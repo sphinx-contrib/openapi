@@ -1,0 +1,24 @@
+sudo: false
+language: python
+python: 3.5
+
+install:
+   - pip install tox
+
+script:
+   - tox
+
+deploy:
+   - provider: pypi
+     user: ikalnitsky
+     password:
+        secure:
+           "XqusR3oOQFAKx/aGVwuIABxcS6vU1xcF/U9taCXRDwhQU3UeJVMabDhWpiHh+\
+            wmE785CZBCPVdq9bqJs1p75IOihV2L3gF8LNxY9LFeMKH6AU2bZHNfpF6CuYE\
+            j7a3KqmmGk0jMykAdOLqDlQHecBLEOfU7+YVdH1i1glpDLKhE="
+     on:
+        tags: true
+        distributions: sdist
+
+notifications:
+   email: false
