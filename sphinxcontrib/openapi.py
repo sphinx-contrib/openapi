@@ -58,13 +58,13 @@ def _httpresource(endpoint, method, properties):
             yield '{indent}{line}'.format(**locals())
         yield ''
 
-    # print endpoint's route params
+    # print request's route params
     for param in filter(lambda p: p['in'] == 'path', parameters):
         yield indent + ':param {type} {name}:'.format(**param)
         for line in param.get('description', '').splitlines():
             yield '{indent}{indent}{line}'.format(**locals())
 
-    # print endpoint's query params
+    # print request's query params
     for param in filter(lambda p: p['in'] == 'query', parameters):
         yield indent + ':query {type} {name}:'.format(**param)
         for line in param.get('description', '').splitlines():
@@ -75,6 +75,19 @@ def _httpresource(endpoint, method, properties):
         yield '{indent}:status {status}:'.format(**locals())
         for line in response['description'].splitlines():
             yield '{indent}{indent}{line}'.format(**locals())
+
+    # print request header params
+    for param in filter(lambda p: p['in'] == 'header', parameters):
+        yield indent + ':reqheader {name}:'.format(**param)
+        for line in param.get('description', '').splitlines():
+            yield '{indent}{indent}{line}'.format(**locals())
+
+    # print response headers
+    for status, response in responses.items():
+        for headername, header in response.get('headers', {}).items():
+            yield indent + ':resheader {name}:'.format(name=headername)
+            for line in header['description'].splitlines():
+                yield '{indent}{indent}{line}'.format(**locals())
 
     yield ''
 

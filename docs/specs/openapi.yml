@@ -65,11 +65,23 @@ paths:
           required: true
           description: |
             A unique evidence identifier to query.
+        - name: If-None-Match
+          in: header
+          type: string
+          description: |
+            Executes a request only if passed ETag doesn't equal to current
+            resource one (i.e. resource has been changed).
       responses:
         200:
           description: An evidence.
           schema:
             $ref: '#/definitions/Evidence'
+          headers:
+            ETag:
+              description: |
+                Entity tag is part of HTTP provided for web cache validation
+                problem, but also used for optimistic concurrency control.
+              type: string
         404:
           description: Evidence not found.
           schema:

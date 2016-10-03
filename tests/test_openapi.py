@@ -36,11 +36,23 @@ class TestOpenApi2HttpDomain(object):
                                 'type': 'integer',
                                 'description': 'Show up to `limit` entries.',
                             },
+                            {
+                                'name': 'If-None-Match',
+                                'in': 'header',
+                                'type': 'string',
+                                'description': 'Last known resource ETag.'
+                            }
                         ],
                         'responses': {
                             '200': {
-                                'description': 'An array of resources.'
-                            },
+                                'description': 'An array of resources.',
+                                'headers': {
+                                    'ETag': {
+                                        'description': 'Resource ETag.',
+                                        'type': 'string'
+                                    }
+                                }
+                            }
                         }
                     },
                 }
@@ -61,6 +73,10 @@ class TestOpenApi2HttpDomain(object):
                   Show up to `limit` entries.
                :status 200:
                   An array of resources.
+               :reqheader If-None-Match:
+                  Last known resource ETag.
+               :resheader ETag:
+                  Resource ETag.
         ''').lstrip()
 
     def test_two_resources(self):
