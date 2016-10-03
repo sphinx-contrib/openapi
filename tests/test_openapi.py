@@ -41,9 +41,6 @@ class TestOpenApi2HttpDomain(object):
                             '200': {
                                 'description': 'An array of resources.'
                             },
-                            '404': {
-                                'description': 'Resource `kind` not found.'
-                            }
                         }
                     },
                 }
@@ -64,8 +61,6 @@ class TestOpenApi2HttpDomain(object):
                   Show up to `limit` entries.
                :status 200:
                   An array of resources.
-               :status 404:
-                  Resource `kind` not found.
         ''').lstrip()
 
     def test_two_resources(self):
