@@ -21,7 +21,7 @@ Pass ``sphinxcontrib-openapi`` to ``extensions`` list in  Sphinx's ``conf.py``
 
    extensions = [
       ...
-      'sphinxcontrib-openapi',
+      'sphinxcontrib.openapi',
    ]
 
 and feel free to use the ``openapi`` directive to render OpenAPI specs
