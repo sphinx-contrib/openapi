@@ -18,7 +18,7 @@ class TestOpenApi2HttpDomain(object):
 
     def test_basic(self):
         text = '\n'.join(openapi.openapi2httpdomain({
-            'paths': collections.OrderedDict({
+            'paths': {
                 '/resources/{kind}': {
                     'get': {
                         'summary': 'List Resources',
@@ -41,7 +41,7 @@ class TestOpenApi2HttpDomain(object):
                                 'in': 'header',
                                 'type': 'string',
                                 'description': 'Last known resource ETag.'
-                            }
+                            },
                         ],
                         'responses': {
                             '200': {
@@ -50,13 +50,13 @@ class TestOpenApi2HttpDomain(object):
                                     'ETag': {
                                         'description': 'Resource ETag.',
                                         'type': 'string'
-                                    }
-                                }
-                            }
-                        }
+                                    },
+                                },
+                            },
+                        },
                     },
-                }
-            })
+                },
+            },
         }))
 
         assert text == textwrap.dedent('''
@@ -116,3 +116,64 @@ class TestOpenApi2HttpDomain(object):
                :status 404:
                   error
         ''').lstrip()
+
+    def test_refs_are_resolved(self):
+        text = '\n'.join(openapi.openapi2httpdomain({
+            'paths': {
+                '/resources': {
+                    'get': {
+                        'summary': 'List Resources',
+                        'description': '~ some useful description ~',
+                        'responses': {
+                            'default': {
+                                '$ref': '#/responses/default',
+                            },
+                        },
+                    },
+                },
+            },
+            'responses': {
+                'default': {
+                    'description': 'Generic error response.'
+                }
+            }
+        }))
+        assert text == textwrap.dedent('''
+            .. http:get:: /resources
+               :synopsis: List Resources
+
+               **List Resources**
+
+               ~ some useful description ~
+
+               :status default:
+                  Generic error response.
+        ''').lstrip()
+
+
+class TestResolveRefs(object):
+
+    def test_ref_resolving(self):
+        data = {
+            'foo': {
+                'a': 13,
+                'b': {
+                    'c': True,
+                }
+            },
+            'bar': {
+                '$ref': '#/foo/b',
+            }
+        }
+
+        assert openapi._resolve_refs(data) == {
+            'foo': {
+                'a': 13,
+                'b': {
+                    'c': True,
+                }
+            },
+            'bar': {
+                'c': True,
+            }
+        }

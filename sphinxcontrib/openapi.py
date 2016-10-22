@@ -14,6 +14,7 @@ import itertools
 import collections
 
 import yaml
+import jsonschema
 
 from docutils import nodes
 from docutils.parsers.rst import directives
@@ -37,6 +38,34 @@ _YamlOrderedLoader.add_constructor(
     yaml.resolver.BaseResolver.DEFAULT_MAPPING_TAG,
     lambda loader, node: collections.OrderedDict(loader.construct_pairs(node))
 )
+
+
+def _resolve_refs(spec):
+    """Resolve JSON references in a given dictionary.
+
+    OpenAPI spec may contain JSON references to its nodes or external
+    sources, so any attempt to rely that there's some expected attribute
+    in the spec may fail. So we need to resolve JSON references before
+    we use it (i.e. replace with referenced object). For details see:
+
+        https://tools.ietf.org/html/draft-pbryan-zyp-json-ref-02
+
+    The input spec is modified in-place despite being returned from
+    the function.
+    """
+    resolver = jsonschema.RefResolver('', spec)
+
+    def _do_resolve(node):
+        for k, v in node.items():
+            if isinstance(v, collections.Mapping) and '$ref' in v:
+                with resolver.resolving(v['$ref']) as resolved:
+                    node[k] = resolved
+            elif isinstance(v, collections.Mapping):
+                node[k] = _do_resolve(v)
+            else:
+                node[k] = v
+        return node
+    return _do_resolve(spec)
 
 
 def _httpresource(endpoint, method, properties):
@@ -94,6 +123,10 @@ def _httpresource(endpoint, method, properties):
 
 def openapi2httpdomain(spec):
     generators = []
+
+    # OpenAPI spec may contain JSON references, so we need resolve them
+    # before we access the actual values.
+    spec = _resolve_refs(spec)
 
     for endpoint in spec['paths']:
         for method, properties in spec['paths'][endpoint].items():

@@ -8,6 +8,8 @@ release.
 0.2.0 (unreleased)
 ==================
 
+- Resolve JSON references in the spec before attempt to generate a doc.
+
 
 0.1.0 (2016-10-03)
 ==================
