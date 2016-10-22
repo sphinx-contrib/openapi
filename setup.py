@@ -15,7 +15,7 @@ with open(os.path.join(here, 'README.rst'), 'r', encoding='utf-8') as f:
 
 setup(
     name='sphinxcontrib-openapi',
-    version='0.1.0',
+    version='0.2.0',
     description='OpenAPI (fka Swagger) spec renderer for Sphinx',
     long_description=long_description,
     license='BSD',
