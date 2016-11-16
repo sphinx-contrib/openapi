@@ -5,7 +5,7 @@
 Here you can see the list of changes between each 'sphinxcontrib-openapi'
 release.
 
-0.2.0 (unreleased)
+0.2.0 (2016-11-16)
 ==================
 
 - Resolve JSON references in the spec before attempt to generate a doc.
