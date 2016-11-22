@@ -34,6 +34,7 @@ from sphinxcontrib import httpdomain
 class _YamlOrderedLoader(yaml.SafeLoader):
     pass
 
+
 _YamlOrderedLoader.add_constructor(
     yaml.resolver.BaseResolver.DEFAULT_MAPPING_TAG,
     lambda loader, node: collections.OrderedDict(loader.construct_pairs(node))
