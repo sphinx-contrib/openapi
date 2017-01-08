@@ -5,6 +5,13 @@
 Here you can see the list of changes between each 'sphinxcontrib-openapi'
 release.
 
+
+0.2.1 (unreleased)
+==================
+
+- Resolve relative JSON references. 
+
+
 0.2.0 (2016-11-16)
 ==================
 

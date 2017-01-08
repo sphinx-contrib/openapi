@@ -8,6 +8,7 @@
     :license: BSD, see LICENSE for details.
 """
 
+import os
 import textwrap
 import collections
 
@@ -117,39 +118,6 @@ class TestOpenApi2HttpDomain(object):
                   error
         ''').lstrip()
 
-    def test_refs_are_resolved(self):
-        text = '\n'.join(openapi.openapi2httpdomain({
-            'paths': {
-                '/resources': {
-                    'get': {
-                        'summary': 'List Resources',
-                        'description': '~ some useful description ~',
-                        'responses': {
-                            'default': {
-                                '$ref': '#/responses/default',
-                            },
-                        },
-                    },
-                },
-            },
-            'responses': {
-                'default': {
-                    'description': 'Generic error response.'
-                }
-            }
-        }))
-        assert text == textwrap.dedent('''
-            .. http:get:: /resources
-               :synopsis: List Resources
-
-               **List Resources**
-
-               ~ some useful description ~
-
-               :status default:
-                  Generic error response.
-        ''').lstrip()
-
 
 class TestResolveRefs(object):
 
@@ -166,13 +134,27 @@ class TestResolveRefs(object):
             }
         }
 
-        assert openapi._resolve_refs(data) == {
+        assert openapi._resolve_refs('', data) == {
             'foo': {
                 'a': 13,
                 'b': {
                     'c': True,
                 }
             },
+            'bar': {
+                'c': True,
+            }
+        }
+
+    def test_relative_ref_resolving_on_fs(self):
+        baseuri = 'file://%s' % os.path.abspath(__file__)
+        data = {
+            'bar': {
+                '$ref': 'testdata/foo.json#/foo/b',
+            }
+        }
+
+        assert openapi._resolve_refs(baseuri, data) == {
             'bar': {
                 'c': True,
             }

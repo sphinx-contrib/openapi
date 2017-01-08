@@ -41,7 +41,7 @@ _YamlOrderedLoader.add_constructor(
 )
 
 
-def _resolve_refs(spec):
+def _resolve_refs(uri, spec):
     """Resolve JSON references in a given dictionary.
 
     OpenAPI spec may contain JSON references to its nodes or external
@@ -54,7 +54,7 @@ def _resolve_refs(spec):
     The input spec is modified in-place despite being returned from
     the function.
     """
-    resolver = jsonschema.RefResolver('', spec)
+    resolver = jsonschema.RefResolver(uri, spec)
 
     def _do_resolve(node):
         for k, v in node.items():
@@ -125,10 +125,6 @@ def _httpresource(endpoint, method, properties):
 def openapi2httpdomain(spec):
     generators = []
 
-    # OpenAPI spec may contain JSON references, so we need resolve them
-    # before we access the actual values.
-    spec = _resolve_refs(spec)
-
     for endpoint in spec['paths']:
         for method, properties in spec['paths'][endpoint].items():
             generators.append(_httpresource(endpoint, method, properties))
@@ -157,6 +153,12 @@ class OpenApi(Directive):
         encoding = self.options.get('encoding', env.config.source_encoding)
         with io.open(path, 'rt', encoding=encoding) as stream:
             spec = yaml.load(stream, _YamlOrderedLoader)
+
+        # OpenAPI spec may contain JSON references, so we need resolve them
+        # before we access the actual values trying to build an httpdomain
+        # markup. Since JSON references may be relative, it's crucial to
+        # pass a document URI in order to properly resolve them.
+        spec = _resolve_refs('file://%s' % path, spec)
 
         # reStructuredText DOM manipulation is pretty tricky task. It requires
         # passing dozen arguments which is not easy without well-documented
