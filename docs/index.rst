@@ -40,6 +40,21 @@ encoding
   Encoding to be used to read an OpenAPI spec. If not passed, Sphinx's
   source encoding will be used.
 
+paths
+  A comma separated list of paths to filter the included openapi spec by.
+  For example:
+
+  .. code:: restructuredtext
+
+     .. openapi:: specs/openapi.yml
+        :paths:
+           /persons
+           /evidence
+        :encoding: utf-8
+
+  Would only render the endpoints at ``/persons`` and ``/evidence``,
+  ignoring all others.
+
 
 .. _Sphinx: https://sphinx.pocoo.org/latest
 .. _OpenAPI: https://openapis.org/specification
