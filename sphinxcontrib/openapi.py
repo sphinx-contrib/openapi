@@ -122,11 +122,37 @@ def _httpresource(endpoint, method, properties):
     yield ''
 
 
-def openapi2httpdomain(spec):
+def string_multiline_list(value):
+    """ Clean a string option by converting it to a list of strings
+
+    Split string on newlines to get list of paths to filter by
+
+    Returns an array of string paths to filter on
+    Raises ValueError if unable to parse the input value
+
+    """
+    paths = [path.strip() for path in value.splitlines()]
+    if len(paths) > 0:
+        return paths
+    else:
+        raise ValueError('Invalid argument to paths param: {}'.format(value))
+
+
+def openapi2httpdomain(spec, **options):
     generators = []
 
-    for endpoint in spec['paths']:
-        for method, properties in spec['paths'][endpoint].items():
+    # If we don't pass a specific list of paths to render,
+    # default to all in spec
+    paths = options.get('paths', spec['paths'])
+
+    for endpoint in paths:
+        try:
+            path = spec['paths'][endpoint]
+        except KeyError:
+            error_msg = ('Invalid path filter \'{}\' in OpenAPI directive. ' +
+                         'Path must be one of {}.')
+            raise ValueError(error_msg.format(endpoint, spec['paths'].keys()))
+        for method, properties in path.items():
             generators.append(_httpresource(endpoint, method, properties))
 
     return iter(itertools.chain(*generators))
@@ -138,6 +164,8 @@ class OpenApi(Directive):
     final_argument_whitespace = True        # path may contain whitespaces
     option_spec = {
         'encoding': directives.encoding,    # useful for non-ascii cases :)
+        'paths': string_multiline_list,     # Filter output based on the
+                                            # list of paths provided
     }
 
     def run(self):
@@ -166,7 +194,7 @@ class OpenApi(Directive):
         # reStructuredText in-memory text and parse it in order to produce a
         # real DOM.
         viewlist = ViewList()
-        for line in openapi2httpdomain(spec):
+        for line in openapi2httpdomain(spec, **self.options):
             viewlist.append(line, '<openapi>')
 
         # Parse reStructuredText contained in `viewlist` and return produced
