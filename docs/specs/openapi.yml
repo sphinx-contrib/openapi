@@ -4,6 +4,18 @@ info:
   version: "1.0.0"
 host: api.batcomputer.com
 paths:
+  /persons:
+    get:
+      summary: List Persons
+      description: |
+        Retrieves a list of all persons on file in the bat computer.
+      responses:
+        200:
+          description: An array of Persons
+          schema:
+            type: array
+            items:
+              $ref: '#/definitions/Person'
   /evidence:
     get:
       summary: List Evidence
@@ -110,3 +122,13 @@ definitions:
       message:
         type: string
         description: A human readable error message.
+  Person:
+    type: object
+    properties:
+      id:
+        type: integer
+        format: int64
+        description: Unique ID for a person
+      name:
+        type: string
+        description: Name of a person

@@ -118,6 +118,69 @@ class TestOpenApi2HttpDomain(object):
                   error
         ''').lstrip()
 
+    def test_path_option(self):
+        spec = collections.defaultdict(collections.OrderedDict)
+        spec['paths']['/resource_a'] = {
+            'get': {
+                'description': 'resource a',
+                'responses': {
+                    '200': {'description': 'ok'},
+                }
+            }
+        }
+        spec['paths']['/resource_b'] = {
+            'post': {
+                'description': 'resource b',
+                'responses': {
+                    '404': {'description': 'error'},
+                }
+            }
+        }
+
+        options = {
+            'paths': ['/resource_a']
+        }
+        text = '\n'.join(openapi.openapi2httpdomain(spec, **options))
+        assert text == textwrap.dedent('''
+            .. http:get:: /resource_a
+               :synopsis: null
+
+               resource a
+
+               :status 200:
+                  ok
+        ''').lstrip()
+
+    def test_path_invalid(self):
+        spec = collections.defaultdict(collections.OrderedDict)
+        spec['paths']['/resource_a'] = {
+            'get': {
+                'description': 'resource a',
+                'responses': {
+                    '200': {'description': 'ok'},
+                }
+            }
+        }
+        spec['paths']['/resource_b'] = {
+            'post': {
+                'description': 'resource b',
+                'responses': {
+                    '404': {'description': 'error'},
+                }
+            }
+        }
+
+        options = {
+            'paths': ['/resource_a', '/resource_invalid_name']
+        }
+        try:
+            openapi.openapi2httpdomain(spec, **options)
+        except ValueError:
+            pass
+        else:
+            raise AssertionError('Should raise ValueError if a filter ' +
+                                 'path is invalid')
+
 
 class TestResolveRefs(object):
 
