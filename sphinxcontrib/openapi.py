@@ -122,22 +122,6 @@ def _httpresource(endpoint, method, properties):
     yield ''
 
 
-def string_multiline_list(value):
-    """ Clean a string option by converting it to a list of strings
-
-    Split string on newlines to get list of paths to filter by
-
-    Returns an array of string paths to filter on
-    Raises ValueError if unable to parse the input value
-
-    """
-    paths = [path.strip() for path in value.splitlines()]
-    if len(paths) > 0:
-        return paths
-    else:
-        raise ValueError('Invalid argument to paths param: {}'.format(value))
-
-
 def openapi2httpdomain(spec, **options):
     generators = []
 
@@ -164,8 +148,7 @@ class OpenApi(Directive):
     final_argument_whitespace = True        # path may contain whitespaces
     option_spec = {
         'encoding': directives.encoding,    # useful for non-ascii cases :)
-        'paths': string_multiline_list,     # Filter output based on the
-                                            # list of paths provided
+        'paths': lambda s: s.split(),       # endpoints to be rendered
     }
 
     def run(self):
