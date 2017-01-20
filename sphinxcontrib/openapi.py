@@ -125,18 +125,18 @@ def _httpresource(endpoint, method, properties):
 def openapi2httpdomain(spec, **options):
     generators = []
 
-    # If we don't pass a specific list of paths to render,
-    # default to all in spec
-    paths = options.get('paths', spec['paths'])
+    # If 'paths' are passed we've got to ensure they exist witin an OpenAPI
+    # spec; otherwise raise error and ask user to fix that.
+    if 'paths' in options:
+        if not set(options['paths']).issubset(spec['paths']):
+            raise ValueError(
+                'One or more paths do not defined in the spec: %s.' % (
+                    ', '.join(set(options['paths']) - set(spec['paths'])),
+                )
+            )
 
-    for endpoint in paths:
-        try:
-            path = spec['paths'][endpoint]
-        except KeyError:
-            error_msg = ('Invalid path filter \'{}\' in OpenAPI directive. ' +
-                         'Path must be one of {}.')
-            raise ValueError(error_msg.format(endpoint, spec['paths'].keys()))
-        for method, properties in path.items():
+    for endpoint in options.get('paths', spec['paths']):
+        for method, properties in spec['paths'][endpoint].items():
             generators.append(_httpresource(endpoint, method, properties))
 
     return iter(itertools.chain(*generators))
