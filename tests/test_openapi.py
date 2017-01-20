@@ -193,8 +193,12 @@ class TestResolveRefs(object):
                 }
             },
             'bar': {
-                '$ref': '#/foo/b',
-            }
+                '$ref': '#/foo/b'
+            },
+            'baz': [
+                {'$ref': '#/foo/a'},
+                {'$ref': '#/foo/b'}
+            ]
         }
 
         assert openapi._resolve_refs('', data) == {
@@ -206,7 +210,11 @@ class TestResolveRefs(object):
             },
             'bar': {
                 'c': True,
-            }
+            },
+            'baz': [
+                13,
+                {'c': True}
+            ]
         }
 
     def test_relative_ref_resolving_on_fs(self):
