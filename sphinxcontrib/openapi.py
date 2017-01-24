@@ -69,8 +69,8 @@ def _resolve_refs(uri, spec):
     return _do_resolve(spec)
 
 
-def _httpresource(endpoint, method, properties):
-    parameters = properties.get('parameters', [])
+def _httpresource(endpoint, method, properties, parameters):
+    parameters = parameters + properties.get('parameters', [])
     responses = properties['responses']
     indent = '   '
 
@@ -136,8 +136,9 @@ def openapi2httpdomain(spec, **options):
             )
 
     for endpoint in options.get('paths', spec['paths']):
-        for method, properties in spec['paths'][endpoint].items():
-            generators.append(_httpresource(endpoint, method, properties))
+        params = spec['paths'][endpoint].pop('parameters', [])
+        for method, props in spec['paths'][endpoint].items():
+            generators.append(_httpresource(endpoint, method, props, params))
 
     return iter(itertools.chain(*generators))
 
