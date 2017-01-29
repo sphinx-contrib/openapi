@@ -57,15 +57,17 @@ def _resolve_refs(uri, spec):
     resolver = jsonschema.RefResolver(uri, spec)
 
     def _do_resolve(node):
-        for k, v in node.items():
-            if isinstance(v, collections.Mapping) and '$ref' in v:
-                with resolver.resolving(v['$ref']) as resolved:
-                    node[k] = resolved
-            elif isinstance(v, collections.Mapping):
+        if isinstance(node, collections.Mapping) and '$ref' in node:
+            with resolver.resolving(node['$ref']) as resolved:
+                return resolved
+        elif isinstance(node, collections.Mapping):
+            for k, v in node.items():
                 node[k] = _do_resolve(v)
-            else:
-                node[k] = v
+        elif isinstance(node, (list, tuple)):
+            for i in range(len(node)):
+                node[i] = _do_resolve(node[i])
         return node
+
     return _do_resolve(spec)
 
 
