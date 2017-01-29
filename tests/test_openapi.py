@@ -12,8 +12,6 @@ import os
 import textwrap
 import collections
 
-import pytest
-
 from sphinxcontrib import openapi
 
 
@@ -139,9 +137,10 @@ class TestOpenApi2HttpDomain(object):
             }
         }
 
-        text = '\n'.join(openapi.openapi2httpdomain(spec, paths=[
-            '/resource_a',
-        ]))
+        options = {
+            'paths': ['/resource_a']
+        }
+        text = '\n'.join(openapi.openapi2httpdomain(spec, **options))
         assert text == textwrap.dedent('''
             .. http:get:: /resource_a
                :synopsis: null
@@ -150,6 +149,65 @@ class TestOpenApi2HttpDomain(object):
 
                :status 200:
                   ok
+        ''').lstrip()
+
+    def test_root_parameters(self):
+        spec = {'paths': {}}
+        spec['paths']['/resources/{name}'] = collections.OrderedDict()
+
+        spec['paths']['/resources/{name}']['parameters'] = [
+            {
+                'name': 'name',
+                'in': 'path',
+                'type': 'string',
+                'description': 'The name of the resource.',
+            }
+        ]
+        spec['paths']['/resources/{name}']['get'] = {
+            'summary': 'Fetch a Resource',
+            'description': '~ some useful description ~',
+            'responses': {
+                '200': {
+                    'description': 'The fetched resource.',
+                },
+            },
+        }
+        spec['paths']['/resources/{name}']['put'] = {
+            'summary': 'Modify a Resource',
+            'description': '~ some useful description ~',
+            'responses': {
+                '200': {
+                    'description': 'The modified resource.',
+                },
+            },
+        }
+
+        text = '\n'.join(openapi.openapi2httpdomain(spec))
+
+        assert text == textwrap.dedent('''
+            .. http:get:: /resources/{name}
+               :synopsis: Fetch a Resource
+
+               **Fetch a Resource**
+
+               ~ some useful description ~
+
+               :param string name:
+                  The name of the resource.
+               :status 200:
+                  The fetched resource.
+
+            .. http:put:: /resources/{name}
+               :synopsis: Modify a Resource
+
+               **Modify a Resource**
+
+               ~ some useful description ~
+
+               :param string name:
+                  The name of the resource.
+               :status 200:
+                  The modified resource.
         ''').lstrip()
 
     def test_path_invalid(self):
@@ -171,16 +229,16 @@ class TestOpenApi2HttpDomain(object):
             }
         }
 
-        with pytest.raises(ValueError) as exc:
-            openapi.openapi2httpdomain(spec, paths=[
-                '/resource_a',
-                '/resource_invalid_name',
-            ])
-
-        assert str(exc.value) == (
-            'One or more paths do not defined in the spec: '
-            '/resource_invalid_name.'
-        )
+        options = {
+            'paths': ['/resource_a', '/resource_invalid_name']
+        }
+        try:
+            openapi.openapi2httpdomain(spec, **options)
+        except ValueError:
+            pass
+        else:
+            raise AssertionError('Should raise ValueError if a filter ' +
+                                 'path is invalid')
 
 
 class TestResolveRefs(object):
