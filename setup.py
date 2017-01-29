@@ -15,7 +15,6 @@ with open(os.path.join(here, 'README.rst'), 'r', encoding='utf-8') as f:
 
 setup(
     name='sphinxcontrib-openapi',
-    version='0.2.1',
     description='OpenAPI (fka Swagger) spec renderer for Sphinx',
     long_description=long_description,
     license='BSD',
@@ -26,6 +25,10 @@ setup(
     packages=find_packages(),
     include_package_data=True,
     zip_safe=False,
+    use_scm_version=True,
+    setup_requires=[
+        'setuptools_scm >= 1.15',
+    ],
     install_requires=[
         'sphinxcontrib-httpdomain >= 1.5.0',
         'PyYAML >= 3.12',
