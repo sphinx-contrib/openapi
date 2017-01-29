@@ -132,7 +132,7 @@ def openapi2httpdomain(spec, **options):
     if 'paths' in options:
         if not set(options['paths']).issubset(spec['paths']):
             raise ValueError(
-                'One or more paths do not defined in the spec: %s.' % (
+                'One or more paths are not defined in the spec: %s.' % (
                     ', '.join(set(options['paths']) - set(spec['paths'])),
                 )
             )

@@ -12,6 +12,8 @@ import os
 import textwrap
 import collections
 
+import pytest
+
 from sphinxcontrib import openapi
 
 
@@ -137,10 +139,9 @@ class TestOpenApi2HttpDomain(object):
             }
         }
 
-        options = {
-            'paths': ['/resource_a']
-        }
-        text = '\n'.join(openapi.openapi2httpdomain(spec, **options))
+        text = '\n'.join(openapi.openapi2httpdomain(spec, paths=[
+            '/resource_a',
+        ]))
         assert text == textwrap.dedent('''
             .. http:get:: /resource_a
                :synopsis: null
@@ -229,16 +230,16 @@ class TestOpenApi2HttpDomain(object):
             }
         }
 
-        options = {
-            'paths': ['/resource_a', '/resource_invalid_name']
-        }
-        try:
-            openapi.openapi2httpdomain(spec, **options)
-        except ValueError:
-            pass
-        else:
-            raise AssertionError('Should raise ValueError if a filter ' +
-                                 'path is invalid')
+        with pytest.raises(ValueError) as exc:
+            openapi.openapi2httpdomain(spec, paths=[
+                '/resource_a',
+                '/resource_invalid_name',
+            ])
+
+        assert str(exc.value) == (
+            'One or more paths are not defined in the spec: '
+            '/resource_invalid_name.'
+        )
 
 
 class TestResolveRefs(object):
@@ -256,7 +257,8 @@ class TestResolveRefs(object):
             },
             'baz': [
                 {'$ref': '#/foo/a'},
-                {'$ref': '#/foo/b'}
+                {'$ref': '#/foo/b'},
+                'batman',
             ]
         }
 
@@ -272,7 +274,8 @@ class TestResolveRefs(object):
             },
             'baz': [
                 13,
-                {'c': True}
+                {'c': True},
+                'batman',
             ]
         }
 
