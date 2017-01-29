@@ -6,6 +6,15 @@ Here you can see the list of changes between each 'sphinxcontrib-openapi'
 release.
 
 
+0.3.0 (2017-01-29)
+==================
+
+- Add ``:paths:`` option to ``openapi`` directive that allows to render
+  only specified endpoints.
+- Resolve references inside list objects.
+- Handle common ``parameters` specified at the endpoint's root.
+
+
 0.2.1 (2017-01-10)
 ==================
 
