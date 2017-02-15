@@ -35,8 +35,8 @@ Links
 =====
 
 * Documentation: https://sphinxcontrib-openapi.readthedocs.org/
-* Source: https://github.com/ikalnitsky/sphinxcontrib-openapi
-* Bugs: https://github.com/ikalnitsky/sphinxcontrib-openapi/issues
+* Source: https://github.com/ikalnytskyi/sphinxcontrib-openapi
+* Bugs: https://github.com/ikalnytskyi/sphinxcontrib-openapi/issues
 
 
 .. _Sphinx: https://sphinx.pocoo.org/latest
