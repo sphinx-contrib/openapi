@@ -12,7 +12,7 @@ from sphinx.directives.code import CodeBlock
 directives.register_directive('code', CodeBlock)
 
 project = 'sphinxcontrib-openapi'
-copyright = '2016, Igor Kalnitsky'
+copyright = '2016, Ihor Kalnytskyi'
 
 extensions = ['sphinxcontrib.openapi']
 source_suffix = '.rst'
