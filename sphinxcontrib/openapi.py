@@ -71,8 +71,8 @@ def _resolve_refs(uri, spec):
     return _do_resolve(spec)
 
 
-def _httpresource(endpoint, method, properties, parameters):
-    parameters = parameters + properties.get('parameters', [])
+def _httpresource(endpoint, method, properties):
+    parameters = properties.get('parameters', [])
     responses = properties['responses']
     indent = '   '
 
@@ -124,10 +124,34 @@ def _httpresource(endpoint, method, properties, parameters):
     yield ''
 
 
+def _normalize_spec(spec, **options):
+    # OpenAPI spec may contain JSON references, so we need resolve them
+    # before we access the actual values trying to build an httpdomain
+    # markup. Since JSON references may be relative, it's crucial to
+    # pass a document URI in order to properly resolve them.
+    spec = _resolve_refs(options.get('uri', ''), spec)
+
+    # OpenAPI spec may contain common endpoint's parameters top-level.
+    # In order to do not place if-s around the code to handle special
+    # cases, let's normalize the spec and push common parameters inside
+    # endpoints definitions.
+    for endpoint in spec['paths'].values():
+        parameters = endpoint.pop('parameters', [])
+        for method in endpoint.values():
+            method.setdefault('parameters', [])
+            method['parameters'].extend(parameters)
+
+
 def openapi2httpdomain(spec, **options):
     generators = []
 
-    # If 'paths' are passed we've got to ensure they exist witin an OpenAPI
+    # OpenAPI spec may contain JSON references, common properties, etc.
+    # Trying to render the spec "As Is" will require to put multiple
+    # if-s around the code. In order to simplify flow, let's make the
+    # spec to have only one (expected) schema, i.e. normalize it.
+    _normalize_spec(spec, **options)
+
+    # If 'paths' are passed we've got to ensure they exist within an OpenAPI
     # spec; otherwise raise error and ask user to fix that.
     if 'paths' in options:
         if not set(options['paths']).issubset(spec['paths']):
@@ -138,9 +162,8 @@ def openapi2httpdomain(spec, **options):
             )
 
     for endpoint in options.get('paths', spec['paths']):
-        params = spec['paths'][endpoint].pop('parameters', [])
-        for method, props in spec['paths'][endpoint].items():
-            generators.append(_httpresource(endpoint, method, props, params))
+        for method, properties in spec['paths'][endpoint].items():
+            generators.append(_httpresource(endpoint, method, properties))
 
     return iter(itertools.chain(*generators))
 
@@ -156,23 +179,22 @@ class OpenApi(Directive):
 
     def run(self):
         env = self.state.document.settings.env
-        rel_path, path = env.relfn2path(directives.path(self.arguments[0]))
+        relpath, abspath = env.relfn2path(directives.path(self.arguments[0]))
 
         # Add OpenAPI spec as a dependency to the current document. That means
         # the document will be rebuilt if the spec is changed.
-        env.note_dependency(rel_path)
+        env.note_dependency(relpath)
 
         # Read the spec using encoding passed to the directive or fallback to
         # the one specified in Sphinx's config.
         encoding = self.options.get('encoding', env.config.source_encoding)
-        with io.open(path, 'rt', encoding=encoding) as stream:
+        with io.open(abspath, 'rt', encoding=encoding) as stream:
             spec = yaml.load(stream, _YamlOrderedLoader)
 
-        # OpenAPI spec may contain JSON references, so we need resolve them
-        # before we access the actual values trying to build an httpdomain
-        # markup. Since JSON references may be relative, it's crucial to
-        # pass a document URI in order to properly resolve them.
-        spec = _resolve_refs('file://%s' % path, spec)
+        # URI parameter is crucial for resolving relative references. So
+        # we need to set this option properly as it's used later down the
+        # stack.
+        self.options.setdefault('uri', 'file://%s' % abspath)
 
         # reStructuredText DOM manipulation is pretty tricky task. It requires
         # passing dozen arguments which is not easy without well-documented
