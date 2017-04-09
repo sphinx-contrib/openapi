@@ -2,6 +2,11 @@
 sphinxcontrib-openapi
 =====================
 
+.. hint::
+
+    Check out `sphinxcontrib-redoc`_ if you are interested in separate
+    three-panel OpenAPI spec rendering.
+
 **sphinxcontrib-openapi** is a `Sphinx`_ extension to generate APIs docs from
 `OpenAPI`_ (fka Swagger) spec. It depends on `sphinxcontrib-httpdomain`_ that
 provides an HTTP domain for describing RESTful HTTP APIs, so we don't need to
@@ -59,3 +64,4 @@ paths
 .. _Sphinx: https://sphinx.pocoo.org
 .. _OpenAPI: https://openapis.org/specification
 .. _sphinxcontrib-httpdomain: https://pythonhosted.org/sphinxcontrib-httpdomain/
+.. _sphinxcontrib-redoc: https://sphinxcontrib-redoc.readthedocs.io/
