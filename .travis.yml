@@ -23,20 +23,8 @@ script:
 
 deploy:
    - provider: pypi
-     user: ikalnitsky
-     password:
-        secure: "Cg37V+zoOYpzSrSAye5Ic5wtWALdNq2kZ1ob2lM1bY6R4rFRgeqjvj2l/S\
-                 852/xZySqQVOZS3bHHEib+yZtDXUQNmC/IYy8kyom/PgVjmnEtcHXfsmrQ\
-                 Uax49SXDxpU7Mp8tPBG5RPgPl3VQMSGgUpbHkjGcU77CQaLuTnqoKJQ5pf\
-                 tQk/vi0+ikV7JdlckqWvQskKFPgKQvvQQjnlvt7Da9v+8J4CGeTn1gv0KR\
-                 oWo8+75bHKDMND1Np6ZyS33p05l+vPVjHegk+15N6ucwaFFLhDIhGZYMWR\
-                 V6IkwAyFjVGfvRptKFGAAqM5cr3EZZ03x0O7EpssYsFsRj2iqfH56bq8JY\
-                 xWum275ZezbWYWCeEYB2XmKWRjQkCjV2ug4/G4rtM6CJQmxwZcBRtabmok\
-                 9hYgUIrgyqyC8NRmk933OkT2BM0lhAoXR3FOauiIJ3+R/4F+y5IzmPyxNT\
-                 YnM3mr7VVrNMbpU2ZiTTsEwl3qYlsUEUNEEswEN/KEmgZf5JOVJ7h7KaDM\
-                 3ymp8t5pyUs2lsDHxhqzyPV6AKyxpL+pBENDhogp2IFRxA01H5gI0UOkMo\
-                 wTO6qjI1jIu4Air3wQOq7N95z0rXJb7lILi9eAezL9SRg86FzMO7wqwI2V\
-                 obbee8Dwar39cedw9/K02BTSr29hLEFlSkRaUTna6x0pg="
+     user: ikalnytskyi
+     password: $PYPI_PASSWORD
      on:
         tags: true
         distributions: sdist
