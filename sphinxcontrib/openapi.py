@@ -17,13 +17,10 @@ import yaml
 import jsonschema
 
 from docutils import nodes
-from docutils.parsers.rst import directives
+from docutils.parsers.rst import Directive, directives
 from docutils.statemachine import ViewList
 
-from sphinx.util.compat import Directive
 from sphinx.util.nodes import nested_parse_with_titles
-
-from sphinxcontrib import httpdomain
 
 
 # Dictionaries do not guarantee to preserve the keys order so when we load
@@ -214,6 +211,5 @@ class OpenApi(Directive):
 
 
 def setup(app):
-    if 'http' not in app.domains:
-        httpdomain.setup(app)
+    app.setup_extension('sphinxcontrib.httpdomain')
     app.add_directive('openapi', OpenApi)
