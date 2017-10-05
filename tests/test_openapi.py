@@ -9,6 +9,7 @@
 """
 
 from __future__ import unicode_literals
+
 import os
 import textwrap
 import collections
@@ -242,10 +243,10 @@ class TestOpenApi2HttpDomain(object):
             '/resource_invalid_name.'
         )
 
-    def test_unicode(self):
+    def test_unicode_is_allowed(self):
         spec = {
             'paths': {
-                '/a': {
+                '/resource_a': {
                     'get': {
                         'description': '\u041f',
                         'responses': {
@@ -255,7 +256,18 @@ class TestOpenApi2HttpDomain(object):
                 }
             }
         }
-        list(openapi.openapi2httpdomain(spec))
+
+        text = '\n'.join(openapi.openapi2httpdomain(spec))
+
+        assert text == textwrap.dedent('''
+            .. http:get:: /resource_a
+               :synopsis: null
+
+               \u041f
+
+               :status 200:
+                  ok
+        ''').lstrip()
 
 
 class TestResolveRefs(object):
