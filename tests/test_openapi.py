@@ -8,6 +8,7 @@
     :license: BSD, see LICENSE for details.
 """
 
+from __future__ import unicode_literals
 import os
 import textwrap
 import collections
@@ -240,6 +241,21 @@ class TestOpenApi2HttpDomain(object):
             'One or more paths are not defined in the spec: '
             '/resource_invalid_name.'
         )
+
+    def test_unicode(self):
+        spec = {
+            'paths': {
+                '/a': {
+                    'get': {
+                        'description': '\u041f',
+                        'responses': {
+                            '200': {'description': 'ok'}
+                        }
+                    }
+                }
+            }
+        }
+        list(openapi.openapi2httpdomain(spec))
 
 
 class TestResolveRefs(object):
