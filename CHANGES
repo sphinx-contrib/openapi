@@ -5,6 +5,10 @@
 Here you can see the list of changes between each 'sphinxcontrib-openapi'
 release.
 
+0.3.2 (2017-10-05)
+==================
+
+- Do not crash on Python 2.x if non-ASCII character is met.
 
 0.3.1 (2017-05-19)
 ==================
