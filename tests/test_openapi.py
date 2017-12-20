@@ -154,6 +154,78 @@ class TestOpenApi2HttpDomain(object):
                   ok
         ''').lstrip()
 
+    def test_include_option(self):
+        spec = collections.defaultdict(collections.OrderedDict)
+        spec['paths']['/resource_a'] = {
+            'get': {
+                'description': 'resource a',
+                'responses': {
+                    '200': {'description': 'ok'},
+                }
+            }
+        }
+        spec['paths']['/resource_b'] = {
+            'post': {
+                'description': 'resource b',
+                'responses': {
+                    '404': {'description': 'error'},
+                }
+            }
+        }
+
+        text = '\n'.join(openapi.openapi2httpdomain(spec, include=[
+            '/resource',
+        ]))
+        assert text == textwrap.dedent('''
+            .. http:get:: /resource_a
+               :synopsis: null
+
+               resource a
+
+               :status 200:
+                  ok
+
+            .. http:post:: /resource_b
+               :synopsis: null
+
+               resource b
+
+               :status 404:
+                  error
+        ''').lstrip()
+
+    def test_exclude_option(self):
+        spec = collections.defaultdict(collections.OrderedDict)
+        spec['paths']['/resource_a'] = {
+            'get': {
+                'description': 'resource a',
+                'responses': {
+                    '200': {'description': 'ok'},
+                }
+            }
+        }
+        spec['paths']['/resource_b'] = {
+            'post': {
+                'description': 'resource b',
+                'responses': {
+                    '404': {'description': 'error'},
+                }
+            }
+        }
+
+        text = '\n'.join(openapi.openapi2httpdomain(spec, exclude=[
+            '/.*_a',
+        ]))
+        assert text == textwrap.dedent('''
+            .. http:post:: /resource_b
+               :synopsis: null
+
+               resource b
+
+               :status 404:
+                  error
+        ''').lstrip()
+
     def test_root_parameters(self):
         spec = {'paths': {}}
         spec['paths']['/resources/{name}'] = collections.OrderedDict()

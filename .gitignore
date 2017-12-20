@@ -47,8 +47,12 @@ docs/_build/
 *.sublime-project
 *.sublime-workspace
 
+# Ignore pycharm
+.idea
+
 # Ignore virtualenvs (who places it near)
 .venv/
+venv
 
 # Various shit from the OS itself
 .DS_Store

@@ -60,6 +60,37 @@ paths
   Would only render the endpoints at ``/persons`` and ``/evidence``,
   ignoring all others.
 
+include
+  A line separated list of regular expressions to filter the included openapi
+  spec by. For example:
+
+  .. code:: restructuredtext
+
+     .. openapi:: specs/openapi.yml
+        :include:
+           /evid.*
+        :encoding: utf-8
+
+  Would render the endpoints at ``/evidence`` and ``/evidence/{pk}``
+
+exclude
+  A line separated list of regular expressions to filter the included openapi
+  spec by (excluding matches). For example:
+
+  .. code:: restructuredtext
+
+     .. openapi:: specs/openapi.yml
+        :exclude:
+           /evidence/{pk}
+        :encoding: utf-8
+
+  Would render ``/persons`` and ``/evidence`` endpoints, but not
+  ``/evidence/{pk}`` endpoints
+
+`exclude`, `include` and `paths` can also be used together (`exclude` taking
+precedence over `include` and `paths`)
+
+
 
 .. _Sphinx: https://sphinx.pocoo.org
 .. _OpenAPI: https://openapis.org/specification

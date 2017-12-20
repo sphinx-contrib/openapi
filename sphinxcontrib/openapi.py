@@ -11,17 +11,16 @@
 
 from __future__ import unicode_literals
 
+import collections
 import io
 import itertools
-import collections
+import re
 
-import yaml
 import jsonschema
-
+import yaml
 from docutils import nodes
 from docutils.parsers.rst import Directive, directives
 from docutils.statemachine import ViewList
-
 from sphinx.util.nodes import nested_parse_with_titles
 
 
@@ -38,6 +37,10 @@ _YamlOrderedLoader.add_constructor(
     yaml.resolver.BaseResolver.DEFAULT_MAPPING_TAG,
     lambda loader, node: collections.OrderedDict(loader.construct_pairs(node))
 )
+
+# Locally cache spec to speedup processing of same spec file in multiple
+# openapi directives
+_specCache = dict()
 
 
 def _resolve_refs(uri, spec):
@@ -150,6 +153,9 @@ def openapi2httpdomain(spec, **options):
     # spec to have only one (expected) schema, i.e. normalize it.
     _normalize_spec(spec, **options)
 
+    # Paths list to be processed
+    paths = []
+
     # If 'paths' are passed we've got to ensure they exist within an OpenAPI
     # spec; otherwise raise error and ask user to fix that.
     if 'paths' in options:
@@ -159,8 +165,31 @@ def openapi2httpdomain(spec, **options):
                     ', '.join(set(options['paths']) - set(spec['paths'])),
                 )
             )
+        paths = options['paths']
 
-    for endpoint in options.get('paths', spec['paths']):
+    # Check against regular expressions to be included
+    if 'include' in options:
+        for i in options['include']:
+            ir = re.compile(i)
+            for path in spec['paths']:
+                if ir.match(path):
+                    paths.append(path)
+
+    # If no include nor paths option, then take full path
+    if 'include' not in options and 'paths' not in options:
+        paths = spec['paths']
+
+    # Remove paths matching regexp
+    if 'exclude' in options:
+        _paths = []
+        for e in options['exclude']:
+            er = re.compile(e)
+            for path in paths:
+                if not er.match(path):
+                    _paths.append(path)
+        paths = _paths
+
+    for endpoint in paths:
         for method, properties in spec['paths'][endpoint].items():
             generators.append(_httpresource(endpoint, method, properties))
 
@@ -168,12 +197,13 @@ def openapi2httpdomain(spec, **options):
 
 
 class OpenApi(Directive):
-
-    required_arguments = 1                  # path to openapi spec
-    final_argument_whitespace = True        # path may contain whitespaces
+    required_arguments = 1  # path to openapi spec
+    final_argument_whitespace = True  # path may contain whitespaces
     option_spec = {
-        'encoding': directives.encoding,    # useful for non-ascii cases :)
-        'paths': lambda s: s.split(),       # endpoints to be rendered
+        'encoding': directives.encoding,  # useful for non-ascii cases :)
+        'paths': lambda s: s.split(),  # endpoints to be rendered (stric)
+        'include': lambda s: s.split(),  # endpoints to be included (regexp)
+        'exclude': lambda s: s.split()  # endpoints to be excluded (regexp)
     }
 
     def run(self):
@@ -186,9 +216,13 @@ class OpenApi(Directive):
 
         # Read the spec using encoding passed to the directive or fallback to
         # the one specified in Sphinx's config.
-        encoding = self.options.get('encoding', env.config.source_encoding)
-        with io.open(abspath, 'rt', encoding=encoding) as stream:
-            spec = yaml.load(stream, _YamlOrderedLoader)
+        if abspath not in _specCache:
+            encoding = self.options.get('encoding', env.config.source_encoding)
+            with io.open(abspath, 'rt', encoding=encoding) as stream:
+                spec = yaml.load(stream, _YamlOrderedLoader)
+            _specCache[abspath] = spec
+        else:
+            spec = _specCache[abspath]
 
         # URI parameter is crucial for resolving relative references. So
         # we need to set this option properly as it's used later down the
