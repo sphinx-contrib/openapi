@@ -139,6 +139,9 @@ def _normalize_spec(spec, **options):
         for method in endpoint.values():
             method.setdefault('parameters', [])
             method['parameters'].extend(parameters)
+            # Set default parameter type to 'string' to support both v2 and v3
+            for parameter in method['parameters']:
+                parameter.setdefault('type', 'string')
 
 
 def openapi2httpdomain(spec, **options):
