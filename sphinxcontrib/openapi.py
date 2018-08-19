@@ -11,6 +11,11 @@
 
 from __future__ import unicode_literals
 
+try:
+    from httplib import responses as http_status_codes  # python2
+except ImportError:
+    from http.client import responses as http_status_codes  # python3
+
 import io
 import itertools
 import collections
@@ -70,7 +75,7 @@ def _resolve_refs(uri, spec):
     return _do_resolve(spec)
 
 
-def _httpresource(endpoint, method, properties):
+def _httpresource_v2(endpoint, method, properties):
     parameters = properties.get('parameters', [])
     responses = properties['responses']
     indent = '   '
@@ -89,7 +94,6 @@ def _httpresource(endpoint, method, properties):
             yield '{indent}{line}'.format(**locals())
         yield ''
 
-    # print request's route params
     for param in filter(lambda p: p['in'] == 'path', parameters):
         yield indent + ':param {type} {name}:'.format(**param)
         for line in param.get('description', '').splitlines():
@@ -106,6 +110,150 @@ def _httpresource(endpoint, method, properties):
         yield '{indent}:status {status}:'.format(**locals())
         for line in response['description'].splitlines():
             yield '{indent}{indent}{line}'.format(**locals())
+
+    # print request header params
+    for param in filter(lambda p: p['in'] == 'header', parameters):
+        yield indent + ':reqheader {name}:'.format(**param)
+        for line in param.get('description', '').splitlines():
+            yield '{indent}{indent}{line}'.format(**locals())
+
+    # print response headers
+    for status, response in responses.items():
+        for headername, header in response.get('headers', {}).items():
+            yield indent + ':resheader {name}:'.format(name=headername)
+            for line in header['description'].splitlines():
+                yield '{indent}{indent}{line}'.format(**locals())
+
+    yield ''
+
+
+def _example_v3(media_type_objects, method=None, endpoint=None, status=None,
+                nb_indent=0):
+    """
+    Format examples in `Media Type Object` openapi v3 to HTTP request or
+    HTTP response example.
+    If method and endpoint is provided, this fonction prints a request example
+    else status should be provided to print a response example.
+
+    Args:
+        - media_type_objects (Dict[str, Dict]): Dict containing
+            Media Type Objects.
+        - method: The HTTP method to use in example.
+        - endpoint: The HTTP route to use in example.
+        - status: The HTTP status to use in example.
+    """
+    # TODO: According to the openapi 3.0.0 spec, we should get example in
+    # `schema` if the `example` or `examples` key is not provided.
+    # https://github.com/OAI/OpenAPI-Specification/blob/master/versions/3.0.0.md#media-type-object
+
+    indent = '   '
+    extra_indent = indent * nb_indent
+
+    if method is not None:
+        method = method.upper()
+    else:
+        status_text = http_status_codes.get(int(status), '-')
+
+    for content_type, content in media_type_objects.items():
+        examples = content.get('examples')
+        if examples is None:
+            examples = {}
+            if 'example' in content:
+                if method is None:
+                    examples['Example response'] = {
+                        'value': content['example']
+                    }
+                else:
+                    examples['Example request'] = {
+                        'value': content['example']
+                    }
+
+        for example_name, example in examples.items():
+            if 'summary' in example:
+                example_title = '{example_name} - {example[summary]}'.format(
+                    **locals())
+            else:
+                example_title = example_name
+
+            yield ''
+            yield '{extra_indent}**{example_title}:**'.format(**locals())
+            yield ''
+            yield '{extra_indent}.. sourcecode:: http'.format(**locals())
+            yield ''
+
+            # Print http response example
+            if method:
+                yield '{extra_indent}{indent}{method} {endpoint} HTTP/1.1' \
+                    .format(**locals())
+                yield '{extra_indent}{indent}Host: example.com' \
+                    .format(**locals())
+                yield '{extra_indent}{indent}Content-Type: {content_type}' \
+                    .format(**locals())
+
+            # Print http request example
+            else:
+                yield '{extra_indent}{indent}HTTP/1.1 {status} {status_text}' \
+                    .format(**locals())
+                yield '{extra_indent}{indent}Content-Type: {content_type}' \
+                    .format(**locals())
+
+            yield ''
+            for example_line in example['value'].splitlines():
+                yield '{extra_indent}{indent}{example_line}'.format(**locals())
+            yield ''
+
+
+def _httpresource_v3(endpoint, method, properties):
+    parameters = properties.get('parameters', [])
+    responses = properties['responses']
+    indent = '   '
+
+    yield '.. http:{0}:: {1}'.format(method, endpoint)
+    yield '   :synopsis: {0}'.format(properties.get('summary', 'null'))
+    yield ''
+
+    if 'summary' in properties:
+        for line in properties['summary'].splitlines():
+            yield '{indent}**{line}**'.format(**locals())
+        yield ''
+
+    if 'description' in properties:
+        for line in properties['description'].splitlines():
+            yield '{indent}{line}'.format(**locals())
+        yield ''
+
+    for param in filter(lambda p: p['in'] == 'path', parameters):
+        yield indent + ':param {type} {name}:'.format(
+            type=param['schema']['type'],
+            name=param['name'])
+
+        for line in param.get('description', '').splitlines():
+            yield '{indent}{indent}{line}'.format(**locals())
+
+    # print request's query params
+    for param in filter(lambda p: p['in'] == 'query', parameters):
+        yield indent + ':query {type} {name}:'.format(
+            type=param['schema']['type'],
+            name=param['name'])
+        for line in param.get('description', '').splitlines():
+            yield '{indent}{indent}{line}'.format(**locals())
+
+    # print request example
+    request_content = properties.get('requestBody', {}).get('content', {})
+    for line in _example_v3(
+            request_content, method, endpoint=endpoint, nb_indent=1):
+        yield line
+
+    # print response status codes
+    for status, response in responses.items():
+        yield '{indent}:status {status}:'.format(**locals())
+        for line in response['description'].splitlines():
+            yield '{indent}{indent}{line}'.format(**locals())
+
+        # print response example
+        for line in _example_v3(
+                response.get('content', {}), status=status, nb_indent=2):
+            yield line
 
     # print request header params
     for param in filter(lambda p: p['in'] == 'header', parameters):
@@ -143,6 +291,11 @@ def _normalize_spec(spec, **options):
 
 def openapi2httpdomain(spec, **options):
     generators = []
+    spec_version = spec.get('openapi', spec.get('swagger', '2.0'))
+    if spec_version.startswith('2.'):
+        httpresource = _httpresource_v2
+    elif spec_version.startswith('3.'):
+        httpresource = _httpresource_v3
 
     # OpenAPI spec may contain JSON references, common properties, etc.
     # Trying to render the spec "As Is" will require to put multiple
@@ -162,7 +315,7 @@ def openapi2httpdomain(spec, **options):
 
     for endpoint in options.get('paths', spec['paths']):
         for method, properties in spec['paths'][endpoint].items():
-            generators.append(_httpresource(endpoint, method, properties))
+            generators.append(httpresource(endpoint, method, properties))
 
     return iter(itertools.chain(*generators))
 
