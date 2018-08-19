@@ -17,6 +17,7 @@ import collections
 import pytest
 
 from sphinxcontrib.openapi import openapi20
+from sphinxcontrib.openapi import openapi30
 from sphinxcontrib.openapi import utils
 
 
@@ -268,6 +269,97 @@ class TestOpenApi2HttpDomain(object):
 
                :status 200:
                   ok
+        ''').lstrip()
+
+
+class TestOpenApi3HttpDomain(object):
+
+    def test_basic(self):
+        text = '\n'.join(openapi30.openapihttpdomain({
+            'openapi': '3.0.0',
+            'paths': {
+                '/resources/{kind}': {
+                    'get': {
+                        'summary': 'List Resources',
+                        'description': '~ some useful description ~',
+                        'parameters': [
+                            {
+                                'name': 'kind',
+                                'in': 'path',
+                                'schema': {'type': 'string'},
+                                'description': 'Kind of resource to list.',
+                            },
+                            {
+                                'name': 'limit',
+                                'in': 'query',
+                                'schema': {'type': 'integer'},
+                                'description': 'Show up to `limit` entries.',
+                            },
+                            {
+                                'name': 'If-None-Match',
+                                'in': 'header',
+                                'schema': {'type': 'string'},
+                                'description': 'Last known resource ETag.'
+                            },
+                        ],
+                        'requestBody': {
+                            'content': {
+                                'application/json':  {
+                                    'example': '{"foo2": "bar2"}'
+                                }
+                            }
+                        },
+                        'responses': {
+                            '200': {
+                                'description': 'An array of resources.',
+                                'content': {
+                                    'application/json': {
+                                        'example': '{"foo": "bar"}'
+                                    }
+                                }
+                            },
+                        },
+                    },
+                },
+            },
+        }))
+        assert text == textwrap.dedent('''
+            .. http:get:: /resources/{kind}
+               :synopsis: List Resources
+
+               **List Resources**
+
+               ~ some useful description ~
+
+               :param string kind:
+                  Kind of resource to list.
+               :query integer limit:
+                  Show up to `limit` entries.
+
+               **Example request:**
+
+               .. sourcecode:: http
+
+                  GET /resources/{kind} HTTP/1.1
+                  Host: example.com
+                  Content-Type: application/json
+
+                  {"foo2": "bar2"}
+
+               :status 200:
+                  An array of resources.
+
+                  **Example response:**
+
+                  .. sourcecode:: http
+
+                     HTTP/1.1 200 OK
+                     Content-Type: application/json
+
+                     {"foo": "bar"}
+
+               :reqheader If-None-Match:
+                  Last known resource ETag.
         ''').lstrip()
 
 

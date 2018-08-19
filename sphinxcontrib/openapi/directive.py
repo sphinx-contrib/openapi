@@ -21,6 +21,7 @@ import yaml
 from sphinx.util.nodes import nested_parse_with_titles
 
 from sphinxcontrib.openapi import openapi20
+from sphinxcontrib.openapi import openapi30
 
 
 # Dictionaries do not guarantee to preserve the keys order so when we load
@@ -66,13 +67,23 @@ class OpenApi(Directive):
         # stack.
         self.options.setdefault('uri', 'file://%s' % abspath)
 
+        # We support both OpenAPI 2.0 (f.k.a. Swagger) and OpenAPI 3.0.0, so
+        # determine which version we are parsing here.
+        spec_version = spec.get('openapi', spec.get('swagger', '2.0'))
+        if spec_version.startswith('2.'):
+            openapihttpdomain = openapi20.openapihttpdomain
+        elif spec_version.startswith('3.'):
+            openapihttpdomain = openapi30.openapihttpdomain
+        else:
+            raise ValueError('Unsupported OpenAPI version (%s)' % spec_version)
+
         # reStructuredText DOM manipulation is pretty tricky task. It requires
         # passing dozen arguments which is not easy without well-documented
         # internals. So the idea here is to represent OpenAPI spec as
         # reStructuredText in-memory text and parse it in order to produce a
         # real DOM.
         viewlist = ViewList()
-        for line in openapi20.openapihttpdomain(spec, **self.options):
+        for line in openapihttpdomain(spec, **self.options):
             viewlist.append(line, '<openapi>')
 
         # Parse reStructuredText contained in `viewlist` and return produced
