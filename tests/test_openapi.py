@@ -409,3 +409,99 @@ class TestResolveRefs(object):
                 'c': True,
             }
         }
+
+
+class TestConvertJsonSchema(object):
+    
+    schema = {
+      'type': 'object',
+      'required': ['name', 'surprise'],
+      'properties': {
+        'name': {
+          'type': 'string',
+          'description': 'The name of user'},
+        'alias': {
+          'type': 'array',
+          'items': {
+            'type': 'string'},
+          'description': 'The list of user alias'},
+        'id': {
+          'type': 'integer',
+          'description': 'the id of user',
+          'readOnly': True},
+        'surprise': {
+          'type': 'string'},
+        'secret': {
+          'type': 'string',
+          'readOnly': True}}}
+
+    result = list(openapi.convert_json_schema(schema))
+
+    def test_required_field_with_description(self):
+        assert ':<json string name: (required) The name of user' in self.result
+
+    def test_required_field_without_description(self):
+        assert ':<json string surprise: (required)' in self.result
+
+    def test_array_field(self):
+        assert ':<json string alias[]' in self.result
+
+    def test_read_only_field_with_description(self):
+        assert ':<json integer id: (read only) the id of user' in self.result
+
+    def test_read_only_field_without_description(self):
+        assert ':<json string secret: (read only)' in self.result
+
+    def test_nested_schema(self):
+        schema = {
+            'type': 'object',
+            'required': ['name'],
+            'properties': {
+                'name': {
+                    'type': 'string',
+                    'description': 'The name of user'
+                },
+                'friends': {
+                    'type': 'array',
+                    'items': {
+                        'type': 'object',
+                        'properties': {
+                            'name': {
+                                'type': 'string',
+                                'readOnly': True
+                            },
+                            'age': {'type': 'integer'}
+                        }
+                    },
+                    'description': 'The list of user alias'
+                },
+                'id': {
+                    'type': 'integer',
+                    'description': 'the id of user',
+                    'readOnly': True
+                },
+                'car': {
+                    'type': 'object',
+                    'properties': {
+                        'provider': {'type': 'string'},
+                        'date': {
+                            'type': 'string',
+                            'description': 'The car of user'
+                        }
+                    }
+                }
+            }
+        }
+
+        result = '\n'.join(openapi.convert_json_schema(schema))
+        
+        expected = textwrap.dedent('''
+            :<json string car.date: The car of user
+            :<json string car.provider
+            :<json integer friends[].age
+            :<json string friends[].name: (read only)
+            :<json integer id: (read only) the id of user
+            :<json string name: (required) The name of user'''.strip('\n'))
+
+        assert result == expected 
+

@@ -127,6 +127,76 @@ def _httpresource_v2(endpoint, method, properties):
     yield ''
 
 
+def convert_json_schema(schema, directive=':<json'):
+    """
+    Convert json schema to `:<json` sphinx httmdomain.
+    """
+
+    output = []
+
+    def _convert(schema, name='', required=False):
+        """
+        Fill the output list, with 2-tuple (name, template)
+
+        i.e: ('user.age', 'str user.age: the age of user')
+
+        This allow to sort output by field name
+        """
+
+        type_ = schema.get('type', 'any')
+        required_properties = schema.get('required', ())
+        if type_ == 'object':
+            for prop, next_schema in schema['properties'].items():
+                _convert(
+                    next_schema, '{name}.{prop}'.format(**locals()),
+                    (prop in required_properties))
+
+        elif type_ == 'array':
+            _convert(schema['items'], name + '[]')
+
+        else:
+            if name:
+                name = name.lstrip('.')
+                constraints = []
+                if required:
+                    constraints.append('required')
+                if schema.get('readOnly', False):
+                    constraints.append('read only')
+                if constraints:
+                    constraints = '({})'.format(', '.join(constraints))
+                else:
+                    constraints = ''
+
+                if schema.get('description', ''):
+                    if constraints:
+                        output.append((
+                            name,
+                            '{type_} {name}:'
+                            ' {constraints}'
+                            ' {schema[description]}'.format(**locals())))
+                    else:
+                        output.append((
+                            name,
+                            '{type_} {name}:'
+                            ' {schema[description]}'.format(**locals())))
+
+                else:
+                    if constraints:
+                        output.append(
+                            (name,
+                             '{type_} {name}:'
+                             ' {constraints}'.format(**locals())))
+                    else:
+                        output.append(
+                            (name,
+                             '{type_} {name}'.format(**locals())))
+
+    _convert(schema)
+
+    for _, render in sorted(output):
+        yield '{} {}'.format(directive, render)
+
+
 def _example_v3(media_type_objects, method=None, endpoint=None, status=None,
                 nb_indent=0):
     """
@@ -238,8 +308,16 @@ def _httpresource_v3(endpoint, method, properties):
         for line in param.get('description', '').splitlines():
             yield '{indent}{indent}{line}'.format(**locals())
 
-    # print request example
+    # print shema request body:
     request_content = properties.get('requestBody', {}).get('content', {})
+    for content_type, content in request_content.items():
+        if content_type == 'application/json' and 'schema' in content:
+            yield ''
+            for line in convert_json_schema(content['schema']):
+                yield '{indent}{line}'.format(**locals())
+            yield ''
+
+    # print request example
     for line in _example_v3(
             request_content, method, endpoint=endpoint, nb_indent=1):
         yield line
@@ -250,9 +328,21 @@ def _httpresource_v3(endpoint, method, properties):
         for line in response['description'].splitlines():
             yield '{indent}{indent}{line}'.format(**locals())
 
+        # print shema response body:
+        # note:
+        #  Sphinx htmldomain merge schema so we cannot display a shema for
+        #  each HTTP response type, we only display the schema of success.
+        if int(status) in (200, 201):
+            response_content = response.get('content', {})
+            for content_type, content in response_content.items():
+                if content_type == 'application/json' and 'schema' in content:
+                    yield ''
+                    for line in convert_json_schema(content['schema'], directive=':>json'):
+                        yield '{indent}{line}'.format(**locals())
+                    yield ''
+
         # print response example
-        for line in _example_v3(
-                response.get('content', {}), status=status, nb_indent=2):
+        for line in _example_v3(response_content, status=status, nb_indent=2):
             yield line
 
     # print request header params
@@ -355,6 +445,7 @@ class OpenApi(Directive):
         # real DOM.
         viewlist = ViewList()
         for line in openapi2httpdomain(spec, **self.options):
+            print(line)
             viewlist.append(line, '<openapi>')
 
         # Parse reStructuredText contained in `viewlist` and return produced
