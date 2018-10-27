@@ -10,7 +10,13 @@
 
 from __future__ import unicode_literals
 
+import copy
+import collections
+from datetime import datetime
 import itertools
+import json
+
+from sphinx.util import logging
 
 from sphinxcontrib.openapi import utils
 
@@ -18,6 +24,113 @@ try:
     from httplib import responses as http_status_codes  # python2
 except ImportError:
     from http.client import responses as http_status_codes  # python3
+
+LOG = logging.getLogger(__name__)
+
+# https://github.com/OAI/OpenAPI-Specification/blob/3.0.2/versions/3.0.0.md#data-types
+_TYPE_MAPPING = {
+    ('integer', 'int32'): 1,  # integer
+    ('integer', 'int64'): 1,  # long
+    ('number', 'float'): 1.0,  # float
+    ('number', 'double'): 1.0,  # double
+    ('boolean', None): True,  # boolean
+    ('string', None): 'string',  # string
+    ('string', 'byte'): b'string',  # byte
+    ('string', 'binary'): '01010101',  # binary
+    ('string', 'date'): datetime.now().date().isoformat(),  # date
+    ('string', 'date-time'): datetime.now().isoformat(),  # dateTime
+    ('string', 'password'): '********',  # password
+
+    # custom extensions to handle common formats
+    ('string', 'email'): 'name@example.com',
+    ('string', 'zip-code'): '90210',
+    ('string', 'uri'): 'https://example.com',
+
+    # additional fallthrough cases
+    ('integer', None): 1,  # integer
+    ('number', None): 1.0,  # <fallthrough>
+}
+
+_READONLY_PROPERTY = object()  # sentinel for values not included in requests
+
+
+def _dict_merge(dct, merge_dct):
+    """Recursive dict merge.
+
+    Inspired by :meth:``dict.update()``, instead of updating only top-level
+    keys, dict_merge recurses down into dicts nested to an arbitrary depth,
+    updating keys. The ``merge_dct`` is merged into ``dct``.
+
+    From https://gist.github.com/angstwad/bf22d1822c38a92ec0a9
+
+    Arguments:
+        dct: dict onto which the merge is executed
+        merge_dct: dct merged into dct
+    """
+    for k, v in merge_dct.items():
+        if (k in dct and isinstance(dct[k], dict)
+                and isinstance(merge_dct[k], collections.Mapping)):
+            _dict_merge(dct[k], merge_dct[k])
+        else:
+            dct[k] = merge_dct[k]
+
+
+def _parse_schema(schema, method):
+    """
+    Convert a Schema Object to a Python object.
+
+    Args:
+        schema: An ``OrderedDict`` representing the schema object.
+    """
+    if method and schema.get('readOnly', False):
+        return _READONLY_PROPERTY
+
+    # allOf: Must be valid against all of the subschemas
+    if 'allOf' in schema:
+        schema_ = copy.deepcopy(schema['allOf'][0])
+        for x in schema['allOf'][1:]:
+            _dict_merge(schema_, x)
+
+        return _parse_schema(schema_, method)
+
+    # anyOf: Must be valid against any of the subschemas
+    # TODO(stephenfin): Handle anyOf
+
+    # oneOf: Must be valid against exactly one of the subschemas
+    if 'oneOf' in schema:
+        # we only show the first one since we can't show everything
+        return _parse_schema(schema['oneOf'][0], method)
+
+    if 'enum' in schema:
+        # we only show the first one since we can't show everything
+        return schema['enum'][0]
+
+    if schema['type'] == 'array':
+        # special case oneOf so that we can show examples for all possible
+        # combinations
+        if 'oneOf' in schema['items']:
+            return [
+                _parse_schema(x, method) for x in schema['items']['oneOf']]
+
+        return [_parse_schema(schema['items'], method)]
+
+    if schema['type'] == 'object':
+        if method and all(v.get('readOnly', False)
+                          for v in schema['properties'].values()):
+            return _READONLY_PROPERTY
+
+        results = []
+        for name, prop in schema['properties'].items():
+            result = _parse_schema(prop, method)
+            if result != _READONLY_PROPERTY:
+                results.append((name, result))
+
+        return collections.OrderedDict(results)
+
+    if (schema['type'], schema.get('format')) in _TYPE_MAPPING:
+        return _TYPE_MAPPING[(schema['type'], schema.get('format'))]
+
+    return _TYPE_MAPPING[(schema['type'], None)]  # unrecognized format
 
 
 def _example(media_type_objects, method=None, endpoint=None, status=None,
@@ -35,10 +148,6 @@ def _example(media_type_objects, method=None, endpoint=None, status=None,
         endpoint: The HTTP route to use in example.
         status: The HTTP status to use in example.
     """
-    # TODO: According to the openapi 3.0.0 spec, we should get example in
-    # `schema` if the `example` or `examples` key is not provided.
-    # https://github.com/OAI/OpenAPI-Specification/blob/master/versions/3.0.0.md#media-type-object
-
     indent = '   '
     extra_indent = indent * nb_indent
 
@@ -49,17 +158,27 @@ def _example(media_type_objects, method=None, endpoint=None, status=None,
 
     for content_type, content in media_type_objects.items():
         examples = content.get('examples')
+        example = content.get('example')
+
         if examples is None:
             examples = {}
-            if 'example' in content:
-                if method is None:
-                    examples['Example response'] = {
-                        'value': content['example']
-                    }
-                else:
-                    examples['Example request'] = {
-                        'value': content['example']
-                    }
+            if not example:
+                if content_type != 'application/json':
+                    LOG.info('skipping non-JSON example generation.')
+                    continue
+
+                example = json.dumps(
+                    _parse_schema(content['schema'], method=method),
+                    indent=4, separators=(',', ': '))
+
+            if method is None:
+                examples['Example response'] = {
+                    'value': example,
+                }
+            else:
+                examples['Example request'] = {
+                    'value': example,
+                }
 
         for example_name, example in examples.items():
             if 'summary' in example:
