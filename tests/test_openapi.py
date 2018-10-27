@@ -16,13 +16,14 @@ import collections
 
 import pytest
 
-from sphinxcontrib import openapi
+from sphinxcontrib.openapi import openapi20
+from sphinxcontrib.openapi import utils
 
 
 class TestOpenApi2HttpDomain(object):
 
     def test_basic(self):
-        text = '\n'.join(openapi.openapi2httpdomain({
+        text = '\n'.join(openapi20.openapihttpdomain({
             'paths': {
                 '/resources/{kind}': {
                     'get': {
@@ -103,7 +104,7 @@ class TestOpenApi2HttpDomain(object):
             }
         }
 
-        text = '\n'.join(openapi.openapi2httpdomain(spec))
+        text = '\n'.join(openapi20.openapihttpdomain(spec))
         assert text == textwrap.dedent('''
             .. http:get:: /resource_a
                :synopsis: null
@@ -141,7 +142,7 @@ class TestOpenApi2HttpDomain(object):
             }
         }
 
-        text = '\n'.join(openapi.openapi2httpdomain(spec, paths=[
+        text = '\n'.join(openapi20.openapihttpdomain(spec, paths=[
             '/resource_a',
         ]))
         assert text == textwrap.dedent('''
@@ -185,7 +186,7 @@ class TestOpenApi2HttpDomain(object):
             },
         }
 
-        text = '\n'.join(openapi.openapi2httpdomain(spec))
+        text = '\n'.join(openapi20.openapihttpdomain(spec))
 
         assert text == textwrap.dedent('''
             .. http:get:: /resources/{name}
@@ -233,7 +234,7 @@ class TestOpenApi2HttpDomain(object):
         }
 
         with pytest.raises(ValueError) as exc:
-            openapi.openapi2httpdomain(spec, paths=[
+            openapi20.openapihttpdomain(spec, paths=[
                 '/resource_a',
                 '/resource_invalid_name',
             ])
@@ -257,7 +258,7 @@ class TestOpenApi2HttpDomain(object):
             }
         }
 
-        text = '\n'.join(openapi.openapi2httpdomain(spec))
+        text = '\n'.join(openapi20.openapihttpdomain(spec))
 
         assert text == textwrap.dedent('''
             .. http:get:: /resource_a
@@ -290,7 +291,7 @@ class TestResolveRefs(object):
             ]
         }
 
-        assert openapi._resolve_refs('', data) == {
+        assert utils._resolve_refs('', data) == {
             'foo': {
                 'a': 13,
                 'b': {
@@ -315,7 +316,7 @@ class TestResolveRefs(object):
             }
         }
 
-        assert openapi._resolve_refs(baseuri, data) == {
+        assert utils._resolve_refs(baseuri, data) == {
             'bar': {
                 'c': True,
             }
