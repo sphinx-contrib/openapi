@@ -39,6 +39,6 @@ Links
 * Bugs: https://github.com/ikalnytskyi/sphinxcontrib-openapi/issues
 
 
-.. _Sphinx: https://sphinx.pocoo.org/
-.. _OpenAPI: https://openapis.org/specification
-.. _sphinxcontrib-httpdomain: https://pythonhosted.org/sphinxcontrib-httpdomain/
+.. _Sphinx: https://www.sphinx-doc.org/en/master/
+.. _OpenAPI: https://github.com/OAI/OpenAPI-Specification
+.. _sphinxcontrib-httpdomain: https://sphinxcontrib-httpdomain.readthedocs.io/

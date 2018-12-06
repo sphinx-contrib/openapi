@@ -16,13 +16,15 @@ import collections
 
 import pytest
 
-from sphinxcontrib import openapi
+from sphinxcontrib.openapi import openapi20
+from sphinxcontrib.openapi import openapi30
+from sphinxcontrib.openapi import utils
 
 
 class TestOpenApi2HttpDomain(object):
 
     def test_basic(self):
-        text = '\n'.join(openapi.openapi2httpdomain({
+        text = '\n'.join(openapi20.openapihttpdomain({
             'paths': {
                 '/resources/{kind}': {
                     'get': {
@@ -103,7 +105,7 @@ class TestOpenApi2HttpDomain(object):
             }
         }
 
-        text = '\n'.join(openapi.openapi2httpdomain(spec))
+        text = '\n'.join(openapi20.openapihttpdomain(spec))
         assert text == textwrap.dedent('''
             .. http:get:: /resource_a
                :synopsis: null
@@ -141,7 +143,7 @@ class TestOpenApi2HttpDomain(object):
             }
         }
 
-        text = '\n'.join(openapi.openapi2httpdomain(spec, paths=[
+        text = '\n'.join(openapi20.openapihttpdomain(spec, paths=[
             '/resource_a',
         ]))
         assert text == textwrap.dedent('''
@@ -185,7 +187,7 @@ class TestOpenApi2HttpDomain(object):
             },
         }
 
-        text = '\n'.join(openapi.openapi2httpdomain(spec))
+        text = '\n'.join(openapi20.openapihttpdomain(spec))
 
         assert text == textwrap.dedent('''
             .. http:get:: /resources/{name}
@@ -233,7 +235,7 @@ class TestOpenApi2HttpDomain(object):
         }
 
         with pytest.raises(ValueError) as exc:
-            openapi.openapi2httpdomain(spec, paths=[
+            openapi20.openapihttpdomain(spec, paths=[
                 '/resource_a',
                 '/resource_invalid_name',
             ])
@@ -257,7 +259,7 @@ class TestOpenApi2HttpDomain(object):
             }
         }
 
-        text = '\n'.join(openapi.openapi2httpdomain(spec))
+        text = '\n'.join(openapi20.openapihttpdomain(spec))
 
         assert text == textwrap.dedent('''
             .. http:get:: /resource_a
@@ -267,6 +269,379 @@ class TestOpenApi2HttpDomain(object):
 
                :status 200:
                   ok
+        ''').lstrip()
+
+
+class TestOpenApi3HttpDomain(object):
+
+    def test_basic(self):
+        text = '\n'.join(openapi30.openapihttpdomain({
+            'openapi': '3.0.0',
+            'paths': {
+                '/resources/{kind}': {
+                    'get': {
+                        'summary': 'List Resources',
+                        'description': '~ some useful description ~',
+                        'parameters': [
+                            {
+                                'name': 'kind',
+                                'in': 'path',
+                                'schema': {'type': 'string'},
+                                'description': 'Kind of resource to list.',
+                            },
+                            {
+                                'name': 'limit',
+                                'in': 'query',
+                                'schema': {'type': 'integer'},
+                                'description': 'Show up to `limit` entries.',
+                            },
+                            {
+                                'name': 'If-None-Match',
+                                'in': 'header',
+                                'schema': {'type': 'string'},
+                                'description': 'Last known resource ETag.'
+                            },
+                        ],
+                        'requestBody': {
+                            'content': {
+                                'application/json':  {
+                                    'example': '{"foo2": "bar2"}'
+                                }
+                            }
+                        },
+                        'responses': {
+                            '200': {
+                                'description': 'An array of resources.',
+                                'content': {
+                                    'application/json': {
+                                        'example': '{"foo": "bar"}'
+                                    }
+                                }
+                            },
+                        },
+                    },
+                },
+            },
+        }))
+        assert text == textwrap.dedent('''
+            .. http:get:: /resources/{kind}
+               :synopsis: List Resources
+
+               **List Resources**
+
+               ~ some useful description ~
+
+               :param string kind:
+                  Kind of resource to list.
+               :query integer limit:
+                  Show up to `limit` entries.
+
+               **Example request:**
+
+               .. sourcecode:: http
+
+                  GET /resources/{kind} HTTP/1.1
+                  Host: example.com
+                  Content-Type: application/json
+
+                  {"foo2": "bar2"}
+
+               :status 200:
+                  An array of resources.
+
+                  **Example response:**
+
+                  .. sourcecode:: http
+
+                     HTTP/1.1 200 OK
+                     Content-Type: application/json
+
+                     {"foo": "bar"}
+
+               :reqheader If-None-Match:
+                  Last known resource ETag.
+        ''').lstrip()
+
+    def test_example_generation(self):
+        text = '\n'.join(openapi30.openapihttpdomain({
+            'openapi': '3.0.0',
+            'paths': collections.OrderedDict([
+                ('/resources/', collections.OrderedDict([
+                    ('get', {
+                        'summary': 'List Resources',
+                        'description': '~ some useful description ~',
+                        'parameters': [
+                            {
+                                'name': 'kind',
+                                'in': 'path',
+                                'schema': {'type': 'string'},
+                                'description': 'Kind of resource to list.',
+                            },
+                            {
+                                'name': 'limit',
+                                'in': 'query',
+                                'schema': {'type': 'integer'},
+                                'description': 'Show up to `limit` entries.',
+                            },
+                            {
+                                'name': 'If-None-Match',
+                                'in': 'header',
+                                'schema': {'type': 'string'},
+                                'description': 'Last known resource ETag.'
+                            },
+                        ],
+                        'responses': {
+                            '200': {
+                                'description': 'An array of resources.',
+                                'content': {
+                                    'application/json': {
+                                        'schema': {
+                                            'type': 'array',
+                                            'items': {
+                                                '$ref': '#/components/schemas/Resource',  # noqa
+                                            },
+                                        },
+                                    }
+                                }
+                            },
+                        },
+                    }),
+                    ('post', {
+                        'summary': 'Create Resource',
+                        'description': '~ some useful description ~',
+                        'parameters': [],
+                        'requestBody': {
+                            'content': {
+                                'application/json':  {
+                                    'schema': {
+                                        '$ref': '#/components/schemas/Resource',  # noqa
+                                    },
+                                }
+                            }
+                        },
+                        'responses': {
+                            '200': {
+                                'description': 'The created resource.',
+                                'content': {
+                                    'application/json': {
+                                        'schema': {
+                                            '$ref': '#/components/schemas/Resource',  # noqa
+                                        },
+                                    }
+                                }
+                            },
+                        },
+                    }),
+                ])),
+                ('/resources/{kind}', collections.OrderedDict([
+                    ('get', {
+                        'summary': 'Show Resource',
+                        'description': '~ some useful description ~',
+                        'parameters': [
+                            {
+                                'name': 'kind',
+                                'in': 'path',
+                                'schema': {'type': 'string'},
+                                'description': 'Kind of resource to list.',
+                            },
+                        ],
+                        'responses': {
+                            '200': {
+                                'description': 'The created resource.',
+                                'content': {
+                                    'application/json': {
+                                        'schema': {
+                                            '$ref': '#/components/schemas/Resource',  # noqa
+                                        },
+                                    }
+                                }
+                            },
+                        },
+                    }),
+                    ('patch', {
+                        'summary': 'Update Resource (partial)',
+                        'description': '~ some useful description ~',
+                        'parameters': [
+                            {
+                                'name': 'kind',
+                                'in': 'path',
+                                'schema': {'type': 'string'},
+                                'description': 'Kind of resource to list.',
+                            },
+                        ],
+                        'requestBody': {
+                            'content': {
+                                'application/json':  {
+                                    'schema': {
+                                        '$ref': '#/components/schemas/Resource',  # noqa
+                                    },
+                                }
+                            }
+                        },
+                        'responses': {
+                            '200': {
+                                'description': 'The created resource.',
+                                'content': {
+                                    'application/json': {
+                                        'schema': {
+                                            '$ref': '#/components/schemas/Resource',  # noqa
+                                        },
+                                    }
+                                }
+                            },
+                        },
+                    }),
+                ])),
+            ]),
+            'components': {
+                'schemas': {
+                    'Resource': {
+                        'type': 'object',
+                        'properties': collections.OrderedDict([
+                            ('kind', {
+                                'title': 'Kind',
+                                'type': 'string',
+                                'readOnly': True,
+                            }),
+                            ('description', {
+                                'title': 'Description',
+                                'type': 'string',
+                            }),
+                        ]),
+                    },
+                },
+            },
+        }))
+        assert text == textwrap.dedent('''
+            .. http:get:: /resources/
+               :synopsis: List Resources
+
+               **List Resources**
+
+               ~ some useful description ~
+
+               :param string kind:
+                  Kind of resource to list.
+               :query integer limit:
+                  Show up to `limit` entries.
+               :status 200:
+                  An array of resources.
+
+                  **Example response:**
+
+                  .. sourcecode:: http
+
+                     HTTP/1.1 200 OK
+                     Content-Type: application/json
+
+                     [
+                         {
+                             "kind": "string",
+                             "description": "string"
+                         }
+                     ]
+
+               :reqheader If-None-Match:
+                  Last known resource ETag.
+
+            .. http:post:: /resources/
+               :synopsis: Create Resource
+
+               **Create Resource**
+
+               ~ some useful description ~
+
+
+               **Example request:**
+
+               .. sourcecode:: http
+
+                  POST /resources/ HTTP/1.1
+                  Host: example.com
+                  Content-Type: application/json
+
+                  {
+                      "description": "string"
+                  }
+
+               :status 200:
+                  The created resource.
+
+                  **Example response:**
+
+                  .. sourcecode:: http
+
+                     HTTP/1.1 200 OK
+                     Content-Type: application/json
+
+                     {
+                         "kind": "string",
+                         "description": "string"
+                     }
+
+
+            .. http:get:: /resources/{kind}
+               :synopsis: Show Resource
+
+               **Show Resource**
+
+               ~ some useful description ~
+
+               :param string kind:
+                  Kind of resource to list.
+               :status 200:
+                  The created resource.
+
+                  **Example response:**
+
+                  .. sourcecode:: http
+
+                     HTTP/1.1 200 OK
+                     Content-Type: application/json
+
+                     {
+                         "kind": "string",
+                         "description": "string"
+                     }
+
+
+            .. http:patch:: /resources/{kind}
+               :synopsis: Update Resource (partial)
+
+               **Update Resource (partial)**
+
+               ~ some useful description ~
+
+               :param string kind:
+                  Kind of resource to list.
+
+               **Example request:**
+
+               .. sourcecode:: http
+
+                  PATCH /resources/{kind} HTTP/1.1
+                  Host: example.com
+                  Content-Type: application/json
+
+                  {
+                      "description": "string"
+                  }
+
+               :status 200:
+                  The created resource.
+
+                  **Example response:**
+
+                  .. sourcecode:: http
+
+                     HTTP/1.1 200 OK
+                     Content-Type: application/json
+
+                     {
+                         "kind": "string",
+                         "description": "string"
+                     }
+
         ''').lstrip()
 
 
@@ -290,7 +665,7 @@ class TestResolveRefs(object):
             ]
         }
 
-        assert openapi._resolve_refs('', data) == {
+        assert utils._resolve_refs('', data) == {
             'foo': {
                 'a': 13,
                 'b': {
@@ -315,7 +690,7 @@ class TestResolveRefs(object):
             }
         }
 
-        assert openapi._resolve_refs(baseuri, data) == {
+        assert utils._resolve_refs(baseuri, data) == {
             'bar': {
                 'c': True,
             }
