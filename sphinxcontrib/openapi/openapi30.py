@@ -16,6 +16,7 @@ from datetime import datetime
 import itertools
 import json
 
+import six
 from sphinx.util import logging
 
 from sphinxcontrib.openapi import utils
@@ -105,7 +106,9 @@ def _parse_schema(schema, method):
         # we only show the first one since we can't show everything
         return schema['enum'][0]
 
-    if schema['type'] == 'array':
+    schema_type = schema.get('type', 'object')
+
+    if schema_type == 'array':
         # special case oneOf so that we can show examples for all possible
         # combinations
         if 'oneOf' in schema['items']:
@@ -114,23 +117,23 @@ def _parse_schema(schema, method):
 
         return [_parse_schema(schema['items'], method)]
 
-    if schema['type'] == 'object':
+    if schema_type == 'object':
         if method and all(v.get('readOnly', False)
                           for v in schema['properties'].values()):
             return _READONLY_PROPERTY
 
         results = []
-        for name, prop in schema['properties'].items():
+        for name, prop in schema.get('properties', {}).items():
             result = _parse_schema(prop, method)
             if result != _READONLY_PROPERTY:
                 results.append((name, result))
 
         return collections.OrderedDict(results)
 
-    if (schema['type'], schema.get('format')) in _TYPE_MAPPING:
-        return _TYPE_MAPPING[(schema['type'], schema.get('format'))]
+    if (schema_type, schema.get('format')) in _TYPE_MAPPING:
+        return _TYPE_MAPPING[(schema_type, schema.get('format'))]
 
-    return _TYPE_MAPPING[(schema['type'], None)]  # unrecognized format
+    return _TYPE_MAPPING[(schema_type, None)]  # unrecognized format
 
 
 def _example(media_type_objects, method=None, endpoint=None, status=None,
@@ -154,7 +157,12 @@ def _example(media_type_objects, method=None, endpoint=None, status=None,
     if method is not None:
         method = method.upper()
     else:
-        status_text = http_status_codes.get(int(status), '-')
+        try:
+            # one of possible values for status might be 'default'.
+            # in the case, just fallback to '-'
+            status_text = http_status_codes[int(status)]
+        except (ValueError, KeyError):
+            status_text = '-'
 
     for content_type, content in media_type_objects.items():
         examples = content.get('examples')
@@ -166,10 +174,7 @@ def _example(media_type_objects, method=None, endpoint=None, status=None,
                 if content_type != 'application/json':
                     LOG.info('skipping non-JSON example generation.')
                     continue
-
-                example = json.dumps(
-                    _parse_schema(content['schema'], method=method),
-                    indent=4, separators=(',', ': '))
+                example = _parse_schema(content['schema'], method=method)
 
             if method is None:
                 examples['Example response'] = {
@@ -179,6 +184,11 @@ def _example(media_type_objects, method=None, endpoint=None, status=None,
                 examples['Example request'] = {
                     'value': example,
                 }
+
+        for example in examples.values():
+            if not isinstance(example['value'], six.string_types):
+                example['value'] = json.dumps(
+                    example['value'], indent=4, separators=(',', ': '))
 
         for example_name, example in examples.items():
             if 'summary' in example:
@@ -193,7 +203,7 @@ def _example(media_type_objects, method=None, endpoint=None, status=None,
             yield '{extra_indent}.. sourcecode:: http'.format(**locals())
             yield ''
 
-            # Print http response example
+            # Print http request example
             if method:
                 yield '{extra_indent}{indent}{method} {endpoint} HTTP/1.1' \
                     .format(**locals())
@@ -202,7 +212,7 @@ def _example(media_type_objects, method=None, endpoint=None, status=None,
                 yield '{extra_indent}{indent}Content-Type: {content_type}' \
                     .format(**locals())
 
-            # Print http request example
+            # Print http response example
             else:
                 yield '{extra_indent}{indent}HTTP/1.1 {status} {status_text}' \
                     .format(**locals())
