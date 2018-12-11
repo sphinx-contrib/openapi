@@ -1,10 +1,15 @@
 from __future__ import unicode_literals
 
 import textwrap
-
 import pytest
 
 from sphinx.application import Sphinx
+
+
+def _format_option_raw(key, val):
+    if isinstance(val, bool) and val:
+        return ':%s:' % key
+    return ':%s: %s' % (key, val)
 
 
 @pytest.fixture(scope='function')
@@ -12,7 +17,11 @@ def run_sphinx(tmpdir):
     src = tmpdir.ensure('src', dir=True)
     out = tmpdir.ensure('out', dir=True)
 
-    def run(spec, options=None):
+    def run(spec, options={}):
+        options_raw = '\n'.join([
+            '   %s' % _format_option_raw(key, val)
+            for key, val in options.items()])
+
         src.join('conf.py').write_text(
             textwrap.dedent('''
                 import os
@@ -27,7 +36,7 @@ def run_sphinx(tmpdir):
             encoding='utf-8')
 
         src.join('index.rst').write_text(
-            '.. openapi:: %s' % spec,
+            '.. openapi:: %s\n%s' % (spec, options_raw),
             encoding='utf-8')
 
         Sphinx(

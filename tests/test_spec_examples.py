@@ -34,6 +34,7 @@ def test_openapi2_success(tmpdir, run_sphinx, spec):
     run_sphinx('test-spec.yml')
 
 
+@pytest.mark.parametrize('render_examples', [False, True])
 @pytest.mark.parametrize('spec', glob.glob(
     os.path.join(
         os.path.abspath(os.path.dirname(__file__)),
@@ -42,6 +43,6 @@ def test_openapi2_success(tmpdir, run_sphinx, spec):
         'v3.0',
         '*.yaml')
 ))
-def test_openapi3_success(tmpdir, run_sphinx, spec):
+def test_openapi3_success(tmpdir, run_sphinx, spec, render_examples):
     py.path.local(spec).copy(tmpdir.join('src', 'test-spec.yml'))
-    run_sphinx('test-spec.yml')
+    run_sphinx('test-spec.yml', options={'examples': render_examples})

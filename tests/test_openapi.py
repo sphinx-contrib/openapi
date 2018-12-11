@@ -14,6 +14,7 @@ import os
 import textwrap
 import collections
 
+import py
 import pytest
 
 from sphinxcontrib.openapi import openapi20
@@ -335,29 +336,8 @@ class TestOpenApi3HttpDomain(object):
                   Kind of resource to list.
                :query integer limit:
                   Show up to `limit` entries.
-
-               **Example request:**
-
-               .. sourcecode:: http
-
-                  GET /resources/{kind} HTTP/1.1
-                  Host: example.com
-                  Content-Type: application/json
-
-                  {"foo2": "bar2"}
-
                :status 200:
                   An array of resources.
-
-                  **Example response:**
-
-                  .. sourcecode:: http
-
-                     HTTP/1.1 200 OK
-                     Content-Type: application/json
-
-                     {"foo": "bar"}
-
                :reqheader If-None-Match:
                   Last known resource ETag.
         ''').lstrip()
@@ -511,7 +491,9 @@ class TestOpenApi3HttpDomain(object):
                     },
                 },
             },
-        }))
+        },
+        examples=True))
+
         assert text == textwrap.dedent('''
             .. http:get:: /resources/
                :synopsis: List Resources
@@ -695,3 +677,37 @@ class TestResolveRefs(object):
                 'c': True,
             }
         }
+
+
+def test_openapi2_examples(tmpdir, run_sphinx):
+    spec = os.path.join(
+        os.path.abspath(os.path.dirname(__file__)),
+        'OpenAPI-Specification',
+        'examples',
+        'v2.0',
+        'json',
+        'uber.json')
+    py.path.local(spec).copy(tmpdir.join('src', 'test-spec.yml'))
+
+    with pytest.raises(ValueError) as excinfo:
+        run_sphinx('test-spec.yml', options={'examples': True})
+
+    assert str(excinfo.value) == (
+        'Rendering examples is not supported for OpenAPI v2.x specs.')
+
+
+@pytest.mark.parametrize('render_examples', [False, True])
+def test_openapi3_examples(tmpdir, run_sphinx, render_examples):
+    spec = os.path.join(
+        os.path.abspath(os.path.dirname(__file__)),
+        'OpenAPI-Specification',
+        'examples',
+        'v3.0',
+        'petstore.yaml')
+    py.path.local(spec).copy(tmpdir.join('src', 'test-spec.yml'))
+    run_sphinx('test-spec.yml', options={'examples': render_examples})
+
+    rendered_html = tmpdir.join('out', 'index.html').read_text('utf-8')
+
+    assert ('<strong>Example response:</strong>' in rendered_html) \
+        == render_examples

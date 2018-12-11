@@ -8,6 +8,7 @@ release.
 0.3.3 (unreleased)
 ==================
 
+- Add OpenAPI 3.x support.
 - Drop Python 3.3 support because it reached its end-of-life.
 
 0.3.2 (2017-10-05)

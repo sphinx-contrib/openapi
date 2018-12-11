@@ -60,6 +60,10 @@ paths
   Would only render the endpoints at ``/persons`` and ``/evidence``,
   ignoring all others.
 
+examples
+  If passed, both request and response examples will be rendered. Please
+  note, if examples are not provided in a spec, they will be generated
+  by internal logic based on a corresponding schema.
 
 .. _Sphinx: https://www.sphinx-doc.org/en/master/
 .. _OpenAPI: https://github.com/OAI/OpenAPI-Specification

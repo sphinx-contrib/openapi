@@ -225,7 +225,7 @@ def _example(media_type_objects, method=None, endpoint=None, status=None,
             yield ''
 
 
-def _httpresource(endpoint, method, properties):
+def _httpresource(endpoint, method, properties, render_examples):
     # https://github.com/OAI/OpenAPI-Specification/blob/3.0.2/versions/3.0.0.md#operation-object
     parameters = properties.get('parameters', [])
     responses = properties['responses']
@@ -263,10 +263,11 @@ def _httpresource(endpoint, method, properties):
             yield '{indent}{indent}{line}'.format(**locals())
 
     # print request example
-    request_content = properties.get('requestBody', {}).get('content', {})
-    for line in _example(
-            request_content, method, endpoint=endpoint, nb_indent=1):
-        yield line
+    if render_examples:
+        request_content = properties.get('requestBody', {}).get('content', {})
+        for line in _example(
+                request_content, method, endpoint=endpoint, nb_indent=1):
+            yield line
 
     # print response status codes
     for status, response in responses.items():
@@ -275,9 +276,10 @@ def _httpresource(endpoint, method, properties):
             yield '{indent}{indent}{line}'.format(**locals())
 
         # print response example
-        for line in _example(
-                response.get('content', {}), status=status, nb_indent=2):
-            yield line
+        if render_examples:
+            for line in _example(
+                    response.get('content', {}), status=status, nb_indent=2):
+                yield line
 
     # print request header params
     for param in filter(lambda p: p['in'] == 'header', parameters):
@@ -317,6 +319,10 @@ def openapihttpdomain(spec, **options):
     # https://github.com/OAI/OpenAPI-Specification/blob/3.0.2/versions/3.0.0.md#paths-object
     for endpoint in options.get('paths', spec['paths']):
         for method, properties in spec['paths'][endpoint].items():
-            generators.append(_httpresource(endpoint, method, properties))
+            generators.append(_httpresource(
+                endpoint,
+                method,
+                properties,
+                render_examples='examples' in options))
 
     return iter(itertools.chain(*generators))
