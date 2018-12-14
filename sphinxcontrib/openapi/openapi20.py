@@ -69,6 +69,10 @@ def _httpresource(endpoint, method, properties):
 
 
 def openapihttpdomain(spec, **options):
+    if 'examples' in options:
+        raise ValueError(
+            'Rendering examples is not supported for OpenAPI v2.x specs.')
+
     generators = []
 
     # OpenAPI spec may contain JSON references, common properties, etc.

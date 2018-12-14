@@ -46,6 +46,7 @@ class OpenApi(Directive):
     option_spec = {
         'encoding': directives.encoding,    # useful for non-ascii cases :)
         'paths': lambda s: s.split(),       # endpoints to be rendered
+        'examples': directives.flag,        # render examples when passed
     }
 
     def run(self):
