@@ -41,11 +41,11 @@ Options
 
 The ``openapi`` directive supports the following options:
 
-encoding
+``encoding``
   Encoding to be used to read an OpenAPI spec. If not passed, Sphinx's
   source encoding will be used.
 
-paths
+``paths``
   A comma separated list of paths to filter the included OpenAPI spec by.
   For example:
 
@@ -60,7 +60,7 @@ paths
   Would only render the endpoints at ``/persons`` and ``/evidence``,
   ignoring all others.
 
-examples
+``examples``
   If passed, both request and response examples will be rendered. Please
   note, if examples are not provided in a spec, they will be generated
   by internal logic based on a corresponding schema.
