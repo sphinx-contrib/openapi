@@ -251,7 +251,7 @@ def _httpresource(endpoint, method, properties, render_examples):
             type=param['schema']['type'],
             name=param['name'])
 
-        for line in param.get('description', '').splitlines():
+        for line in param['schema'].get('description', '').splitlines():
             yield '{indent}{indent}{line}'.format(**locals())
 
     # print request's query params
@@ -259,7 +259,7 @@ def _httpresource(endpoint, method, properties, render_examples):
         yield indent + ':query {type} {name}:'.format(
             type=param['schema']['type'],
             name=param['name'])
-        for line in param.get('description', '').splitlines():
+        for line in param['schema'].get('description', '').splitlines():
             yield '{indent}{indent}{line}'.format(**locals())
 
     # print request example
