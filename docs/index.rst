@@ -65,6 +65,10 @@ examples
   note, if examples are not provided in a spec, they will be generated
   by internal logic based on a corresponding schema.
 
+``group``
+  If passed, paths will be grouped by tags. If a path has no tag assigned, it
+  will be grouped in a ``default`` group.
+
 .. _Sphinx: https://www.sphinx-doc.org/en/master/
 .. _OpenAPI: https://github.com/OAI/OpenAPI-Specification
 .. _sphinxcontrib-httpdomain: https://sphinxcontrib-httpdomain.readthedocs.io/
