@@ -345,8 +345,8 @@ class TestOpenApi3HttpDomain(object):
     def test_groups(self):
         text = '\n'.join(openapi30.openapihttpdomain({
             'openapi': '3.0.0',
-            'paths': {
-                '/': {
+            'paths': collections.OrderedDict([
+                ('/', {
                     'get': {
                         'summary': 'Index',
                         'description': '~ some useful description ~',
@@ -362,8 +362,8 @@ class TestOpenApi3HttpDomain(object):
                             },
                         },
                     },
-                },
-                '/pets': {
+                }),
+                ('/pets', {
                     'get': {
                         'summary': 'List Pets',
                         'description': '~ some useful description ~',
@@ -383,8 +383,35 @@ class TestOpenApi3HttpDomain(object):
                             'pets',
                         ],
                     },
-                },
-                '/tags': {
+                }),
+                ('/pets/{name}', {
+                    'get': {
+                        'summary': 'Show Pet',
+                        'description': '~ some useful description ~',
+                        'parameters': [
+                            {
+                                'name': 'name',
+                                'in': 'path',
+                                'schema': {'type': 'string'},
+                                'description': 'Name of pet.',
+                            },
+                        ],
+                        'responses': {
+                            '200': {
+                                'description': 'A Pet',
+                                'content': {
+                                    'application/json': {
+                                        'example': '{"foo": "bar"}'
+                                    }
+                                }
+                            },
+                        },
+                        'tags': [
+                            'pets',
+                        ],
+                    },
+                }),
+                ('/tags', {
                     'get': {
                         'summary': 'List Tags',
                         'description': '~ some useful description ~',
@@ -402,10 +429,11 @@ class TestOpenApi3HttpDomain(object):
                         },
                         'tags': [
                             'tags',
+                            'pets',
                         ],
                     },
-                },
-            },
+                }),
+            ]),
         }, group=True))
         assert text == textwrap.dedent('''
             default
@@ -433,6 +461,18 @@ class TestOpenApi3HttpDomain(object):
 
                :status 200:
                   Pets
+
+            .. http:get:: /pets/{name}
+               :synopsis: Show Pet
+
+               **Show Pet**
+
+               ~ some useful description ~
+
+               :param string name:
+                  Name of pet.
+               :status 200:
+                  A Pet
 
             tags
             ====
