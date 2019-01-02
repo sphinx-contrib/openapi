@@ -272,6 +272,114 @@ class TestOpenApi2HttpDomain(object):
                   ok
         ''').lstrip()
 
+    def test_json_in_out(self):
+        text = '\n'.join(openapi20.openapihttpdomain({
+            'definitions': {
+                'CreateResourceSchema': {
+                    'additionalProperties': False,
+                    'properties': {
+                        'string_field': {
+                            'type': 'string',
+                            'description': 'some input string'
+                        },
+                        'int_field': {
+                            'default': 1,
+                            'type': 'integer',
+                        },
+                    },
+                    'required': [
+                        'string_field'
+                    ],
+                    'title': 'CreateResourceSchema',
+                    'type': 'object'
+                },
+                'ResourceSchema': {
+                    'properties': {
+                        'string_field': {
+                            'type': 'string',
+                            'description': 'some output string'
+                        },
+                        'int_field': {
+                            'type': 'integer',
+                        },
+                    },
+                    'required': [
+                        'string_field'
+                    ],
+                    'title': 'ResourceSchema',
+                    'type': 'object'
+                },
+                'Error': {
+                    'properties': {
+                        'errors': {
+                            'type': 'object'
+                        },
+                        'message': {
+                            'type': 'string'
+                        }
+                    },
+                    'required': [
+                        'message'
+                    ],
+                    'title': 'Error',
+                    'type': 'object'
+                },
+            },
+            'paths': {
+                '/resources': {
+                    'post': {
+                        'description': '~ some useful description ~',
+                        'parameters': [
+                            {
+                                'in': 'body',
+                                'name': 'CreateResourceSchema',
+                                'required': True,
+                                'schema': {
+                                    '$ref':
+                                        '#/definitions/CreateResourceSchema'
+                                }
+                            },
+                        ],
+                        'responses': {
+                            '201': {
+                                'description': '~ some useful description ~',
+                                'schema': {
+                                    '$ref': '#/definitions/ResourceSchema'
+                                }
+                            },
+                            'default': {
+                                'description': '~ some useful description ~',
+                                'schema': {
+                                    '$ref': '#/definitions/Error'
+                                }
+                            }
+                        },
+                    },
+                },
+            },
+        }))
+
+        text2 = textwrap.dedent('''
+            .. http:post:: /resources
+               :synopsis: null
+
+               ~ some useful description ~
+
+
+               :<json integer int_field:
+               :<json string string_field: some input string (required)
+
+               :status 201:
+                  ~ some useful description ~
+               :status default:
+                  ~ some useful description ~
+
+               :>json integer int_field:
+               :>json string string_field: some output string (required)
+
+        ''').lstrip()
+        assert text == text2
+
 
 class TestOpenApi3HttpDomain(object):
 
@@ -868,3 +976,97 @@ def test_openapi3_examples(tmpdir, run_sphinx, render_examples):
 
     assert ('<strong>Example response:</strong>' in rendered_html) \
         == render_examples
+
+
+class TestConvertJsonSchema(object):
+    schema = {
+        'type': 'object',
+        'required': ['name', 'surprise'],
+        'properties': {
+            'name': {
+                'type': 'string',
+                'description': 'The name of user'},
+            'alias': {
+                'type': 'array',
+                'items': {
+                    'type': 'string'},
+                'description': 'The list of user alias'},
+            'id': {
+                'type': 'integer',
+                'description': 'the id of user',
+                'readOnly': True},
+            'surprise': {
+                'type': 'string'},
+            'secret': {
+                'type': 'string',
+                'readOnly': True}}}
+
+    result = list(openapi20.convert_json_schema(schema))
+
+    def test_required_field_with_description(self):
+        assert ':<json string name: The name of user (required)' in self.result
+
+    def test_required_field_without_description(self):
+        assert ':<json string surprise: (required)' in self.result
+
+    def test_array_field(self):
+        assert ':<json string alias[]:' in self.result
+
+    def test_read_only_field_with_description(self):
+        assert ':<json integer id: the id of user (read only)' in self.result
+
+    def test_read_only_field_without_description(self):
+        assert ':<json string secret: (read only)' in self.result
+
+    def test_nested_schema(self):
+        schema = {
+            'type': 'object',
+            'required': ['name'],
+            'properties': {
+                'name': {
+                    'type': 'string',
+                    'description': 'The name of user'
+                },
+                'friends': {
+                    'type': 'array',
+                    'items': {
+                        'type': 'object',
+                        'properties': {
+                            'name': {
+                                'type': 'string',
+                                'readOnly': True
+                            },
+                            'age': {'type': 'integer'}
+                        }
+                    },
+                    'description': 'The list of user alias'
+                },
+                'id': {
+                    'type': 'integer',
+                    'description': 'the id of user',
+                    'readOnly': True
+                },
+                'car': {
+                    'type': 'object',
+                    'properties': {
+                        'provider': {'type': 'string'},
+                        'date': {
+                            'type': 'string',
+                            'description': 'The car of user'
+                        }
+                    }
+                }
+            }
+        }
+
+        result = '\n'.join(openapi20.convert_json_schema(schema))
+
+        expected = textwrap.dedent('''
+            :<json string car.date: The car of user
+            :<json string car.provider:
+            :<json integer friends[].age:
+            :<json string friends[].name: (read only)
+            :<json integer id: the id of user (read only)
+            :<json string name: The name of user (required)'''.strip('\n'))
+
+        assert result == expected
