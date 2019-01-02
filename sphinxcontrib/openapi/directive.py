@@ -47,6 +47,7 @@ class OpenApi(Directive):
         'encoding': directives.encoding,    # useful for non-ascii cases :)
         'paths': lambda s: s.split(),       # endpoints to be rendered
         'examples': directives.flag,        # render examples when passed
+        'group': directives.flag,           # group paths by tag when passed
     }
 
     def run(self):

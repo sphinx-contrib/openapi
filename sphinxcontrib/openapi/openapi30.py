@@ -297,6 +297,12 @@ def _httpresource(endpoint, method, properties, render_examples):
     yield ''
 
 
+def _header(title):
+    yield title
+    yield '=' * len(title)
+    yield ''
+
+
 def openapihttpdomain(spec, **options):
     generators = []
 
@@ -317,12 +323,32 @@ def openapihttpdomain(spec, **options):
             )
 
     # https://github.com/OAI/OpenAPI-Specification/blob/3.0.2/versions/3.0.0.md#paths-object
-    for endpoint in options.get('paths', spec['paths']):
-        for method, properties in spec['paths'][endpoint].items():
-            generators.append(_httpresource(
-                endpoint,
-                method,
-                properties,
-                render_examples='examples' in options))
+    if 'group' in options:
+        groups = collections.defaultdict(list)
+
+        for endpoint in options.get('paths', spec['paths']):
+            for method, properties in spec['paths'][endpoint].items():
+                key = properties.get('tags', [''])[0]
+                groups[key].append(_httpresource(
+                    endpoint,
+                    method,
+                    properties,
+                    render_examples='examples' in options))
+
+        for key in sorted(groups.keys()):
+            if key:
+                generators.append(_header(key))
+            else:
+                generators.append(_header('default'))
+
+            generators.extend(groups[key])
+    else:
+        for endpoint in options.get('paths', spec['paths']):
+            for method, properties in spec['paths'][endpoint].items():
+                generators.append(_httpresource(
+                    endpoint,
+                    method,
+                    properties,
+                    render_examples='examples' in options))
 
     return iter(itertools.chain(*generators))
