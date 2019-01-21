@@ -36,7 +36,7 @@ _TYPE_MAPPING = {
     ('number', 'double'): 1.0,  # double
     ('boolean', None): True,  # boolean
     ('string', None): 'string',  # string
-    ('string', 'byte'): b'string',  # byte
+    ('string', 'byte'): 'c3RyaW5n',  # b'string' encoded in base64,  # byte
     ('string', 'binary'): '01010101',  # binary
     ('string', 'date'): datetime.now().date().isoformat(),  # date
     ('string', 'date-time'): datetime.now().isoformat(),  # dateTime

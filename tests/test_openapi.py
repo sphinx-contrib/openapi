@@ -633,6 +633,11 @@ class TestOpenApi3HttpDomain(object):
                                 'title': 'Description',
                                 'type': 'string',
                             }),
+                            ('data', {
+                                'title': 'Data',
+                                'type': 'string',
+                                'format': 'byte',
+                            }),
                         ]),
                     },
                 },
@@ -665,7 +670,8 @@ class TestOpenApi3HttpDomain(object):
                      [
                          {
                              "kind": "string",
-                             "description": "string"
+                             "description": "string",
+                             "data": "c3RyaW5n"
                          }
                      ]
 
@@ -689,7 +695,8 @@ class TestOpenApi3HttpDomain(object):
                   Content-Type: application/json
 
                   {
-                      "description": "string"
+                      "description": "string",
+                      "data": "c3RyaW5n"
                   }
 
                :status 200:
@@ -704,7 +711,8 @@ class TestOpenApi3HttpDomain(object):
 
                      {
                          "kind": "string",
-                         "description": "string"
+                         "description": "string",
+                         "data": "c3RyaW5n"
                      }
 
 
@@ -729,7 +737,8 @@ class TestOpenApi3HttpDomain(object):
 
                      {
                          "kind": "string",
-                         "description": "string"
+                         "description": "string",
+                         "data": "c3RyaW5n"
                      }
 
 
@@ -752,7 +761,8 @@ class TestOpenApi3HttpDomain(object):
                   Content-Type: application/json
 
                   {
-                      "description": "string"
+                      "description": "string",
+                      "data": "c3RyaW5n"
                   }
 
                :status 200:
@@ -767,7 +777,8 @@ class TestOpenApi3HttpDomain(object):
 
                      {
                          "kind": "string",
-                         "description": "string"
+                         "description": "string",
+                         "data": "c3RyaW5n"
                      }
 
         ''').lstrip()
