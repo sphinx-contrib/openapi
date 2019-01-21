@@ -50,4 +50,5 @@ setup(
         'Programming Language :: Python :: 3.7',
     ],
     namespace_packages=['sphinxcontrib'],
+    entry_points = {'console_scripts': 'oas2rst = sphinxcontrib.openapi.cmdline:main'}
 )

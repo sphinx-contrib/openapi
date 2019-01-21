@@ -16,6 +16,7 @@ from datetime import datetime
 import itertools
 import json
 
+from six.moves.urllib import parse
 import six
 from sphinx.util import logging
 
@@ -151,7 +152,7 @@ def _example(media_type_objects, method=None, endpoint=None, status=None,
         endpoint: The HTTP route to use in example.
         status: The HTTP status to use in example.
     """
-    indent = '   '
+    indent = '    '
     extra_indent = indent * nb_indent
 
     if method is not None:
@@ -163,6 +164,10 @@ def _example(media_type_objects, method=None, endpoint=None, status=None,
             status_text = http_status_codes[int(status)]
         except (ValueError, KeyError):
             status_text = '-'
+
+    # Provide request samples for GET requests
+    if method=='GET' and not media_type_objects:
+        media_type_objects[''] = {'examples':{'Example request':{'value':''}}}
 
     for content_type, content in media_type_objects.items():
         examples = content.get('examples')
@@ -209,8 +214,9 @@ def _example(media_type_objects, method=None, endpoint=None, status=None,
                     .format(**locals())
                 yield '{extra_indent}{indent}Host: example.com' \
                     .format(**locals())
-                yield '{extra_indent}{indent}Content-Type: {content_type}' \
-                    .format(**locals())
+                if content_type:
+                    yield '{extra_indent}{indent}Content-Type: {content_type}' \
+                        .format(**locals())
 
             # Print http response example
             else:
@@ -229,10 +235,11 @@ def _httpresource(endpoint, method, properties, render_examples):
     # https://github.com/OAI/OpenAPI-Specification/blob/3.0.2/versions/3.0.0.md#operation-object
     parameters = properties.get('parameters', [])
     responses = properties['responses']
-    indent = '   '
+    query_param_examples = {}
+    indent = '    '
 
     yield '.. http:{0}:: {1}'.format(method, endpoint)
-    yield '   :synopsis: {0}'.format(properties.get('summary', 'null'))
+    yield indent+':synopsis: {0}'.format(properties.get('summary', 'null'))
     yield ''
 
     if 'summary' in properties:
@@ -261,13 +268,12 @@ def _httpresource(endpoint, method, properties, render_examples):
             name=param['name'])
         for line in param.get('description', '').splitlines():
             yield '{indent}{indent}{line}'.format(**locals())
-
-    # print request example
-    if render_examples:
-        request_content = properties.get('requestBody', {}).get('content', {})
-        for line in _example(
-                request_content, method, endpoint=endpoint, nb_indent=1):
-            yield line
+        if param.get('required',False):
+            yield '{indent}{indent}(Required)'.format(**locals())
+            if (param['schema']['type'], param['schema'].get('format')) in _TYPE_MAPPING:
+                query_param_examples[param['name']] = _TYPE_MAPPING[(param['schema']['type'], param['schema'].get('format'))]
+            else:
+                query_param_examples[param['name']] = _TYPE_MAPPING[(param['schema']['type'], None)]
 
     # print response status codes
     for status, response in responses.items():
@@ -275,17 +281,13 @@ def _httpresource(endpoint, method, properties, render_examples):
         for line in response['description'].splitlines():
             yield '{indent}{indent}{line}'.format(**locals())
 
-        # print response example
-        if render_examples:
-            for line in _example(
-                    response.get('content', {}), status=status, nb_indent=2):
-                yield line
-
     # print request header params
     for param in filter(lambda p: p['in'] == 'header', parameters):
         yield indent + ':reqheader {name}:'.format(**param)
         for line in param.get('description', '').splitlines():
             yield '{indent}{indent}{line}'.format(**locals())
+        if param.get('required',False):
+            yield '{indent}{indent}(Required)'.format(**locals())
 
     # print response headers
     for status, response in responses.items():
@@ -293,6 +295,35 @@ def _httpresource(endpoint, method, properties, render_examples):
             yield indent + ':resheader {name}:'.format(name=headername)
             for line in header['description'].splitlines():
                 yield '{indent}{indent}{line}'.format(**locals())
+
+    if render_examples:
+        endpoint_examples = endpoint + "?" + parse.urlencode(query_param_examples)
+        # print request example
+        request_content = properties.get('requestBody', {}).get('content', {})
+        for line in _example(
+                request_content, method, endpoint=endpoint_examples, nb_indent=1):
+            yield line
+
+        # print response status codes
+        for status, response in responses.items():
+            # print response example
+            for line in _example(
+                    response.get('content', {}), status=status, nb_indent=1):
+                yield line
+
+    for cb_name,cb_specs in properties.get('callbacks',{}).items():
+        yield ''
+        yield '.. admonition:: Callback: ' + cb_name
+        yield ''
+
+        for cb_endpoint in cb_specs.keys():
+            for cb_method, cb_properties in cb_specs[cb_endpoint].items():
+                for line in _httpresource(
+                    cb_endpoint,
+                    cb_method,
+                    cb_properties,
+                    render_examples=render_examples):
+                    yield indent+line
 
     yield ''
 
