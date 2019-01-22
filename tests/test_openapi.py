@@ -801,6 +801,114 @@ class TestOpenApi3HttpDomain(object):
 
         ''').lstrip()
 
+    def test_callback(self):
+        text = '\n'.join(openapi30.openapihttpdomain({
+            'openapi': '3.0.0',
+            'paths': {
+                '/resources/{kind}': {
+                    'post': {
+                        'summary': 'List Resources',
+                        'description': '~ some useful description ~',
+                        'parameters': [
+                            {
+                                'name': 'kind',
+                                'in': 'path',
+                                'schema': {'type': 'string'},
+                                'description': 'Kind of resource to list.',
+                            },
+                            {
+                                'name': 'callback',
+                                'in': 'query',
+                                'description': 'the callback address, where the result will be sent when available',
+                                'required': False,
+                                'schema': {
+                                    'type': 'string',
+                                    'format': 'uri'
+                                },
+                                'example': 'http://client.com/callback'
+                            }
+                        ],
+                        'requestBody': {
+                            'content': {
+                                'application/json':  {
+                                    'example': '{"foo2": "bar2"}'
+                                }
+                            }
+                        },
+                        'responses': {
+                            '202': {
+                                'description': 'Something',
+                                'content': {
+                                    'application/json': {
+                                        'example': '{"foo": "bar"}'
+                                    }
+                                }
+                            },
+                        },
+                        'callbacks': {
+                            'callback': {
+                                '${request.query.callback}': {
+                                    'post': {
+                                        'summary': 'Response callback',
+                                        'operationId': 'sampleCB',
+                                        'requestBody': {
+                                            'required': True,
+                                            'description': 'Result of the insertion',
+                                            'content': {
+                                                'application/json': {
+                                                    'schema': {
+                                                        'type': 'object',
+                                                        'required': ['status'],
+                                                        'properties': {
+                                                            'status': {
+                                                                'type': 'string',
+                                                                'enum': ['OK', 'ERROR']
+                                                            }
+                                                        }
+                                                    }
+                                                }
+                                            }
+                                        },
+                                        'responses': {
+                                            '200': {
+                                                'description': 'Success'
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    },
+                },
+            },
+        }))
+        assert text == textwrap.dedent('''
+            .. http:post:: /resources/{kind}
+                :synopsis: List Resources
+
+                **List Resources**
+
+                ~ some useful description ~
+
+                :param string kind:
+                    Kind of resource to list.
+                :query string callback:
+                    the callback address, where the result will be sent when available
+                :status 202:
+                    Something
+
+            .. admonition:: Callback: callback
+         
+                .. http:post:: ${request.query.callback}
+                    :synopsis: Response callback
+                    
+                    **Response callback**
+                
+                    :status 200:
+                        Success
+                
+        ''').lstrip()
+
 
 class TestResolveRefs(object):
 

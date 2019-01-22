@@ -338,7 +338,10 @@ def _httpresource(endpoint, method, properties, render_examples):
                         cb_method,
                         cb_properties,
                         render_examples=render_examples):
-                    yield indent+line
+                    if line:
+                        yield indent+line
+                    else:
+                        yield ''
 
     yield ''
 
