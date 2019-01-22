@@ -304,8 +304,12 @@ def _httpresource(endpoint, method, properties, render_examples):
                 yield '{indent}{indent}{line}'.format(**locals())
 
     if render_examples:
-        endpoint_examples = endpoint + "?" + \
-            parse.urlencode(query_param_examples)
+        if query_param_examples:
+            endpoint_examples = endpoint + "?" + \
+                parse.urlencode(query_param_examples)
+        else:
+            endpoint_examples = endpoint
+
         # print request example
         request_content = properties.get('requestBody', {}).get('content', {})
         for line in _example(
