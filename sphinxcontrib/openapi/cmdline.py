@@ -21,6 +21,7 @@ _YamlOrderedLoader.add_constructor(
     lambda loader, node: collections.OrderedDict(loader.construct_pairs(node))
 )
 
+
 def main():
     parser = argparse.ArgumentParser(
         prog='oas2rst',
@@ -70,6 +71,7 @@ def main():
     for line in openapihttpdomain(spec, examples=True, **openapi_options):
         options.output.write(line+'\n')
         logging.debug(line)
+
 
 if __name__ == '__main__':
     main()

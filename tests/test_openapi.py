@@ -819,7 +819,7 @@ class TestOpenApi3HttpDomain(object):
                             {
                                 'name': 'callback',
                                 'in': 'query',
-                                'description': 'the callback address, where the result will be sent when available',
+                                'description': 'the callback address',
                                 'required': False,
                                 'schema': {
                                     'type': 'string',
@@ -853,7 +853,7 @@ class TestOpenApi3HttpDomain(object):
                                         'operationId': 'sampleCB',
                                         'requestBody': {
                                             'required': True,
-                                            'description': 'Result of the insertion',
+                                            'description': 'Result',
                                             'content': {
                                                 'application/json': {
                                                     'schema': {
@@ -861,8 +861,12 @@ class TestOpenApi3HttpDomain(object):
                                                         'required': ['status'],
                                                         'properties': {
                                                             'status': {
-                                                                'type': 'string',
-                                                                'enum': ['OK', 'ERROR']
+                                                                'type':
+                                                                    'string',
+                                                                'enum': [
+                                                                    'OK',
+                                                                    'ERROR'
+                                                                ]
                                                             }
                                                         }
                                                     }
@@ -893,20 +897,20 @@ class TestOpenApi3HttpDomain(object):
                 :param string kind:
                     Kind of resource to list.
                 :query string callback:
-                    the callback address, where the result will be sent when available
+                    the callback address
                 :status 202:
                     Something
 
             .. admonition:: Callback: callback
-         
+
                 .. http:post:: ${request.query.callback}
                     :synopsis: Response callback
-                    
+
                     **Response callback**
-                
+
                     :status 200:
                         Success
-                
+
         ''').lstrip()
 
 

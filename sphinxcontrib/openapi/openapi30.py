@@ -216,8 +216,7 @@ def _example(media_type_objects, method=None, endpoint=None, status=None,
                 yield '{extra_indent}{indent}Host: example.com' \
                     .format(**locals())
                 if content_type:
-                    yield \
-                        '{extra_indent}{indent}Content-Type: {content_type}' \
+                    yield '{extra_indent}{indent}Content-Type: {content_type}'\
                         .format(**locals())
 
             # Print http response example
@@ -241,7 +240,7 @@ def _httpresource(endpoint, method, properties, render_examples):
     indent = '    '
 
     yield '.. http:{0}:: {1}'.format(method, endpoint)
-    yield indent+':synopsis: {0}'.format(properties.get('summary', 'null'))
+    yield indent + ':synopsis: {0}'.format(properties.get('summary', 'null'))
     yield ''
 
     if 'summary' in properties:
