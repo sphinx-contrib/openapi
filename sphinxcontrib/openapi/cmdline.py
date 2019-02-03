@@ -21,40 +21,6 @@ _YamlOrderedLoader.add_constructor(
     lambda loader, node: collections.OrderedDict(loader.construct_pairs(node))
 )
 
-
-class OpenApi(object):
-
-    def __init__(self):
-        self.options = {}
-
-    def run(self, options):
-
-        encoding = "ascii"
-        with io.open(options.input, 'rt', encoding=encoding) as stream:
-            spec = yaml.load(stream, _YamlOrderedLoader)
-
-        # URI parameter is crucial for resolving relative references. So
-        # we need to set this option properly as it's used later down the
-        # stack.
-        self.options.setdefault('uri', 'file://%s' % options.input)
-
-        # We support both OpenAPI 2.0 (f.k.a. Swagger) and OpenAPI 3.0.0, so
-        # determine which version we are parsing here.
-        spec_version = spec.get('openapi', spec.get('swagger', '2.0'))
-        if spec_version.startswith('2.'):
-            logging.info("OpenAPI 2.x Specification")
-            openapihttpdomain = openapi20.openapihttpdomain
-        elif spec_version.startswith('3.'):
-            logging.info("OpenAPI 3.x Specification")
-            openapihttpdomain = openapi30.openapihttpdomain
-        else:
-            raise ValueError('Unsupported OpenAPI version (%s)' % spec_version)
-
-        for line in openapihttpdomain(spec, examples=True, **self.options):
-            options.output.write(line+'\n')
-            logging.debug(line)
-
-
 def main():
     parser = argparse.ArgumentParser(
         prog='oas2rst',
@@ -81,37 +47,29 @@ def main():
     options = parser.parse_args()
     logging.getLogger().setLevel(options.level)
 
-    oa = OpenApi()
-    oa.run(options)
+    with io.open(options.input, 'rt', encoding="ascii") as stream:
+        spec = yaml.load(stream, _YamlOrderedLoader)
 
+    # URI parameter is crucial for resolving relative references. So
+    # we need to set this option properly as it's used later down the
+    # stack.
+    openapi_options = {'uri': 'file://%s' % options.input}
 
-def mime_sample():
-    from email.mime.multipart import MIMEMultipart
-    from email.mime.nonmultipart import MIMENonMultipart
+    # We support both OpenAPI 2.0 (f.k.a. Swagger) and OpenAPI 3.0.0, so
+    # determine which version we are parsing here.
+    spec_version = spec.get('openapi', spec.get('swagger', '2.0'))
+    if spec_version.startswith('2.'):
+        logging.info("OpenAPI 2.x Specification")
+        openapihttpdomain = openapi20.openapihttpdomain
+    elif spec_version.startswith('3.'):
+        logging.info("OpenAPI 3.x Specification")
+        openapihttpdomain = openapi30.openapihttpdomain
+    else:
+        raise ValueError('Unsupported OpenAPI version (%s)' % spec_version)
 
-    related = MIMEMultipart('mixed')
-
-    def noop_encoder(msg):
-        pass
-
-    document = MIMENonMultipart('application', 'pdf')
-    document.set_payload("%PDF-1.4...".encode("ascii"))
-    del document['MIME-Version']
-    related.attach(document)
-
-    document = MIMENonMultipart('image', 'png')
-    document.set_payload("%PNG...")
-    del document['MIME-Version']
-    related.attach(document)
-
-    document = MIMENonMultipart('image', 'jpeg')
-    document.set_payload("ÿØÿá...")
-    del document['MIME-Version']
-    related.attach(document)
-
-    data = related.as_string()
-    print(data)
-
+    for line in openapihttpdomain(spec, examples=True, **openapi_options):
+        options.output.write(line+'\n')
+        logging.debug(line)
 
 if __name__ == '__main__':
     main()
