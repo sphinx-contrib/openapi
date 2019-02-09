@@ -167,8 +167,8 @@ def _example(media_type_objects, method=None, endpoint=None, status=None,
 
     # Provide request samples for GET requests
     if method == 'GET' and not media_type_objects:
-        media_type_objects[''] = \
-            {'examples': {'Example request': {'value': ''}}}
+        media_type_objects[''] = {
+            'examples': {'Example request': {'value': ''}}}
 
     for content_type, content in media_type_objects.items():
         examples = content.get('examples')
