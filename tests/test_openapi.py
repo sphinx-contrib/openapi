@@ -326,20 +326,20 @@ class TestOpenApi3HttpDomain(object):
         }))
         assert text == textwrap.dedent('''
             .. http:get:: /resources/{kind}
-                :synopsis: List Resources
+               :synopsis: List Resources
 
-                **List Resources**
+               **List Resources**
 
-                ~ some useful description ~
+               ~ some useful description ~
 
-                :param string kind:
-                    Kind of resource to list.
-                :query integer limit:
-                    Show up to `limit` entries.
-                :status 200:
-                    An array of resources.
-                :reqheader If-None-Match:
-                    Last known resource ETag.
+               :param string kind:
+                  Kind of resource to list.
+               :query integer limit:
+                  Show up to `limit` entries.
+               :status 200:
+                  An array of resources.
+               :reqheader If-None-Match:
+                  Last known resource ETag.
         ''').lstrip()
 
     def test_groups(self):
@@ -440,52 +440,52 @@ class TestOpenApi3HttpDomain(object):
             =======
 
             .. http:get:: /
-                :synopsis: Index
+               :synopsis: Index
 
-                **Index**
+               **Index**
 
-                ~ some useful description ~
+               ~ some useful description ~
 
-                :status 200:
-                    Index
+               :status 200:
+                  Index
 
             pets
             ====
 
             .. http:get:: /pets
-                :synopsis: List Pets
+               :synopsis: List Pets
 
-                **List Pets**
+               **List Pets**
 
-                ~ some useful description ~
+               ~ some useful description ~
 
-                :status 200:
-                    Pets
+               :status 200:
+                  Pets
 
             .. http:get:: /pets/{name}
-                :synopsis: Show Pet
+               :synopsis: Show Pet
 
-                **Show Pet**
+               **Show Pet**
 
-                ~ some useful description ~
+               ~ some useful description ~
 
-                :param string name:
-                    Name of pet.
-                :status 200:
-                    A Pet
+               :param string name:
+                  Name of pet.
+               :status 200:
+                  A Pet
 
             tags
             ====
 
             .. http:get:: /tags
-                :synopsis: List Tags
+               :synopsis: List Tags
 
-                **List Tags**
+               **List Tags**
 
-                ~ some useful description ~
+               ~ some useful description ~
 
-                :status 200:
-                    Tags
+               :status 200:
+                  Tags
         ''').lstrip()
 
     def test_example_generation(self):
@@ -647,157 +647,157 @@ class TestOpenApi3HttpDomain(object):
 
         assert text == textwrap.dedent('''
             .. http:get:: /resources/
-                :synopsis: List Resources
+               :synopsis: List Resources
 
-                **List Resources**
+               **List Resources**
 
-                ~ some useful description ~
+               ~ some useful description ~
 
-                :param string kind:
-                    Kind of resource to list.
-                :query integer limit:
-                    Show up to `limit` entries.
-                :status 200:
-                    An array of resources.
-                :reqheader If-None-Match:
-                    Last known resource ETag.
+               :param string kind:
+                  Kind of resource to list.
+               :query integer limit:
+                  Show up to `limit` entries.
+               :status 200:
+                  An array of resources.
+               :reqheader If-None-Match:
+                  Last known resource ETag.
 
-                **Example request:**
+               **Example request:**
 
-                .. sourcecode:: http
+               .. sourcecode:: http
 
-                    GET /resources/ HTTP/1.1
-                    Host: example.com
+                  GET /resources/ HTTP/1.1
+                  Host: example.com
 
 
 
-                **Example response:**
+               **Example response:**
 
-                .. sourcecode:: http
+               .. sourcecode:: http
 
-                    HTTP/1.1 200 OK
-                    Content-Type: application/json
+                  HTTP/1.1 200 OK
+                  Content-Type: application/json
 
-                    [
-                        {
-                            "kind": "string",
-                            "description": "string",
-                            "data": "c3RyaW5n"
-                        }
-                    ]
+                  [
+                      {
+                          "kind": "string",
+                          "description": "string",
+                          "data": "c3RyaW5n"
+                      }
+                  ]
 
 
             .. http:post:: /resources/
-                :synopsis: Create Resource
+               :synopsis: Create Resource
 
-                **Create Resource**
+               **Create Resource**
 
-                ~ some useful description ~
+               ~ some useful description ~
 
-                :status 200:
-                    The created resource.
+               :status 200:
+                  The created resource.
 
-                **Example request:**
+               **Example request:**
 
-                .. sourcecode:: http
+               .. sourcecode:: http
 
-                    POST /resources/ HTTP/1.1
-                    Host: example.com
-                    Content-Type: application/json
+                  POST /resources/ HTTP/1.1
+                  Host: example.com
+                  Content-Type: application/json
 
-                    {
-                        "description": "string",
-                        "data": "c3RyaW5n"
-                    }
+                  {
+                      "description": "string",
+                      "data": "c3RyaW5n"
+                  }
 
 
-                **Example response:**
+               **Example response:**
 
-                .. sourcecode:: http
+               .. sourcecode:: http
 
-                    HTTP/1.1 200 OK
-                    Content-Type: application/json
+                  HTTP/1.1 200 OK
+                  Content-Type: application/json
 
-                    {
-                        "kind": "string",
-                        "description": "string",
-                        "data": "c3RyaW5n"
-                    }
+                  {
+                      "kind": "string",
+                      "description": "string",
+                      "data": "c3RyaW5n"
+                  }
 
 
             .. http:get:: /resources/{kind}
-                :synopsis: Show Resource
+               :synopsis: Show Resource
 
-                **Show Resource**
+               **Show Resource**
 
-                ~ some useful description ~
+               ~ some useful description ~
 
-                :param string kind:
-                    Kind of resource to list.
-                :status 200:
-                    The created resource.
+               :param string kind:
+                  Kind of resource to list.
+               :status 200:
+                  The created resource.
 
-                **Example request:**
+               **Example request:**
 
-                .. sourcecode:: http
+               .. sourcecode:: http
 
-                    GET /resources/{kind} HTTP/1.1
-                    Host: example.com
+                  GET /resources/{kind} HTTP/1.1
+                  Host: example.com
 
 
 
-                **Example response:**
+               **Example response:**
 
-                .. sourcecode:: http
+               .. sourcecode:: http
 
-                    HTTP/1.1 200 OK
-                    Content-Type: application/json
+                  HTTP/1.1 200 OK
+                  Content-Type: application/json
 
-                    {
-                        "kind": "string",
-                        "description": "string",
-                        "data": "c3RyaW5n"
-                    }
+                  {
+                      "kind": "string",
+                      "description": "string",
+                      "data": "c3RyaW5n"
+                  }
 
 
             .. http:patch:: /resources/{kind}
-                :synopsis: Update Resource (partial)
+               :synopsis: Update Resource (partial)
 
-                **Update Resource (partial)**
+               **Update Resource (partial)**
 
-                ~ some useful description ~
+               ~ some useful description ~
 
-                :param string kind:
-                    Kind of resource to list.
-                :status 200:
-                    The created resource.
+               :param string kind:
+                  Kind of resource to list.
+               :status 200:
+                  The created resource.
 
-                **Example request:**
+               **Example request:**
 
-                .. sourcecode:: http
+               .. sourcecode:: http
 
-                    PATCH /resources/{kind} HTTP/1.1
-                    Host: example.com
-                    Content-Type: application/json
+                  PATCH /resources/{kind} HTTP/1.1
+                  Host: example.com
+                  Content-Type: application/json
 
-                    {
-                        "description": "string",
-                        "data": "c3RyaW5n"
-                    }
+                  {
+                      "description": "string",
+                      "data": "c3RyaW5n"
+                  }
 
 
-                **Example response:**
+               **Example response:**
 
-                .. sourcecode:: http
+               .. sourcecode:: http
 
-                    HTTP/1.1 200 OK
-                    Content-Type: application/json
+                  HTTP/1.1 200 OK
+                  Content-Type: application/json
 
-                    {
-                        "kind": "string",
-                        "description": "string",
-                        "data": "c3RyaW5n"
-                    }
+                  {
+                      "kind": "string",
+                      "description": "string",
+                      "data": "c3RyaW5n"
+                  }
 
         ''').lstrip()
 
@@ -885,7 +885,7 @@ class TestOpenApi3HttpDomain(object):
                     },
                 },
             },
-        }))
+        }, indent=4))
         assert text == textwrap.dedent('''
             .. http:post:: /resources/{kind}
                 :synopsis: List Resources

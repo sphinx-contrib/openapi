@@ -138,7 +138,7 @@ def _parse_schema(schema, method):
 
 
 def _example(media_type_objects, method=None, endpoint=None, status=None,
-             nb_indent=0):
+             nb_indent=0, indent_lvl=3):
     """
     Format examples in `Media Type Object` openapi v3 to HTTP request or
     HTTP response example.
@@ -152,7 +152,7 @@ def _example(media_type_objects, method=None, endpoint=None, status=None,
         endpoint: The HTTP route to use in example.
         status: The HTTP status to use in example.
     """
-    indent = '    '
+    indent = ' ' * indent_lvl
     extra_indent = indent * nb_indent
 
     if method is not None:
@@ -232,12 +232,12 @@ def _example(media_type_objects, method=None, endpoint=None, status=None,
             yield ''
 
 
-def _httpresource(endpoint, method, properties, render_examples):
+def _httpresource(endpoint, method, properties, render_examples, indent_lvl=3):
     # https://github.com/OAI/OpenAPI-Specification/blob/3.0.2/versions/3.0.0.md#operation-object
     parameters = properties.get('parameters', [])
     responses = properties['responses']
     query_param_examples = {}
-    indent = '    '
+    indent = ' ' * indent_lvl
 
     yield '.. http:{0}:: {1}'.format(method, endpoint)
     yield indent + ':synopsis: {0}'.format(properties.get('summary', 'null'))
@@ -315,14 +315,16 @@ def _httpresource(endpoint, method, properties, render_examples):
                 request_content,
                 method,
                 endpoint=endpoint_examples,
-                nb_indent=1):
+                nb_indent=1,
+                indent_lvl=indent_lvl):
             yield line
 
         # print response status codes
         for status, response in responses.items():
             # print response example
             for line in _example(
-                    response.get('content', {}), status=status, nb_indent=1):
+                    response.get('content', {}), status=status, nb_indent=1,
+                    indent_lvl=indent_lvl):
                 yield line
 
     for cb_name, cb_specs in properties.get('callbacks', {}).items():
@@ -336,7 +338,8 @@ def _httpresource(endpoint, method, properties, render_examples):
                         cb_endpoint,
                         cb_method,
                         cb_properties,
-                        render_examples=render_examples):
+                        render_examples=render_examples,
+                        indent_lvl=indent_lvl):
                     if line:
                         yield indent+line
                     else:
@@ -381,7 +384,8 @@ def openapihttpdomain(spec, **options):
                     endpoint,
                     method,
                     properties,
-                    render_examples='examples' in options))
+                    render_examples='examples' in options,
+                    indent_lvl=options.get('indent', 3)))
 
         for key in sorted(groups.keys()):
             if key:
@@ -397,6 +401,7 @@ def openapihttpdomain(spec, **options):
                     endpoint,
                     method,
                     properties,
-                    render_examples='examples' in options))
+                    render_examples='examples' in options,
+                    indent_lvl=options.get('indent', 3)))
 
     return iter(itertools.chain(*generators))

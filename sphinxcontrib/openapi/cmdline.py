@@ -50,6 +50,13 @@ def main():
         required=True,
         dest='output',
         help="Output file")
+    parser.add_argument(
+        "-I", "--indent",
+        action='store',
+        type=int,
+        default=3,
+        dest='indent',
+        help="Indentation level")
 
     options = parser.parse_args()
     logging.getLogger().setLevel(options.level)
@@ -61,6 +68,7 @@ def main():
         openapi_options['examples'] = True
     if options.group:
         openapi_options['group'] = True
+    openapi_options['indent'] = options.indent
     openapihttpdomain, spec = \
         directive.get_openapihttpdomain(
             openapi_options,
