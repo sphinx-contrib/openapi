@@ -277,9 +277,10 @@ def _httpresource(endpoint, method, properties, render_examples, indent_lvl=3):
                             param['schema']['type'],
                             param['schema'].get('format')
                             )]
-            else:
+            elif (param['schema']['type'], None) in _TYPE_MAPPING:
                 query_param_examples[param['name']] = \
                     _TYPE_MAPPING[(param['schema']['type'], None)]
+            # else: no sample available
 
     # print response status codes
     for status, response in responses.items():
