@@ -13,6 +13,10 @@ from __future__ import unicode_literals
 import collections
 
 import jsonschema
+try:
+    from m2r import convert as convert_markdown
+except ImportError:
+    convert_markdown = None
 
 
 def _resolve_refs(uri, spec):
@@ -61,3 +65,18 @@ def normalize_spec(spec, **options):
         for method in endpoint.values():
             method.setdefault('parameters', [])
             method['parameters'].extend(parameters)
+
+
+def get_text_converter(options):
+    """Decide on a text converter for prose."""
+    if 'format' in options:
+        if options['format'] == 'markdown':
+            if convert_markdown is None:
+                raise ValueError(
+                    "Markdown conversion isn't available, "
+                    "install the [markdown] extra."
+                )
+            return convert_markdown
+
+    # No conversion needed.
+    return lambda s: s
