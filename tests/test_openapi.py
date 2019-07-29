@@ -685,6 +685,7 @@ class TestOpenApi3HttpDomain(object):
                             {
                                 'name': 'limit',
                                 'in': 'query',
+                                'required': True,
                                 'schema': {'type': 'integer'},
                                 'description': 'Show up to `limit` entries.',
                             },
@@ -836,6 +837,16 @@ class TestOpenApi3HttpDomain(object):
                   Kind of resource to list.
                :query integer limit:
                   Show up to `limit` entries.
+                  (Required)
+
+               **Example request:**
+
+               .. sourcecode:: http
+
+                  GET /resources/?limit=1 HTTP/1.1
+                  Host: example.com
+
+
                :status 200:
                   An array of resources.
 
@@ -904,6 +915,15 @@ class TestOpenApi3HttpDomain(object):
 
                :param string kind:
                   Kind of resource to list.
+
+               **Example request:**
+
+               .. sourcecode:: http
+
+                  GET /resources/{kind} HTTP/1.1
+                  Host: example.com
+
+
                :status 200:
                   The created resource.
 
