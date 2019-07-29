@@ -39,6 +39,27 @@ _YamlOrderedLoader.add_constructor(
 )
 
 
+def get_openapihttpdomain(options, abspath, encoding):
+    with io.open(abspath, 'rt', encoding=encoding) as stream:
+        spec = yaml.load(stream, _YamlOrderedLoader)
+
+    # URI parameter is crucial for resolving relative references. So
+    # we need to set this option properly as it's used later down the
+    # stack.
+    options.setdefault('uri', 'file://%s' % abspath)
+
+    # We support both OpenAPI 2.0 (f.k.a. Swagger) and OpenAPI 3.0.0, so
+    # determine which version we are parsing here.
+    spec_version = spec.get('openapi', spec.get('swagger', '2.0'))
+    if spec_version.startswith('2.'):
+        openapihttpdomain = openapi20.openapihttpdomain
+    elif spec_version.startswith('3.'):
+        openapihttpdomain = openapi30.openapihttpdomain
+    else:
+        raise ValueError('Unsupported OpenAPI version (%s)' % spec_version)
+    return openapihttpdomain, spec
+
+
 class OpenApi(Directive):
 
     required_arguments = 1                  # path to openapi spec
@@ -62,23 +83,10 @@ class OpenApi(Directive):
         # Read the spec using encoding passed to the directive or fallback to
         # the one specified in Sphinx's config.
         encoding = self.options.get('encoding', env.config.source_encoding)
-        with io.open(abspath, 'rt', encoding=encoding) as stream:
-            spec = yaml.load(stream, _YamlOrderedLoader)
 
-        # URI parameter is crucial for resolving relative references. So
-        # we need to set this option properly as it's used later down the
-        # stack.
-        self.options.setdefault('uri', 'file://%s' % abspath)
-
-        # We support both OpenAPI 2.0 (f.k.a. Swagger) and OpenAPI 3.0.0, so
-        # determine which version we are parsing here.
-        spec_version = spec.get('openapi', spec.get('swagger', '2.0'))
-        if spec_version.startswith('2.'):
-            openapihttpdomain = openapi20.openapihttpdomain
-        elif spec_version.startswith('3.'):
-            openapihttpdomain = openapi30.openapihttpdomain
-        else:
-            raise ValueError('Unsupported OpenAPI version (%s)' % spec_version)
+        # Open the specification file
+        openapihttpdomain, spec = \
+            get_openapihttpdomain(self.options, abspath, encoding)
 
         # reStructuredText DOM manipulation is pretty tricky task. It requires
         # passing dozen arguments which is not easy without well-documented
