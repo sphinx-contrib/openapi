@@ -659,24 +659,24 @@ class TestOpenApi3HttpDomain(object):
                   Show up to `limit` entries.
                :status 200:
                   An array of resources.
-
-                  **Example response:**
-
-                  .. sourcecode:: http
-
-                     HTTP/1.1 200 OK
-                     Content-Type: application/json
-
-                     [
-                         {
-                             "kind": "string",
-                             "description": "string",
-                             "data": "c3RyaW5n"
-                         }
-                     ]
-
                :reqheader If-None-Match:
                   Last known resource ETag.
+
+               **Example response:**
+
+               .. sourcecode:: http
+
+                  HTTP/1.1 200 OK
+                  Content-Type: application/json
+
+                  [
+                      {
+                          "kind": "string",
+                          "description": "string",
+                          "data": "c3RyaW5n"
+                      }
+                  ]
+
 
             .. http:post:: /resources/
                :synopsis: Create Resource
@@ -685,6 +685,8 @@ class TestOpenApi3HttpDomain(object):
 
                ~ some useful description ~
 
+               :status 200:
+                  The created resource.
 
                **Example request:**
 
@@ -699,21 +701,19 @@ class TestOpenApi3HttpDomain(object):
                       "data": "c3RyaW5n"
                   }
 
-               :status 200:
-                  The created resource.
 
-                  **Example response:**
+               **Example response:**
 
-                  .. sourcecode:: http
+               .. sourcecode:: http
 
-                     HTTP/1.1 200 OK
-                     Content-Type: application/json
+                  HTTP/1.1 200 OK
+                  Content-Type: application/json
 
-                     {
-                         "kind": "string",
-                         "description": "string",
-                         "data": "c3RyaW5n"
-                     }
+                  {
+                      "kind": "string",
+                      "description": "string",
+                      "data": "c3RyaW5n"
+                  }
 
 
             .. http:get:: /resources/{kind}
@@ -728,18 +728,18 @@ class TestOpenApi3HttpDomain(object):
                :status 200:
                   The created resource.
 
-                  **Example response:**
+               **Example response:**
 
-                  .. sourcecode:: http
+               .. sourcecode:: http
 
-                     HTTP/1.1 200 OK
-                     Content-Type: application/json
+                  HTTP/1.1 200 OK
+                  Content-Type: application/json
 
-                     {
-                         "kind": "string",
-                         "description": "string",
-                         "data": "c3RyaW5n"
-                     }
+                  {
+                      "kind": "string",
+                      "description": "string",
+                      "data": "c3RyaW5n"
+                  }
 
 
             .. http:patch:: /resources/{kind}
@@ -751,6 +751,8 @@ class TestOpenApi3HttpDomain(object):
 
                :param string kind:
                   Kind of resource to list.
+               :status 200:
+                  The created resource.
 
                **Example request:**
 
@@ -765,21 +767,19 @@ class TestOpenApi3HttpDomain(object):
                       "data": "c3RyaW5n"
                   }
 
-               :status 200:
-                  The created resource.
 
-                  **Example response:**
+               **Example response:**
 
-                  .. sourcecode:: http
+               .. sourcecode:: http
 
-                     HTTP/1.1 200 OK
-                     Content-Type: application/json
+                  HTTP/1.1 200 OK
+                  Content-Type: application/json
 
-                     {
-                         "kind": "string",
-                         "description": "string",
-                         "data": "c3RyaW5n"
-                     }
+                  {
+                      "kind": "string",
+                      "description": "string",
+                      "data": "c3RyaW5n"
+                  }
 
         ''').lstrip()
 

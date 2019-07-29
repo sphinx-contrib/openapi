@@ -264,24 +264,11 @@ def _httpresource(endpoint, method, properties, render_examples):
         if param.get('required', False):
             yield '{indent}{indent}(Required)'.format(**locals())
 
-    # print request example
-    if render_examples:
-        request_content = properties.get('requestBody', {}).get('content', {})
-        for line in _example(
-                request_content, method, endpoint=endpoint, nb_indent=1):
-            yield line
-
     # print response status codes
     for status, response in responses.items():
         yield '{indent}:status {status}:'.format(**locals())
         for line in response['description'].splitlines():
             yield '{indent}{indent}{line}'.format(**locals())
-
-        # print response example
-        if render_examples:
-            for line in _example(
-                    response.get('content', {}), status=status, nb_indent=2):
-                yield line
 
     # print request header params
     for param in filter(lambda p: p['in'] == 'header', parameters):
@@ -297,6 +284,19 @@ def _httpresource(endpoint, method, properties, render_examples):
             yield indent + ':resheader {name}:'.format(name=headername)
             for line in header['description'].splitlines():
                 yield '{indent}{indent}{line}'.format(**locals())
+
+    if render_examples:
+        # print request example
+        request_content = properties.get('requestBody', {}).get('content', {})
+        for line in _example(
+                request_content, method, endpoint=endpoint, nb_indent=1):
+            yield line
+
+        # print response example
+        for status, response in responses.items():
+            for line in _example(
+                    response.get('content', {}), status=status, nb_indent=1):
+                yield line
 
     yield ''
 
