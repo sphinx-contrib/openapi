@@ -267,16 +267,16 @@ def _httpresource(endpoint, method, properties, render_examples,
     if render_request:
         request_content = properties.get('requestBody', {}).get('content', {})
         if request_content:
-            req_properties = json.dumps(request_content['application/json']
-                    ['schema']['properties'], indent=2, separators=(',', ':')
-            )
+            schema = request_content['application/json']['schema']
+            req_properties = json.dumps(schema['properties'], indent=2,
+                                        separators=(',', ':'))
             yield '{indent}**Request body:**'.format(**locals())
             yield ''
             yield '{indent}.. sourcecode:: http'.format(**locals())
             yield ''
             yield '{indent}{indent}POST /customers HTTP/1.1'.format(**locals())
             yield '{indent}{indent}Host: example.com'.format(**locals())
-            yield '{indent}{indent}Content-Type: application/json'\
+            yield '{indent}{indent}Content-Type: application/json' \
                 .format(**locals())
             yield ''
             for line in req_properties.splitlines():
