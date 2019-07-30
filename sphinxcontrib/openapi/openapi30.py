@@ -141,7 +141,7 @@ def _example(media_type_objects, method=None, endpoint=None, status=None,
     """
     Format examples in `Media Type Object` openapi v3 to HTTP request or
     HTTP response example.
-    If method and endpoint is provided, this fonction prints a request example
+    If method and endpoint is provided, this function prints a request example
     else status should be provided to print a response example.
 
     Arguments:
@@ -225,7 +225,7 @@ def _example(media_type_objects, method=None, endpoint=None, status=None,
             yield ''
 
 
-def _httpresource(endpoint, method, properties, render_examples):
+def _httpresource(endpoint, method, properties, render_examples, render_request=True):
     # https://github.com/OAI/OpenAPI-Specification/blob/3.0.2/versions/3.0.0.md#operation-object
     parameters = properties.get('parameters', [])
     responses = properties['responses']
@@ -261,6 +261,26 @@ def _httpresource(endpoint, method, properties, render_examples):
             name=param['name'])
         for line in param.get('description', '').splitlines():
             yield '{indent}{indent}{line}'.format(**locals())
+
+    # print request content
+    if render_request:
+        request_content = properties.get('requestBody', {}).get('content', {})
+        if request_content:
+            req_properties = json.dumps(request_content['application/json']['schema']['properties'], indent=2,
+                                        separators=(',', ':'))
+            # req_properties = _request(request_content['application/json']['schema']['properties'])
+            yield '{indent}**Request body:**'.format(**locals())
+            yield ''
+            yield '{indent}.. sourcecode:: http'.format(**locals())
+            yield ''
+            yield '{indent}{indent}POST /customers HTTP/1.1'.format(**locals())
+            yield '{indent}{indent}Host: example.com'.format(**locals())
+            yield '{indent}{indent}Content-Type: application/json'.format(**locals())
+            yield ''
+            for line in req_properties.splitlines():
+                # yield indent + line
+                yield '{indent}{indent}{line}'.format(**locals())
+                # yield ''
 
     # print request example
     if render_examples:
@@ -322,6 +342,10 @@ def openapihttpdomain(spec, **options):
                 )
             )
 
+    render_request = False
+    if 'request' in options:
+        render_request = True
+
     # https://github.com/OAI/OpenAPI-Specification/blob/3.0.2/versions/3.0.0.md#paths-object
     if 'group' in options:
         groups = collections.defaultdict(list)
@@ -333,7 +357,8 @@ def openapihttpdomain(spec, **options):
                     endpoint,
                     method,
                     properties,
-                    render_examples='examples' in options))
+                    render_examples='examples' in options,
+                    render_request=render_request))
 
         for key in sorted(groups.keys()):
             if key:
@@ -349,6 +374,7 @@ def openapihttpdomain(spec, **options):
                     endpoint,
                     method,
                     properties,
-                    render_examples='examples' in options))
+                    render_examples='examples' in options,
+                    render_request=render_request))
 
     return iter(itertools.chain(*generators))
