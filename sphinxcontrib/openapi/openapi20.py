@@ -16,7 +16,7 @@ import itertools
 from sphinxcontrib.openapi import utils
 
 
-def _httpresource(endpoint, method, properties):
+def _httpresource(endpoint, method, properties, convert):
     parameters = properties.get('parameters', [])
     responses = properties['responses']
     indent = '   '
@@ -31,38 +31,38 @@ def _httpresource(endpoint, method, properties):
         yield ''
 
     if 'description' in properties:
-        for line in properties['description'].splitlines():
+        for line in convert(properties['description']).splitlines():
             yield '{indent}{line}'.format(**locals())
         yield ''
 
     for param in filter(lambda p: p['in'] == 'path', parameters):
         yield indent + ':param {type} {name}:'.format(**param)
-        for line in param.get('description', '').splitlines():
+        for line in convert(param.get('description', '')).splitlines():
             yield '{indent}{indent}{line}'.format(**locals())
 
     # print request's query params
     for param in filter(lambda p: p['in'] == 'query', parameters):
         yield indent + ':query {type} {name}:'.format(**param)
-        for line in param.get('description', '').splitlines():
+        for line in convert(param.get('description', '')).splitlines():
             yield '{indent}{indent}{line}'.format(**locals())
 
     # print response status codes
     for status, response in responses.items():
         yield '{indent}:status {status}:'.format(**locals())
-        for line in response['description'].splitlines():
+        for line in convert(response['description']).splitlines():
             yield '{indent}{indent}{line}'.format(**locals())
 
     # print request header params
     for param in filter(lambda p: p['in'] == 'header', parameters):
         yield indent + ':reqheader {name}:'.format(**param)
-        for line in param.get('description', '').splitlines():
+        for line in convert(param.get('description', '')).splitlines():
             yield '{indent}{indent}{line}'.format(**locals())
 
     # print response headers
     for status, response in responses.items():
         for headername, header in response.get('headers', {}).items():
             yield indent + ':resheader {name}:'.format(name=headername)
-            for line in header['description'].splitlines():
+            for line in convert(header['description']).splitlines():
                 yield '{indent}{indent}{line}'.format(**locals())
 
     yield ''
@@ -93,6 +93,11 @@ def openapihttpdomain(spec, **options):
 
     for endpoint in options.get('paths', spec['paths']):
         for method, properties in spec['paths'][endpoint].items():
-            generators.append(_httpresource(endpoint, method, properties))
+            generators.append(_httpresource(
+                endpoint,
+                method,
+                properties,
+                utils.get_text_converter(options),
+                ))
 
     return iter(itertools.chain(*generators))

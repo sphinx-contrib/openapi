@@ -48,6 +48,7 @@ class OpenApi(Directive):
         'paths': lambda s: s.split(),       # endpoints to be rendered
         'examples': directives.flag,        # render examples when passed
         'group': directives.flag,           # group paths by tag when passed
+        'format': str,                      # "rst" (default) or "markdown"
     }
 
     def run(self):
