@@ -488,6 +488,77 @@ class TestOpenApi3HttpDomain(object):
                   Tags
         ''').lstrip()
 
+    def test_required_parameters(self):
+        text = '\n'.join(openapi30.openapihttpdomain({
+            'openapi': '3.0.0',
+            'paths': {
+                '/resources/{kind}': {
+                    'get': {
+                        'summary': 'List Resources',
+                        'description': '~ some useful description ~',
+                        'parameters': [
+                            {
+                                'name': 'kind',
+                                'in': 'path',
+                                'schema': {'type': 'string'},
+                                'description': 'Kind of resource to list.',
+                            },
+                            {
+                                'name': 'limit',
+                                'in': 'query',
+                                'required': True,
+                                'schema': {'type': 'integer'},
+                                'description': 'Show up to `limit` entries.',
+                            },
+                            {
+                                'name': 'If-None-Match',
+                                'in': 'header',
+                                'required': True,
+                                'schema': {'type': 'string'},
+                                'description': 'Last known resource ETag.'
+                            },
+                        ],
+                        'requestBody': {
+                            'content': {
+                                'application/json':  {
+                                    'example': '{"foo2": "bar2"}'
+                                }
+                            }
+                        },
+                        'responses': {
+                            '200': {
+                                'description': 'An array of resources.',
+                                'content': {
+                                    'application/json': {
+                                        'example': '{"foo": "bar"}'
+                                    }
+                                }
+                            },
+                        },
+                    },
+                },
+            },
+        }))
+        assert text == textwrap.dedent('''
+            .. http:get:: /resources/{kind}
+               :synopsis: List Resources
+
+               **List Resources**
+
+               ~ some useful description ~
+
+               :param string kind:
+                  Kind of resource to list.
+               :query integer limit:
+                  Show up to `limit` entries.
+                  (Required)
+               :status 200:
+                  An array of resources.
+               :reqheader If-None-Match:
+                  Last known resource ETag.
+                  (Required)
+        ''').lstrip()
+
     def test_example_generation(self):
         text = '\n'.join(openapi30.openapihttpdomain({
             'openapi': '3.0.0',
