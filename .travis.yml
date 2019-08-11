@@ -23,7 +23,7 @@ script:
 
 deploy:
    - provider: pypi
-     user: ikalnytskyi
+     user: $PYPI_USERNAME
      password: $PYPI_PASSWORD
      on:
         tags: true
