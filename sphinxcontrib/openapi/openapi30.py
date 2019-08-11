@@ -298,6 +298,24 @@ def _httpresource(endpoint, method, properties, convert, render_examples):
             for line in convert(header['description']).splitlines():
                 yield '{indent}{indent}{line}'.format(**locals())
 
+    for cb_name, cb_specs in properties.get('callbacks', {}).items():
+        yield ''
+        yield indent + '.. admonition:: Callback: ' + cb_name
+        yield ''
+
+        for cb_endpoint in cb_specs.keys():
+            for cb_method, cb_properties in cb_specs[cb_endpoint].items():
+                for line in _httpresource(
+                        cb_endpoint,
+                        cb_method,
+                        cb_properties,
+                        convert=convert,
+                        render_examples=render_examples):
+                    if line:
+                        yield indent+indent+line
+                    else:
+                        yield ''
+
     yield ''
 
 
