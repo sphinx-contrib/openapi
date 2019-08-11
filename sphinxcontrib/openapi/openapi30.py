@@ -261,6 +261,8 @@ def _httpresource(endpoint, method, properties, convert, render_examples):
             name=param['name'])
         for line in convert(param.get('description', '')).splitlines():
             yield '{indent}{indent}{line}'.format(**locals())
+        if param.get('required', False):
+            yield '{indent}{indent}(Required)'.format(**locals())
 
     # print request example
     if render_examples:
@@ -286,6 +288,8 @@ def _httpresource(endpoint, method, properties, convert, render_examples):
         yield indent + ':reqheader {name}:'.format(**param)
         for line in convert(param.get('description', '')).splitlines():
             yield '{indent}{indent}{line}'.format(**locals())
+        if param.get('required', False):
+            yield '{indent}{indent}(Required)'.format(**locals())
 
     # print response headers
     for status, response in responses.items():
