@@ -1074,6 +1074,51 @@ class TestOpenApi3HttpDomain(object):
 
         ''').lstrip()
 
+    def test_string_example(self):
+        text = '\n'.join(openapi30.openapihttpdomain({
+            'openapi': '3.0.0',
+            'paths': {
+                '/resources': {
+                    'get': {
+                        'summary': 'Get resources',
+                        'responses': {
+                            '200': {
+                                'description': 'Something',
+                                'content': {
+                                    'application/json': {
+                                        'schema': {
+                                            'type': 'string',
+                                            'example': 'A sample',
+                                        }
+                                    }
+                                }
+                            },
+                        },
+                    },
+                },
+            },
+        }, examples=True))
+
+        assert text == textwrap.dedent('''
+            .. http:get:: /resources
+               :synopsis: Get resources
+
+               **Get resources**
+
+               :status 200:
+                  Something
+
+                  **Example response:**
+
+                  .. sourcecode:: http
+
+                     HTTP/1.1 200 OK
+                     Content-Type: application/json
+
+                     "A sample"
+
+        ''').lstrip()
+
 
 class TestResolveRefs(object):
 

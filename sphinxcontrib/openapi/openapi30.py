@@ -16,7 +16,6 @@ from datetime import datetime
 import itertools
 import json
 
-import six
 from sphinx.util import logging
 
 from sphinxcontrib.openapi import utils
@@ -168,6 +167,10 @@ def _example(media_type_objects, method=None, endpoint=None, status=None,
         examples = content.get('examples')
         example = content.get('example')
 
+        # Try to get the example from the schema
+        if example is None and 'schema' in content:
+            example = content['schema'].get('example')
+
         if examples is None:
             examples = {}
             if not example:
@@ -186,9 +189,10 @@ def _example(media_type_objects, method=None, endpoint=None, status=None,
                 }
 
         for example in examples.values():
-            if not isinstance(example['value'], six.string_types):
-                example['value'] = json.dumps(
-                    example['value'], indent=4, separators=(',', ': '))
+            # Convert to json.
+            # For a simple string, will add the necessary double quotes
+            example['value'] = json.dumps(
+                example['value'], indent=4, separators=(',', ': '))
 
         for example_name, example in examples.items():
             if 'summary' in example:
