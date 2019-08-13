@@ -225,8 +225,7 @@ def _example(media_type_objects, method=None, endpoint=None, status=None,
             yield ''
 
 
-def _httpresource(endpoint, method, properties, render_examples,
-                  render_request):
+def _httpresource(endpoint, method, properties, convert, render_examples, render_request):
     # https://github.com/OAI/OpenAPI-Specification/blob/3.0.2/versions/3.0.0.md#operation-object
     parameters = properties.get('parameters', [])
     responses = properties['responses']
@@ -242,7 +241,7 @@ def _httpresource(endpoint, method, properties, render_examples,
         yield ''
 
     if 'description' in properties:
-        for line in properties['description'].splitlines():
+        for line in convert(properties['description']).splitlines():
             yield '{indent}{line}'.format(**locals())
         yield ''
 
@@ -252,7 +251,7 @@ def _httpresource(endpoint, method, properties, render_examples,
             type=param['schema']['type'],
             name=param['name'])
 
-        for line in param.get('description', '').splitlines():
+        for line in convert(param.get('description', '')).splitlines():
             yield '{indent}{indent}{line}'.format(**locals())
 
     # print request's query params
@@ -260,8 +259,10 @@ def _httpresource(endpoint, method, properties, render_examples,
         yield indent + ':query {type} {name}:'.format(
             type=param['schema']['type'],
             name=param['name'])
-        for line in param.get('description', '').splitlines():
+        for line in convert(param.get('description', '')).splitlines():
             yield '{indent}{indent}{line}'.format(**locals())
+        if param.get('required', False):
+            yield '{indent}{indent}(Required)'.format(**locals())
 
     # print request content
     if render_request:
@@ -289,7 +290,7 @@ def _httpresource(endpoint, method, properties, render_examples,
     # print response status codes
     for status, response in responses.items():
         yield '{indent}:status {status}:'.format(**locals())
-        for line in response['description'].splitlines():
+        for line in convert(response['description']).splitlines():
             yield '{indent}{indent}{line}'.format(**locals())
 
         # print response example
@@ -301,15 +302,35 @@ def _httpresource(endpoint, method, properties, render_examples,
     # print request header params
     for param in filter(lambda p: p['in'] == 'header', parameters):
         yield indent + ':reqheader {name}:'.format(**param)
-        for line in param.get('description', '').splitlines():
+        for line in convert(param.get('description', '')).splitlines():
             yield '{indent}{indent}{line}'.format(**locals())
+        if param.get('required', False):
+            yield '{indent}{indent}(Required)'.format(**locals())
 
     # print response headers
     for status, response in responses.items():
         for headername, header in response.get('headers', {}).items():
             yield indent + ':resheader {name}:'.format(name=headername)
-            for line in header['description'].splitlines():
+            for line in convert(header['description']).splitlines():
                 yield '{indent}{indent}{line}'.format(**locals())
+
+    for cb_name, cb_specs in properties.get('callbacks', {}).items():
+        yield ''
+        yield indent + '.. admonition:: Callback: ' + cb_name
+        yield ''
+
+        for cb_endpoint in cb_specs.keys():
+            for cb_method, cb_properties in cb_specs[cb_endpoint].items():
+                for line in _httpresource(
+                        cb_endpoint,
+                        cb_method,
+                        cb_properties,
+                        convert=convert,
+                        render_examples=render_examples):
+                    if line:
+                        yield indent+indent+line
+                    else:
+                        yield ''
 
     yield ''
 
@@ -343,6 +364,8 @@ def openapihttpdomain(spec, **options):
     if 'request' in options:
         render_request = True
 
+    convert = utils.get_text_converter(options)
+
     # https://github.com/OAI/OpenAPI-Specification/blob/3.0.2/versions/3.0.0.md#paths-object
     if 'group' in options:
         groups = collections.defaultdict(list)
@@ -354,6 +377,8 @@ def openapihttpdomain(spec, **options):
                     endpoint,
                     method,
                     properties,
+
+                    convert,
                     render_examples='examples' in options,
                     render_request=render_request))
 
@@ -371,6 +396,7 @@ def openapihttpdomain(spec, **options):
                     endpoint,
                     method,
                     properties,
+                    convert,
                     render_examples='examples' in options,
                     render_request=render_request))
 

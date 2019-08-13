@@ -69,6 +69,11 @@ The ``openapi`` directive supports the following options:
   If passed, paths will be grouped by tags. If a path has no tag assigned, it
   will be grouped in a ``default`` group.
 
+``format``
+  The format of text in the spec, either ``rst`` or ``markdown``. If
+  not supplied, ReStructured Text is assumed.
+
+
 .. _Sphinx: https://www.sphinx-doc.org/en/master/
 .. _OpenAPI: https://github.com/OAI/OpenAPI-Specification
 .. _sphinxcontrib-httpdomain: https://sphinxcontrib-httpdomain.readthedocs.io/
