@@ -327,7 +327,8 @@ def _httpresource(endpoint, method, properties, convert, render_examples,
                         cb_method,
                         cb_properties,
                         convert=convert,
-                        render_examples=render_examples):
+                        render_examples=render_examples,
+                        render_request=render_request):
                     if line:
                         yield indent+indent+line
                     else:
@@ -378,7 +379,6 @@ def openapihttpdomain(spec, **options):
                     endpoint,
                     method,
                     properties,
-
                     convert,
                     render_examples='examples' in options,
                     render_request=render_request))
