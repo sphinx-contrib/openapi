@@ -225,7 +225,8 @@ def _example(media_type_objects, method=None, endpoint=None, status=None,
             yield ''
 
 
-def _httpresource(endpoint, method, properties, convert, render_examples, render_request):
+def _httpresource(endpoint, method, properties, convert, render_examples,
+                  render_request):
     # https://github.com/OAI/OpenAPI-Specification/blob/3.0.2/versions/3.0.0.md#operation-object
     parameters = properties.get('parameters', [])
     responses = properties['responses']
