@@ -268,7 +268,7 @@ def _httpresource(endpoint, method, properties, convert, render_examples,
     # print request content
     if render_request:
         request_content = properties.get('requestBody', {}).get('content', {})
-        if request_content and request_content['application/json']:
+        if request_content and 'application/json' in request_content:
             schema = request_content['application/json']['schema']
             req_properties = json.dumps(schema['properties'], indent=2,
                                         separators=(',', ':'))
