@@ -1,6 +1,6 @@
 # Backup files
 *.~
-
+.idea/
 # Byte-compiles / optimizied
 __pycache__/
 *.py[cod]

@@ -170,6 +170,10 @@ def openapihttpdomain(spec, **options):
         raise ValueError(
             'Rendering examples is not supported for OpenAPI v2.x specs.')
 
+    if 'request' in options:
+        raise ValueError(
+            'The :request: option is not supported for OpenAPI v2.x specs.')
+
     generators = []
 
     # OpenAPI spec may contain JSON references, common properties, etc.
