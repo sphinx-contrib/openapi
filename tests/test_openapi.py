@@ -1126,6 +1126,64 @@ class TestResolveRefs(object):
             }
         }
 
+    def test_noproperties(self):
+        text = '\n'.join(openapi30.openapihttpdomain({
+            'openapi': '3.0.0',
+            'paths': {
+                '/resources': {
+                    'post': {
+                        'summary': 'Create Resources',
+                        'description': '~ some useful description ~',
+                        'requestBody': {
+                            'content': {
+                                'application/json':  {
+                                    'schema': {
+                                        '$ref': '#/components/schemas/Resource',  # noqa
+                                    }
+                                }
+                            }
+                        },
+                        'responses': {
+                            '200': {
+                                'description': 'Something',
+                            },
+                        },
+                    },
+                },
+            },
+            'components': {
+                'schemas': {
+                    'Resource': {
+                        'type': 'object',
+                        'additionalProperties': True,
+                    },
+                },
+            },
+
+        }, examples=True))
+        assert text == textwrap.dedent('''
+            .. http:post:: /resources
+               :synopsis: Create Resources
+
+               **Create Resources**
+
+               ~ some useful description ~
+
+
+               **Example request:**
+         
+               .. sourcecode:: http
+         
+                  POST /resources HTTP/1.1
+                  Host: example.com
+                  Content-Type: application/json
+         
+                  {}
+
+               :status 200:
+                  Something
+        ''').lstrip()
+
 
 def test_openapi2_examples(tmpdir, run_sphinx):
     spec = os.path.join(
