@@ -1171,13 +1171,13 @@ class TestResolveRefs(object):
 
 
                **Example request:**
-         
+
                .. sourcecode:: http
-         
+
                   POST /resources HTTP/1.1
                   Host: example.com
                   Content-Type: application/json
-         
+
                   {}
 
                :status 200:
