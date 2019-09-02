@@ -1710,7 +1710,11 @@ class TestConvertJsonSchema(object):
                             'description': 'The car of user'
                         }
                     }
-                }
+                },
+                'meta': {
+                    'type': 'object',
+                    'description': 'free form metadata',
+                },
             }
         }
 
@@ -1722,6 +1726,7 @@ class TestConvertJsonSchema(object):
             :<json integer friends[].age:
             :<json string friends[].name: (read only)
             :<json integer id: the id of user (read only)
+            :<json object meta: free form metadata
             :<json string name: The name of user (required)'''.strip('\n'))
 
         assert result == expected

@@ -104,7 +104,7 @@ def convert_json_schema(schema, directive=':<json'):
 
         type_ = schema.get('type', 'any')
         required_properties = schema.get('required', ())
-        if type_ == 'object':
+        if type_ == 'object' and schema.get('properties'):
             for prop, next_schema in schema.get('properties', {}).items():
                 _convert(
                     next_schema, '{name}.{prop}'.format(**locals()),
