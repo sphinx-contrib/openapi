@@ -226,11 +226,13 @@ def _example(media_type_objects, method=None, endpoint=None, status=None,
 
 
 def _httpresource(endpoint, method, properties, convert, render_examples,
-                  render_request):
+                  render_request, components=None):
     # https://github.com/OAI/OpenAPI-Specification/blob/3.0.2/versions/3.0.0.md#operation-object
     parameters = properties.get('parameters', [])
     responses = properties['responses']
     indent = '   '
+
+    components = components or {}
 
     yield '.. http:{0}:: {1}'.format(method, endpoint)
     yield '   :synopsis: {0}'.format(properties.get('summary', 'null'))
@@ -244,6 +246,50 @@ def _httpresource(endpoint, method, properties, convert, render_examples,
     if 'description' in properties:
         for line in convert(properties['description']).splitlines():
             yield '{indent}{line}'.format(**locals())
+        yield ''
+
+    securities = properties.get('security', [])
+    for security in securities:
+        yield ('{indent}This resource requires the '
+               'following authentication scheme(s):').format(**locals())
+        yield ''
+        for ref in security.keys():
+            secScheme = components.get('securitySchemes', {}).get(ref, {})
+            yield ('{indent}:scheme: ' + secScheme['name']).format(**locals())
+            if secScheme['type'] == 'http':
+                if secScheme['scheme'].lower() == 'basic':
+                    line = ':security: HTTP Basic'
+                    yield '{indent}{line}'.format(**locals())
+                if secScheme['scheme'].lower() == 'bearer':
+                    line = ':security: HTTP Bearer'
+                    yield '{indent}{line}'.format(**locals())
+                else:
+                    raise Exception(
+                        'Unknown http scheme "%s"' % secScheme['scheme'])
+            elif secScheme['type'] == 'apiKey':
+                key_loc = secScheme['in']
+                yield ('{indent}:security: '
+                       'API key in {key_loc}').format(**locals())
+            elif secScheme['type'] == 'openIdConnect':
+                # TODO add discovery URL
+                yield ('{indent}:security: '
+                       'OpenID Connect scopes:').format(**locals())
+                yield ''
+                for scopes in security[ref]:
+                    sc = scopes.join(' AND ')
+                    yield '{indent}* {sc}'.format(**locals())
+                yield ''
+            elif secScheme['type'] == 'oauth2':
+                # TODO add supported flows
+                yield '{indent}:security: OAuth2 scopes:'.format(**locals())
+                yield ''
+                for scopes in security[ref]:
+                    sc = scopes.join(' AND ')
+                    yield '{indent}* {sc}'.format(**locals())
+                yield ''
+            else:
+                raise Exception(
+                    'Unknown security scheme "%s"' % secScheme['type'])
         yield ''
 
     # print request's path params
@@ -264,6 +310,18 @@ def _httpresource(endpoint, method, properties, convert, render_examples,
             yield '{indent}{indent}{line}'.format(**locals())
         if param.get('required', False):
             yield '{indent}{indent}(Required)'.format(**locals())
+    # security params
+    securities = properties.get('security', [])
+    for security in securities:
+        for ref in security.keys():
+            secScheme = components.get('securitySchemes', {}).get(ref, {})
+            if secScheme['type'] == 'apiKey':
+                if secScheme['in'] == 'query':
+                    yield indent + ':query {type} {name}:'.format(
+                        type='API key',
+                        name=secScheme['name'])
+                    yield ('{indent}{indent}(Required'
+                           ' by authentication "{ref}")').format(**locals())
 
     # print request content
     if render_request:
@@ -399,6 +457,7 @@ def openapihttpdomain(spec, **options):
                     properties,
                     convert,
                     render_examples='examples' in options,
-                    render_request=render_request))
+                    render_request=render_request,
+                    components=spec.get('components', {})))
 
     return iter(itertools.chain(*generators))
