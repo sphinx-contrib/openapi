@@ -11,6 +11,23 @@
 from __future__ import unicode_literals
 
 import collections
+try:
+    from functools import lru_cache as simple_cache
+except ImportError:
+    def simple_cache():
+        def decorate(user_function):
+            cache = dict()
+
+            def wrapper(*args):
+                try:
+                    result = cache[args]
+                except KeyError:
+                    result = user_function(*args)
+                    cache[args] = result
+                return result
+            return wrapper
+        return decorate
+
 import io
 
 from docutils import nodes
@@ -39,9 +56,16 @@ _YamlOrderedLoader.add_constructor(
 )
 
 
-def get_openapihttpdomain(options, abspath, encoding):
+# Locally cache spec to speedup processing of same spec file in multiple
+# openapi directives
+@simple_cache()
+def _get_spec(abspath, encoding):
     with io.open(abspath, 'rt', encoding=encoding) as stream:
-        spec = yaml.load(stream, _YamlOrderedLoader)
+        return yaml.load(stream, _YamlOrderedLoader)
+
+
+def get_openapihttpdomain(options, abspath, encoding):
+    spec = _get_spec(abspath, encoding)
 
     # URI parameter is crucial for resolving relative references. So
     # we need to set this option properly as it's used later down the
