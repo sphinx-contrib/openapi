@@ -15,6 +15,7 @@ import collections
 from datetime import datetime
 import itertools
 import json
+import re
 
 import six
 from sphinx.util import logging
@@ -352,6 +353,9 @@ def openapihttpdomain(spec, **options):
     # spec to have only one (expected) schema, i.e. normalize it.
     utils.normalize_spec(spec, **options)
 
+    # Paths list to be processed
+    paths = []
+
     # If 'paths' are passed we've got to ensure they exist within an OpenAPI
     # spec; otherwise raise error and ask user to fix that.
     if 'paths' in options:
@@ -361,6 +365,29 @@ def openapihttpdomain(spec, **options):
                     ', '.join(set(options['paths']) - set(spec['paths'])),
                 )
             )
+        paths = options['paths']
+
+    # Check against regular expressions to be included
+    if 'include' in options:
+        for i in options['include']:
+            ir = re.compile(i)
+            for path in spec['paths']:
+                if ir.match(path):
+                    paths.append(path)
+
+    # If no include nor paths option, then take full path
+    if 'include' not in options and 'paths' not in options:
+        paths = spec['paths']
+
+    # Remove paths matching regexp
+    if 'exclude' in options:
+        _paths = []
+        for e in options['exclude']:
+            er = re.compile(e)
+            for path in paths:
+                if not er.match(path):
+                    _paths.append(path)
+        paths = _paths
 
     render_request = False
     if 'request' in options:
@@ -372,7 +399,7 @@ def openapihttpdomain(spec, **options):
     if 'group' in options:
         groups = collections.defaultdict(list)
 
-        for endpoint in options.get('paths', spec['paths']):
+        for endpoint in paths:
             for method, properties in spec['paths'][endpoint].items():
                 key = properties.get('tags', [''])[0]
                 groups[key].append(_httpresource(
@@ -391,7 +418,7 @@ def openapihttpdomain(spec, **options):
 
             generators.extend(groups[key])
     else:
-        for endpoint in options.get('paths', spec['paths']):
+        for endpoint in paths:
             for method, properties in spec['paths'][endpoint].items():
                 generators.append(_httpresource(
                     endpoint,
