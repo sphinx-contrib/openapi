@@ -118,8 +118,9 @@ def _parse_schema(schema, method):
         return [_parse_schema(schema['items'], method)]
 
     if schema_type == 'object':
-        if method and all(v.get('readOnly', False)
-                          for v in schema['properties'].values()):
+        if method and 'properties' in schema and \
+                all(v.get('readOnly', False)
+                    for v in schema['properties'].values()):
             return _READONLY_PROPERTY
 
         results = []
