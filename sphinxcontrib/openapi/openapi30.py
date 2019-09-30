@@ -117,6 +117,10 @@ def _parse_schema(schema, method):
         return [_parse_schema(schema['items'], method)]
 
     if schema_type == 'object':
+        if 'example' in schema:
+            example = schema.get('example')
+            return collections.OrderedDict(example)
+
         if method and all(v.get('readOnly', False)
                           for v in schema['properties'].values()):
             return _READONLY_PROPERTY
