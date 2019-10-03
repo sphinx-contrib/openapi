@@ -846,7 +846,6 @@ class TestOpenApi3HttpDomain(object):
                   GET /resources/?limit=1 HTTP/1.1
                   Host: example.com
 
-
                :status 200:
                   An array of resources.
 
@@ -922,7 +921,6 @@ class TestOpenApi3HttpDomain(object):
 
                   GET /resources/{kind} HTTP/1.1
                   Host: example.com
-
 
                :status 200:
                   The created resource.

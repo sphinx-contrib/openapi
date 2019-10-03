@@ -230,7 +230,8 @@ def _example(media_type_objects, method=None, endpoint=None, status=None,
             yield ''
             for example_line in example['value'].splitlines():
                 yield '{extra_indent}{indent}{example_line}'.format(**locals())
-            yield ''
+            if example['value'].splitlines():
+                yield ''
 
 
 def _httpresource(endpoint, method, properties, convert, render_examples,
@@ -273,16 +274,8 @@ def _httpresource(endpoint, method, properties, convert, render_examples,
             yield '{indent}{indent}{line}'.format(**locals())
         if param.get('required', False):
             yield '{indent}{indent}(Required)'.format(**locals())
-            if (param['schema']['type'], param['schema'].get('format')) \
-                    in _TYPE_MAPPING:
-                query_param_examples[param['name']] = _TYPE_MAPPING[(
-                        param['schema']['type'],
-                        param['schema'].get('format')
-                        )]
-            elif (param['schema']['type'], None) in _TYPE_MAPPING:
-                query_param_examples[param['name']] = \
-                    _TYPE_MAPPING[(param['schema']['type'], None)]
-            # else: no sample available
+            query_param_examples[param['name']] = \
+                _parse_schema(param['schema'], method)
 
     # print request content
     if render_request:
@@ -302,11 +295,10 @@ def _httpresource(endpoint, method, properties, convert, render_examples,
 
     # print request example
     if render_examples:
+        endpoint_examples = endpoint
         if query_param_examples:
             endpoint_examples = endpoint + "?" + \
                 parse.urlencode(query_param_examples)
-        else:
-            endpoint_examples = endpoint
 
         # print request example
         request_content = properties.get('requestBody', {}).get('content', {})
