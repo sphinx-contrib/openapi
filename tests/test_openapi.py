@@ -453,6 +453,10 @@ class TestOpenApi3HttpDomain(object):
     def test_groups(self):
         text = '\n'.join(openapi30.openapihttpdomain({
             'openapi': '3.0.0',
+            'tags': [
+                {'name': 'tags'},
+                {'name': 'pets'},
+            ],
             'paths': collections.OrderedDict([
                 ('/', {
                     'get': {
@@ -544,18 +548,18 @@ class TestOpenApi3HttpDomain(object):
             ]),
         }, group=True))
         assert text == textwrap.dedent('''
-            default
-            =======
+            tags
+            ====
 
-            .. http:get:: /
-               :synopsis: Index
+            .. http:get:: /tags
+               :synopsis: List Tags
 
-               **Index**
+               **List Tags**
 
                ~ some useful description ~
 
                :status 200:
-                  Index
+                  Tags
 
             pets
             ====
@@ -582,18 +586,18 @@ class TestOpenApi3HttpDomain(object):
                :status 200:
                   A Pet
 
-            tags
-            ====
+            default
+            =======
 
-            .. http:get:: /tags
-               :synopsis: List Tags
+            .. http:get:: /
+               :synopsis: Index
 
-               **List Tags**
+               **Index**
 
                ~ some useful description ~
 
                :status 200:
-                  Tags
+                  Index
         ''').lstrip()
 
     def test_required_parameters(self):
