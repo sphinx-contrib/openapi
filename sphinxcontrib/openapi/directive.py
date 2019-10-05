@@ -91,6 +91,8 @@ class OpenApi(Directive):
     option_spec = {
         'encoding': directives.encoding,    # useful for non-ascii cases :)
         'paths': lambda s: s.split(),       # endpoints to be rendered
+        'include': lambda s: s.split(),     # endpoints to be included (regexp)
+        'exclude': lambda s: s.split(),     # endpoints to be excluded (regexp)
         'request': directives.flag,         # print the request body structure
         'examples': directives.flag,        # render examples when passed
         'group': directives.flag,           # group paths by tag when passed
