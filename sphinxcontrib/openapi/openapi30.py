@@ -225,6 +225,16 @@ def _example(media_type_objects, method=None, endpoint=None, status=None,
             yield ''
 
 
+def _find_scope_description(scope, securityScheme):
+    desc = 'No description available'
+    for flow in securityScheme['flows']:
+        for sc in securityScheme['flows'][flow]['scopes']:
+            if sc == scope:
+                desc = securityScheme['flows'][flow]['scopes'][sc]
+                break
+    return desc
+
+
 def _httpresource(endpoint, method, properties, convert, render_examples,
                   render_request, components=None):
     # https://github.com/OAI/OpenAPI-Specification/blob/3.0.2/versions/3.0.0.md#operation-object
@@ -255,12 +265,12 @@ def _httpresource(endpoint, method, properties, convert, render_examples,
         yield ''
         for ref in security.keys():
             secScheme = components.get('securitySchemes', {}).get(ref, {})
-            yield ('{indent}:scheme: ' + secScheme['name']).format(**locals())
+            yield ('{indent}:scheme: ' + ref).format(**locals())
             if secScheme['type'] == 'http':
                 if secScheme['scheme'].lower() == 'basic':
                     line = ':security: HTTP Basic'
                     yield '{indent}{line}'.format(**locals())
-                if secScheme['scheme'].lower() == 'bearer':
+                elif secScheme['scheme'].lower() == 'bearer':
                     line = ':security: HTTP Bearer'
                     yield '{indent}{line}'.format(**locals())
                 else:
@@ -271,22 +281,33 @@ def _httpresource(endpoint, method, properties, convert, render_examples,
                 yield ('{indent}:security: '
                        'API key in {key_loc}').format(**locals())
             elif secScheme['type'] == 'openIdConnect':
-                # TODO add discovery URL
                 yield ('{indent}:security: '
-                       'OpenID Connect scopes:').format(**locals())
+                       'OpenID Connect').format(**locals())
+                if secScheme.get('openIdConnectUrl'):
+                    discoveryUrl = secScheme.get('openIdConnectUrl')
+                    yield ('{indent}{indent}'
+                           'Discovery URL: {discoveryUrl}').format(**locals())
                 yield ''
-                for scopes in security[ref]:
-                    sc = scopes.join(' AND ')
-                    yield '{indent}* {sc}'.format(**locals())
-                yield ''
+                yield '{indent}{indent}Scope(s):'.format(**locals())
+                for scope in security[ref]:
+                    yield ('{indent}{indent}'
+                           '{indent}:scope {scope}:').format(**locals())
             elif secScheme['type'] == 'oauth2':
-                # TODO add supported flows
-                yield '{indent}:security: OAuth2 scopes:'.format(**locals())
+                yield '{indent}:security: OAuth 2.0'.format(**locals())
+                if 'description' in secScheme:
+                    desc = secScheme['description']
+                else:
+                    desc = 'No description available'
+                yield '{indent}{indent}{desc}'.format(**locals())
                 yield ''
-                for scopes in security[ref]:
-                    sc = scopes.join(' AND ')
-                    yield '{indent}* {sc}'.format(**locals())
-                yield ''
+                yield '{indent}{indent}Scope(s):'.format(**locals())
+                for scope in security[ref]:
+                    yield ('{indent}{indent}'
+                           '{indent}:scope {scope}:').format(**locals())
+                    # find the scope description
+                    scope_desc = _find_scope_description(scope, secScheme)
+                    yield ('{indent}{indent}{indent}'
+                           '{indent}' + scope_desc).format(**locals())
             else:
                 raise Exception(
                     'Unknown security scheme "%s"' % secScheme['type'])
@@ -318,7 +339,7 @@ def _httpresource(endpoint, method, properties, convert, render_examples,
             if secScheme['type'] == 'apiKey':
                 if secScheme['in'] == 'query':
                     yield indent + ':query {type} {name}:'.format(
-                        type='API key',
+                        type='string',
                         name=secScheme['name'])
                     yield ('{indent}{indent}(Required'
                            ' by authentication "{ref}")').format(**locals())
@@ -365,6 +386,34 @@ def _httpresource(endpoint, method, properties, convert, render_examples,
             yield '{indent}{indent}{line}'.format(**locals())
         if param.get('required', False):
             yield '{indent}{indent}(Required)'.format(**locals())
+    # security header params
+    securities = properties.get('security', [])
+    for security in securities:
+        for ref in security.keys():
+            secScheme = components.get('securitySchemes', {}).get(ref, {})
+            # bearer auth
+            if secScheme['type'] == 'http' and\
+               secScheme.get('scheme') == 'bearer':
+                yield indent + ':reqheader Authorization:'
+                yield '{indent}{indent}Bearer <token>'.format(**locals())
+                yield ('{indent}{indent}(Required '
+                       'by security scheme "{ref}")'.format(**locals()))
+            # API key header
+            elif (secScheme['type'] == 'apiKey' and
+                  secScheme.get('in') == 'header'):
+                sechead_name = secScheme['name']
+                yield indent + ':reqheader {sechead_name}:'.format(**locals())
+                yield ('{indent}{indent}(Required '
+                       'by security scheme "{ref}")'.format(**locals()))
+            # API key cookie
+            elif (secScheme['type'] == 'apiKey' and
+                  secScheme.get('in') == 'cookie'):
+                cookie_name = secScheme['name']
+                yield indent + ':reqheader Cookie:'
+                yield ('{indent}{indent}'
+                       '{cookie_name}=<API key>').format(**locals())
+                yield ('{indent}{indent}(Required '
+                       'by security scheme "{ref}")').format(**locals())
 
     # print response headers
     for status, response in responses.items():
