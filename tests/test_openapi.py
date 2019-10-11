@@ -522,6 +522,360 @@ class TestOpenApi3HttpDomain(object):
                   Last known resource ETag.
         ''').lstrip()
 
+    def _test_securityScheme(self, component, security, expected):
+        text = '\n'.join(openapi30.openapihttpdomain({
+            'openapi': '3.0.0',
+            'components': {
+                'securitySchemes': component,
+            },
+            'paths': {
+                '/resources/{kind}': {
+                    'get': {
+                        'security': security,
+                        'summary': 'List Resources',
+                        'description': '~ some useful description ~',
+                        'parameters': [
+                            {
+                                'name': 'kind',
+                                'in': 'path',
+                                'schema': {'type': 'string'},
+                                'description': 'Kind of resource to list.',
+                            },
+                            {
+                                'name': 'limit',
+                                'in': 'query',
+                                'schema': {'type': 'integer'},
+                                'description': 'Show up to `limit` entries.',
+                            },
+                            {
+                                'name': 'If-None-Match',
+                                'in': 'header',
+                                'schema': {'type': 'string'},
+                                'description': 'Last known resource ETag.'
+                            },
+                        ],
+                        'requestBody': {
+                            'content': {
+                                'application/json':  {
+                                    'example': '{"foo2": "bar2"}'
+                                }
+                            }
+                        },
+                        'responses': {
+                            '200': {
+                                'description': 'An array of resources.',
+                                'content': {
+                                    'application/json': {
+                                        'example': '{"foo": "bar"}'
+                                    }
+                                }
+                            },
+                        },
+                    },
+                },
+            },
+        }))
+        assert text == expected
+
+    def test_basicAuth(self):
+        component = {
+            'bAuth': {
+                'type': 'http',
+                'scheme': 'basic'
+            }
+        }
+        security = [
+            {'bAuth': []}
+        ]
+        expected = textwrap.dedent('''
+            .. http:get:: /resources/{kind}
+               :synopsis: List Resources
+
+               **List Resources**
+
+               ~ some useful description ~
+
+               This resource requires the following authentication scheme(s):
+
+               :scheme: bAuth
+               :security: HTTP Basic
+
+               :param string kind:
+                  Kind of resource to list.
+               :query integer limit:
+                  Show up to `limit` entries.
+               :status 200:
+                  An array of resources.
+               :reqheader If-None-Match:
+                  Last known resource ETag.
+        ''').lstrip()
+        self._test_securityScheme(component, security, expected)
+
+    def test_bearerAuth(self):
+        component = {
+            'bearerAuth': {
+                'type': 'http',
+                'scheme': 'bearer',
+                'bearerFormat': 'JWT'  # Optional
+            }
+        }
+        security = [
+            {'bearerAuth': []}
+        ]
+        expected = textwrap.dedent('''
+            .. http:get:: /resources/{kind}
+               :synopsis: List Resources
+
+               **List Resources**
+
+               ~ some useful description ~
+
+               This resource requires the following authentication scheme(s):
+
+               :scheme: bearerAuth
+               :security: HTTP Bearer
+
+               :param string kind:
+                  Kind of resource to list.
+               :query integer limit:
+                  Show up to `limit` entries.
+               :status 200:
+                  An array of resources.
+               :reqheader If-None-Match:
+                  Last known resource ETag.
+               :reqheader Authorization:
+                  Bearer <token>
+                  (Required by security scheme "bearerAuth")
+        ''').lstrip()
+        self._test_securityScheme(component, security, expected)
+
+    def test_apiKey_header(self):
+        component = {
+            'apiKeyAuth': {
+                'type': 'apiKey',
+                'in': 'header',
+                'name': 'X-API-KEY'
+            }
+        }
+        security = [
+            {'apiKeyAuth': []}
+        ]
+        expected = textwrap.dedent('''
+            .. http:get:: /resources/{kind}
+               :synopsis: List Resources
+
+               **List Resources**
+
+               ~ some useful description ~
+
+               This resource requires the following authentication scheme(s):
+
+               :scheme: apiKeyAuth
+               :security: API key in header
+
+               :param string kind:
+                  Kind of resource to list.
+               :query integer limit:
+                  Show up to `limit` entries.
+               :status 200:
+                  An array of resources.
+               :reqheader If-None-Match:
+                  Last known resource ETag.
+               :reqheader X-API-KEY:
+                  (Required by security scheme "apiKeyAuth")
+        ''').lstrip()
+        self._test_securityScheme(component, security, expected)
+
+    def test_apiKey_qstring(self):
+        component = {
+            'apiKeyAuth': {
+                'type': 'apiKey',
+                'in': 'query',
+                'name': 'api_key'
+            }
+        }
+        security = [
+            {'apiKeyAuth': []}
+        ]
+        expected = textwrap.dedent('''
+            .. http:get:: /resources/{kind}
+               :synopsis: List Resources
+
+               **List Resources**
+
+               ~ some useful description ~
+
+               This resource requires the following authentication scheme(s):
+
+               :scheme: apiKeyAuth
+               :security: API key in query
+
+               :param string kind:
+                  Kind of resource to list.
+               :query integer limit:
+                  Show up to `limit` entries.
+               :query string api_key:
+                  (Required by authentication "apiKeyAuth")
+               :status 200:
+                  An array of resources.
+               :reqheader If-None-Match:
+                  Last known resource ETag.
+        ''').lstrip()
+        self._test_securityScheme(component, security, expected)
+
+    def test_apiKey_cookie(self):
+        component = {
+            'apiKeyAuth': {
+                'type': 'apiKey',
+                'in': 'cookie',
+                'name': 'JSESSIONID'
+            }
+        }
+        security = [
+            {'apiKeyAuth': []}
+        ]
+        expected = textwrap.dedent('''
+            .. http:get:: /resources/{kind}
+               :synopsis: List Resources
+
+               **List Resources**
+
+               ~ some useful description ~
+
+               This resource requires the following authentication scheme(s):
+
+               :scheme: apiKeyAuth
+               :security: API key in cookie
+
+               :param string kind:
+                  Kind of resource to list.
+               :query integer limit:
+                  Show up to `limit` entries.
+               :status 200:
+                  An array of resources.
+               :reqheader If-None-Match:
+                  Last known resource ETag.
+               :reqheader Cookie:
+                  JSESSIONID=<API key>
+                  (Required by security scheme "apiKeyAuth")
+        ''').lstrip()
+        self._test_securityScheme(component, security, expected)
+
+    def test_OAuth2(self):
+        component = {
+            'oAuthSample': {
+                'type': 'oauth2',
+                'description': 'More info at https://example.com/docs/auth',
+                'flows': {
+                    'implicit': {
+                        'authorizationUrl': 'https://example.com/authorize',
+                        'scopes': {
+                            'read': 'read resources',
+                            'write': 'modify resources'
+                        }
+                    },
+                    'authorizationCode': {
+                        'authorizationUrl': 'https://example.com/authorize',
+                        'tokenUrl': 'https://example.com/token',
+                        'scopes': {
+                            'read': 'read resources',
+                            'write': 'modify resources'
+                        }
+                    },
+                    'password': {
+                        'tokenUrl': 'https://example.com/token',
+                        'scopes': {
+                            'read': 'read resources',
+                            'write': 'modify resources'
+                        }
+                    },
+                    'clientCredentials': {
+                        'tokenUrl': 'https://example.com/token',
+                        'scopes': {}
+                    }
+                }
+            }
+        }
+        security = [
+            {'oAuthSample': [
+                'read',
+                'write'
+            ]}
+        ]
+        expected = textwrap.dedent('''
+            .. http:get:: /resources/{kind}
+               :synopsis: List Resources
+
+               **List Resources**
+
+               ~ some useful description ~
+
+               This resource requires the following authentication scheme(s):
+
+               :scheme: oAuthSample
+               :security: OAuth 2.0
+                  More info at https://example.com/docs/auth
+
+                  Scope(s):
+                     :scope read:
+                        read resources
+                     :scope write:
+                        modify resources
+
+               :param string kind:
+                  Kind of resource to list.
+               :query integer limit:
+                  Show up to `limit` entries.
+               :status 200:
+                  An array of resources.
+               :reqheader If-None-Match:
+                  Last known resource ETag.
+        ''').lstrip()
+        self._test_securityScheme(component, security, expected)
+
+    def test_OIDC(self):
+        component = {
+            'oidcSample': {
+                'type': 'openIdConnect',
+                'openIdConnectUrl': 'https://example.com/'
+                                    '.well-known/configuration',
+            }
+        }
+        security = [
+            {'oidcSample': [
+                'read',
+                'write'
+            ]}
+        ]
+        expected = textwrap.dedent('''
+            .. http:get:: /resources/{kind}
+               :synopsis: List Resources
+
+               **List Resources**
+
+               ~ some useful description ~
+
+               This resource requires the following authentication scheme(s):
+
+               :scheme: oidcSample
+               :security: OpenID Connect
+                  Discovery URL: https://example.com/.well-known/configuration
+
+                  Scope(s):
+                     :scope read:
+                     :scope write:
+
+               :param string kind:
+                  Kind of resource to list.
+               :query integer limit:
+                  Show up to `limit` entries.
+               :status 200:
+                  An array of resources.
+               :reqheader If-None-Match:
+                  Last known resource ETag.
+        ''').lstrip()
+        self._test_securityScheme(component, security, expected)
+
     def test_groups(self):
         text = '\n'.join(openapi30.openapihttpdomain({
             'openapi': '3.0.0',

@@ -227,12 +227,24 @@ def _example(media_type_objects, method=None, endpoint=None, status=None,
             yield ''
 
 
+def _find_scope_description(scope, securityScheme):
+    desc = 'No description available'
+    for flow in securityScheme['flows']:
+        for sc in securityScheme['flows'][flow]['scopes']:
+            if sc == scope:
+                desc = securityScheme['flows'][flow]['scopes'][sc]
+                break
+    return desc
+
+
 def _httpresource(endpoint, method, properties, convert, render_examples,
-                  render_request):
+                  render_request, components=None):
     # https://github.com/OAI/OpenAPI-Specification/blob/3.0.2/versions/3.0.0.md#operation-object
     parameters = properties.get('parameters', [])
     responses = properties['responses']
     indent = '   '
+
+    components = components or {}
 
     yield '.. http:{0}:: {1}'.format(method, endpoint)
     yield '   :synopsis: {0}'.format(properties.get('summary', 'null'))
@@ -246,6 +258,61 @@ def _httpresource(endpoint, method, properties, convert, render_examples,
     if 'description' in properties:
         for line in convert(properties['description']).splitlines():
             yield '{indent}{line}'.format(**locals())
+        yield ''
+
+    securities = properties.get('security', [])
+    for security in securities:
+        yield ('{indent}This resource requires the '
+               'following authentication scheme(s):').format(**locals())
+        yield ''
+        for ref in security.keys():
+            secScheme = components.get('securitySchemes', {}).get(ref, {})
+            yield ('{indent}:scheme: ' + ref).format(**locals())
+            if secScheme['type'] == 'http':
+                if secScheme['scheme'].lower() == 'basic':
+                    line = ':security: HTTP Basic'
+                    yield '{indent}{line}'.format(**locals())
+                elif secScheme['scheme'].lower() == 'bearer':
+                    line = ':security: HTTP Bearer'
+                    yield '{indent}{line}'.format(**locals())
+                else:
+                    raise Exception(
+                        'Unknown http scheme "%s"' % secScheme['scheme'])
+            elif secScheme['type'] == 'apiKey':
+                key_loc = secScheme['in']
+                yield ('{indent}:security: '
+                       'API key in {key_loc}').format(**locals())
+            elif secScheme['type'] == 'openIdConnect':
+                yield ('{indent}:security: '
+                       'OpenID Connect').format(**locals())
+                if secScheme.get('openIdConnectUrl'):
+                    discoveryUrl = secScheme.get('openIdConnectUrl')
+                    yield ('{indent}{indent}'
+                           'Discovery URL: {discoveryUrl}').format(**locals())
+                yield ''
+                yield '{indent}{indent}Scope(s):'.format(**locals())
+                for scope in security[ref]:
+                    yield ('{indent}{indent}'
+                           '{indent}:scope {scope}:').format(**locals())
+            elif secScheme['type'] == 'oauth2':
+                yield '{indent}:security: OAuth 2.0'.format(**locals())
+                if 'description' in secScheme:
+                    desc = secScheme['description']
+                else:
+                    desc = 'No description available'
+                yield '{indent}{indent}{desc}'.format(**locals())
+                yield ''
+                yield '{indent}{indent}Scope(s):'.format(**locals())
+                for scope in security[ref]:
+                    yield ('{indent}{indent}'
+                           '{indent}:scope {scope}:').format(**locals())
+                    # find the scope description
+                    scope_desc = _find_scope_description(scope, secScheme)
+                    yield ('{indent}{indent}{indent}'
+                           '{indent}' + scope_desc).format(**locals())
+            else:
+                raise Exception(
+                    'Unknown security scheme "%s"' % secScheme['type'])
         yield ''
 
     # print request's path params
@@ -266,6 +333,18 @@ def _httpresource(endpoint, method, properties, convert, render_examples,
             yield '{indent}{indent}{line}'.format(**locals())
         if param.get('required', False):
             yield '{indent}{indent}(Required)'.format(**locals())
+    # security params
+    securities = properties.get('security', [])
+    for security in securities:
+        for ref in security.keys():
+            secScheme = components.get('securitySchemes', {}).get(ref, {})
+            if secScheme['type'] == 'apiKey':
+                if secScheme['in'] == 'query':
+                    yield indent + ':query {type} {name}:'.format(
+                        type='string',
+                        name=secScheme['name'])
+                    yield ('{indent}{indent}(Required'
+                           ' by authentication "{ref}")').format(**locals())
 
     # print request content
     if render_request:
@@ -309,6 +388,34 @@ def _httpresource(endpoint, method, properties, convert, render_examples,
             yield '{indent}{indent}{line}'.format(**locals())
         if param.get('required', False):
             yield '{indent}{indent}(Required)'.format(**locals())
+    # security header params
+    securities = properties.get('security', [])
+    for security in securities:
+        for ref in security.keys():
+            secScheme = components.get('securitySchemes', {}).get(ref, {})
+            # bearer auth
+            if secScheme['type'] == 'http' and\
+               secScheme.get('scheme') == 'bearer':
+                yield indent + ':reqheader Authorization:'
+                yield '{indent}{indent}Bearer <token>'.format(**locals())
+                yield ('{indent}{indent}(Required '
+                       'by security scheme "{ref}")'.format(**locals()))
+            # API key header
+            elif (secScheme['type'] == 'apiKey' and
+                  secScheme.get('in') == 'header'):
+                sechead_name = secScheme['name']
+                yield indent + ':reqheader {sechead_name}:'.format(**locals())
+                yield ('{indent}{indent}(Required '
+                       'by security scheme "{ref}")'.format(**locals()))
+            # API key cookie
+            elif (secScheme['type'] == 'apiKey' and
+                  secScheme.get('in') == 'cookie'):
+                cookie_name = secScheme['name']
+                yield indent + ':reqheader Cookie:'
+                yield ('{indent}{indent}'
+                       '{cookie_name}=<API key>').format(**locals())
+                yield ('{indent}{indent}(Required '
+                       'by security scheme "{ref}")').format(**locals())
 
     # print response headers
     for status, response in responses.items():
@@ -427,6 +534,7 @@ def openapihttpdomain(spec, **options):
                     properties,
                     convert,
                     render_examples='examples' in options,
-                    render_request=render_request))
+                    render_request=render_request,
+                    components=spec.get('components', {})))
 
     return iter(itertools.chain(*generators))
