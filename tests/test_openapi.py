@@ -382,6 +382,48 @@ class TestOpenApi2HttpDomain(object):
                   error
         ''').lstrip()
 
+    def test_method_option(self):
+        spec = collections.defaultdict(collections.OrderedDict)
+        spec['paths']['/resource_a'] = {
+            'get': {
+                'description': 'resource a',
+                'responses': {
+                    '200': {'description': 'ok'},
+                }
+            },
+            'post': {
+                'description': 'resource a',
+                'responses': {
+                    '201': {'description': 'ok'},
+                }
+            },
+            'put': {
+                'description': 'resource a',
+                'responses': {
+                    '404': {'description': 'error'},
+                }
+            }
+        }
+
+        renderer = renderers.HttpdomainOldRenderer(
+            None,
+            {
+                'methods': ['post'],
+                'paths': ['/resource_a'],
+            },
+        )
+        text = '\n'.join(renderer.render_restructuredtext_markup(spec))
+
+        assert text == textwrap.dedent('''
+            .. http:post:: /resource_a
+               :synopsis: null
+
+               resource a
+
+               :status 201:
+                  ok
+        ''').lstrip()
+
     def test_root_parameters(self):
         spec = {'paths': {}}
         spec['paths']['/resources/{name}'] = collections.OrderedDict()
@@ -1485,6 +1527,48 @@ class TestOpenApi3HttpDomain(object):
                      :status 200:
                         Success
 
+        ''').lstrip()
+
+    def test_method_option(self):
+        spec = collections.defaultdict(collections.OrderedDict)
+        spec['paths']['/resource_a'] = {
+            'get': {
+                'description': 'resource a',
+                'responses': {
+                    '200': {'description': 'ok'},
+                }
+            },
+            'post': {
+                'description': 'resource a',
+                'responses': {
+                    '201': {'description': 'ok'},
+                }
+            },
+            'put': {
+                'description': 'resource a',
+                'responses': {
+                    '404': {'description': 'error'},
+                }
+            }
+        }
+
+        renderer = renderers.HttpdomainOldRenderer(
+            None,
+            {
+                'methods': ['post'],
+                'paths': ['/resource_a'],
+            },
+        )
+        text = '\n'.join(renderer.render_restructuredtext_markup(spec))
+
+        assert text == textwrap.dedent('''
+            .. http:post:: /resource_a
+               :synopsis: null
+
+               resource a
+
+               :status 201:
+                  ok
         ''').lstrip()
 
 
