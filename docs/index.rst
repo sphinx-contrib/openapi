@@ -100,6 +100,21 @@ The ``openapi`` directive supports the following options:
   Would render ``/persons`` and ``/evidence`` endpoints, but not
   ``/evidence/{pk}`` endpoints
 
+``methods``
+  A line separated list of http methods to filter included openapi
+  spec. For example:
+
+  .. code:: restructuredtext
+
+     .. openapi:: specs/openapi.yml
+        :methods:
+            get
+            post
+            put
+        :encoding: utf-8
+
+  Would render paths with get, post or put method
+
 ``exclude``, ``include`` and ``paths`` can also be used together (``exclude``
 taking precedence over ``include`` and ``paths``)
 
