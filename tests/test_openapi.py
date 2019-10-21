@@ -1017,10 +1017,10 @@ class TestOpenApi3HttpDomain(object):
                                 },
                                 'style': 'form',
                                 'explode': True,
-                                'example': {
-                                    'v1': 'V1',
-                                    'v2': 'V2',
-                                },
+                                'example': collections.OrderedDict([
+                                    ('v1', 'V1'),
+                                    ('v2', 'V2'),
+                                ]),
                                 'description': 'Dict with explode set to True'
                             },
                         ],
