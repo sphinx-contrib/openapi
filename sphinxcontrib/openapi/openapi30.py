@@ -121,8 +121,9 @@ def _parse_schema(schema, method):
             example = schema.get('example')
             return collections.OrderedDict(example)
 
-        if method and all(v.get('readOnly', False)
-                          for v in schema['properties'].values()):
+        if method and 'properties' in schema and \
+                all(v.get('readOnly', False)
+                    for v in schema['properties'].values()):
             return _READONLY_PROPERTY
 
         results = []
