@@ -371,8 +371,9 @@ def openapihttpdomain(spec, **options):
 
     # https://github.com/OAI/OpenAPI-Specification/blob/3.0.2/versions/3.0.0.md#paths-object
     if 'group' in options:
-        groups = collections.OrderedDict()
-        groups.update({x['name']: [] for x in spec.get('tags', {})})
+        groups = collections.OrderedDict(
+            [(x['name'], []) for x in spec.get('tags', {})]
+            )
 
         for endpoint in options.get('paths', spec['paths']):
             for method, properties in spec['paths'][endpoint].items():
