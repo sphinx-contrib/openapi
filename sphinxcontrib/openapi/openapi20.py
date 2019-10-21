@@ -12,6 +12,7 @@
 from __future__ import unicode_literals
 
 import itertools
+import re
 
 from sphinxcontrib.openapi import utils
 
@@ -170,6 +171,10 @@ def openapihttpdomain(spec, **options):
         raise ValueError(
             'Rendering examples is not supported for OpenAPI v2.x specs.')
 
+    if 'request' in options:
+        raise ValueError(
+            'The :request: option is not supported for OpenAPI v2.x specs.')
+
     generators = []
 
     # OpenAPI spec may contain JSON references, common properties, etc.
@@ -177,6 +182,9 @@ def openapihttpdomain(spec, **options):
     # if-s around the code. In order to simplify flow, let's make the
     # spec to have only one (expected) schema, i.e. normalize it.
     utils.normalize_spec(spec, **options)
+
+    # Paths list to be processed
+    paths = []
 
     # If 'paths' are passed we've got to ensure they exist within an OpenAPI
     # spec; otherwise raise error and ask user to fix that.
@@ -187,8 +195,31 @@ def openapihttpdomain(spec, **options):
                     ', '.join(set(options['paths']) - set(spec['paths'])),
                 )
             )
+        paths = options['paths']
 
-    for endpoint in options.get('paths', spec['paths']):
+    # Check against regular expressions to be included
+    if 'include' in options:
+        for i in options['include']:
+            ir = re.compile(i)
+            for path in spec['paths']:
+                if ir.match(path):
+                    paths.append(path)
+
+    # If no include nor paths option, then take full path
+    if 'include' not in options and 'paths' not in options:
+        paths = spec['paths']
+
+    # Remove paths matching regexp
+    if 'exclude' in options:
+        _paths = []
+        for e in options['exclude']:
+            er = re.compile(e)
+            for path in paths:
+                if not er.match(path):
+                    _paths.append(path)
+        paths = _paths
+
+    for endpoint in paths:
         for method, properties in spec['paths'][endpoint].items():
             generators.append(_httpresource(
                 endpoint,

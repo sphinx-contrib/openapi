@@ -157,6 +157,78 @@ class TestOpenApi2HttpDomain(object):
                   ok
         ''').lstrip()
 
+    def test_include_option(self):
+        spec = collections.defaultdict(collections.OrderedDict)
+        spec['paths']['/resource_a'] = {
+            'get': {
+                'description': 'resource a',
+                'responses': {
+                    '200': {'description': 'ok'},
+                }
+            }
+        }
+        spec['paths']['/resource_b'] = {
+            'post': {
+                'description': 'resource b',
+                'responses': {
+                    '404': {'description': 'error'},
+                }
+            }
+        }
+
+        text = '\n'.join(openapi20.openapihttpdomain(spec, include=[
+            '/resource',
+        ]))
+        assert text == textwrap.dedent('''
+            .. http:get:: /resource_a
+               :synopsis: null
+
+               resource a
+
+               :status 200:
+                  ok
+
+            .. http:post:: /resource_b
+               :synopsis: null
+
+               resource b
+
+               :status 404:
+                  error
+        ''').lstrip()
+
+    def test_exclude_option(self):
+        spec = collections.defaultdict(collections.OrderedDict)
+        spec['paths']['/resource_a'] = {
+            'get': {
+                'description': 'resource a',
+                'responses': {
+                    '200': {'description': 'ok'},
+                }
+            }
+        }
+        spec['paths']['/resource_b'] = {
+            'post': {
+                'description': 'resource b',
+                'responses': {
+                    '404': {'description': 'error'},
+                }
+            }
+        }
+
+        text = '\n'.join(openapi20.openapihttpdomain(spec, exclude=[
+            '/.*_a',
+        ]))
+        assert text == textwrap.dedent('''
+            .. http:post:: /resource_b
+               :synopsis: null
+
+               resource b
+
+               :status 404:
+                  error
+        ''').lstrip()
+
     def test_root_parameters(self):
         spec = {'paths': {}}
         spec['paths']['/resources/{name}'] = collections.OrderedDict()
@@ -1228,6 +1300,64 @@ class TestResolveRefs(object):
                 'c': True,
             }
         }
+
+    def test_noproperties(self):
+        text = '\n'.join(openapi30.openapihttpdomain({
+            'openapi': '3.0.0',
+            'paths': {
+                '/resources': {
+                    'post': {
+                        'summary': 'Create Resources',
+                        'description': '~ some useful description ~',
+                        'requestBody': {
+                            'content': {
+                                'application/json':  {
+                                    'schema': {
+                                        '$ref': '#/components/schemas/Resource',  # noqa
+                                    }
+                                }
+                            }
+                        },
+                        'responses': {
+                            '200': {
+                                'description': 'Something',
+                            },
+                        },
+                    },
+                },
+            },
+            'components': {
+                'schemas': {
+                    'Resource': {
+                        'type': 'object',
+                        'additionalProperties': True,
+                    },
+                },
+            },
+
+        }, examples=True))
+        assert text == textwrap.dedent('''
+            .. http:post:: /resources
+               :synopsis: Create Resources
+
+               **Create Resources**
+
+               ~ some useful description ~
+
+
+               **Example request:**
+
+               .. sourcecode:: http
+
+                  POST /resources HTTP/1.1
+                  Host: example.com
+                  Content-Type: application/json
+
+                  {}
+
+               :status 200:
+                  Something
+        ''').lstrip()
 
 
 def test_openapi2_examples(tmpdir, run_sphinx):

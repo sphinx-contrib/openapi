@@ -15,6 +15,7 @@ import collections
 from datetime import datetime
 import itertools
 import json
+import re
 
 from sphinx.util import logging
 
@@ -145,7 +146,7 @@ def _example(media_type_objects, method=None, endpoint=None, status=None,
     """
     Format examples in `Media Type Object` openapi v3 to HTTP request or
     HTTP response example.
-    If method and endpoint is provided, this fonction prints a request example
+    If method and endpoint is provided, this function prints a request example
     else status should be provided to print a response example.
 
     Arguments:
@@ -234,7 +235,8 @@ def _example(media_type_objects, method=None, endpoint=None, status=None,
             yield ''
 
 
-def _httpresource(endpoint, method, properties, convert, render_examples):
+def _httpresource(endpoint, method, properties, convert, render_examples,
+                  render_request):
     # https://github.com/OAI/OpenAPI-Specification/blob/3.0.2/versions/3.0.0.md#operation-object
     parameters = properties.get('parameters', [])
     responses = properties['responses']
@@ -272,6 +274,22 @@ def _httpresource(endpoint, method, properties, convert, render_examples):
             yield '{indent}{indent}{line}'.format(**locals())
         if param.get('required', False):
             yield '{indent}{indent}(Required)'.format(**locals())
+
+    # print request content
+    if render_request:
+        request_content = properties.get('requestBody', {}).get('content', {})
+        if request_content and 'application/json' in request_content:
+            schema = request_content['application/json']['schema']
+            req_properties = json.dumps(schema['properties'], indent=2,
+                                        separators=(',', ':'))
+            yield '{indent}**Request body:**'.format(**locals())
+            yield ''
+            yield '{indent}.. sourcecode:: json'.format(**locals())
+            yield ''
+            for line in req_properties.splitlines():
+                # yield indent + line
+                yield '{indent}{indent}{line}'.format(**locals())
+                # yield ''
 
     # print request example
     if render_examples:
@@ -319,7 +337,8 @@ def _httpresource(endpoint, method, properties, convert, render_examples):
                         cb_method,
                         cb_properties,
                         convert=convert,
-                        render_examples=render_examples):
+                        render_examples=render_examples,
+                        render_request=render_request):
                     if line:
                         yield indent+indent+line
                     else:
@@ -343,6 +362,9 @@ def openapihttpdomain(spec, **options):
     # spec to have only one (expected) schema, i.e. normalize it.
     utils.normalize_spec(spec, **options)
 
+    # Paths list to be processed
+    paths = []
+
     # If 'paths' are passed we've got to ensure they exist within an OpenAPI
     # spec; otherwise raise error and ask user to fix that.
     if 'paths' in options:
@@ -352,6 +374,33 @@ def openapihttpdomain(spec, **options):
                     ', '.join(set(options['paths']) - set(spec['paths'])),
                 )
             )
+        paths = options['paths']
+
+    # Check against regular expressions to be included
+    if 'include' in options:
+        for i in options['include']:
+            ir = re.compile(i)
+            for path in spec['paths']:
+                if ir.match(path):
+                    paths.append(path)
+
+    # If no include nor paths option, then take full path
+    if 'include' not in options and 'paths' not in options:
+        paths = spec['paths']
+
+    # Remove paths matching regexp
+    if 'exclude' in options:
+        _paths = []
+        for e in options['exclude']:
+            er = re.compile(e)
+            for path in paths:
+                if not er.match(path):
+                    _paths.append(path)
+        paths = _paths
+
+    render_request = False
+    if 'request' in options:
+        render_request = True
 
     convert = utils.get_text_converter(options)
 
@@ -359,7 +408,7 @@ def openapihttpdomain(spec, **options):
     if 'group' in options:
         groups = collections.defaultdict(list)
 
-        for endpoint in options.get('paths', spec['paths']):
+        for endpoint in paths:
             for method, properties in spec['paths'][endpoint].items():
                 key = properties.get('tags', [''])[0]
                 groups[key].append(_httpresource(
@@ -367,7 +416,8 @@ def openapihttpdomain(spec, **options):
                     method,
                     properties,
                     convert,
-                    render_examples='examples' in options))
+                    render_examples='examples' in options,
+                    render_request=render_request))
 
         for key in sorted(groups.keys()):
             if key:
@@ -377,13 +427,14 @@ def openapihttpdomain(spec, **options):
 
             generators.extend(groups[key])
     else:
-        for endpoint in options.get('paths', spec['paths']):
+        for endpoint in paths:
             for method, properties in spec['paths'][endpoint].items():
                 generators.append(_httpresource(
                     endpoint,
                     method,
                     properties,
                     convert,
-                    render_examples='examples' in options))
+                    render_examples='examples' in options,
+                    render_request=render_request))
 
     return iter(itertools.chain(*generators))
