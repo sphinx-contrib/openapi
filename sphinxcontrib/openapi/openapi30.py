@@ -239,7 +239,7 @@ def _httpresource(endpoint, method, properties, convert, render_examples,
     # https://github.com/OAI/OpenAPI-Specification/blob/3.0.2/versions/3.0.0.md#operation-object
     parameters = properties.get('parameters', [])
     responses = properties['responses']
-    query_param_examples = {}
+    query_param_examples = []
     indent = '   '
 
     yield '.. http:{0}:: {1}'.format(method, endpoint)
@@ -274,8 +274,16 @@ def _httpresource(endpoint, method, properties, convert, render_examples,
             yield '{indent}{indent}{line}'.format(**locals())
         if param.get('required', False):
             yield '{indent}{indent}(Required)'.format(**locals())
-            query_param_examples[param['name']] = \
-                _parse_schema(param['schema'], method)
+            example = _parse_schema(param['schema'], method)
+            example = param.get('example', example)
+            if param.get('explode', False) and isinstance(example, list):
+                for v in example:
+                    query_param_examples.append((param['name'], v))
+            elif param.get('explode', False) and isinstance(example, dict):
+                for k, v in example.items():
+                    query_param_examples.append((k, v))
+            else:
+                query_param_examples.append((param['name'], example))
 
     # print request content
     if render_request:
