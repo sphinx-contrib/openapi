@@ -219,18 +219,12 @@ def openapihttpdomain(spec, **options):
                     _paths.append(path)
         paths = _paths
 
-    # Check for included methods
-    if 'methods' in options:
-        _methods = {}
-        for path, methods in paths.items():
-            _methods = methods.copy()
-            for method in methods:
-                if method not in options['methods']:
-                    _methods.pop(method)
-            paths[path] = _methods
-
     for endpoint in paths:
         for method, properties in spec['paths'][endpoint].items():
+            # Check for included methods
+            if options.get('methods') and method not in options.get('methods'):
+                continue
+
             generators.append(_httpresource(
                 endpoint,
                 method,

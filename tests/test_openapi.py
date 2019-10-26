@@ -252,7 +252,7 @@ class TestOpenApi2HttpDomain(object):
             }
         }
 
-        text = '\n'.join(openapi20.openapihttpdomain(spec, methods=['post']))
+        text = '\n'.join(openapi20.openapihttpdomain(spec, paths=['/resource_a'], methods=['post']))
 
         assert text == textwrap.dedent('''
             .. http:post:: /resource_a
