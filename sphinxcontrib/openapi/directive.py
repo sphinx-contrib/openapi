@@ -92,7 +92,7 @@ class OpenApi(Directive):
         'encoding': directives.encoding,    # useful for non-ascii cases :)
         'paths': lambda s: s.split(),       # endpoints to be rendered
         'include': lambda s: s.split(),     # endpoints to be included (regexp)
-        'methods': lambda s: s.split(),     # endpoints to be included based on methods
+        'methods': lambda s: s.split(),     # included based on methods
         'exclude': lambda s: s.split(),     # endpoints to be excluded (regexp)
         'request': directives.flag,         # print the request body structure
         'examples': directives.flag,        # render examples when passed
