@@ -522,6 +522,80 @@ class TestOpenApi3HttpDomain(object):
                   Last known resource ETag.
         ''').lstrip()
 
+    def test_rfc7807(self):
+        text = '\n'.join(openapi30.openapihttpdomain({
+            'openapi': '3.0.0',
+            'paths': {
+                '/problem': {
+                    'post': {
+                        'summary': 'Problem',
+                        'description': '~ some useful description ~',
+                        'requestBody': {
+                            'content': {
+                                'application/problem+json':  {
+                                    'example': {
+                                        "type": "string",
+                                        "title": "string",
+                                        "status": 1,
+                                        "detail": "string",
+                                        "instance": "string",
+                                        }
+                                }
+                            }
+                        },
+                        'responses': {
+                            '200': {
+                                'description': 'An array of resources.',
+                                'content': {
+                                    'application/json': {
+                                        'example': '{"foo": "bar"}'
+                                    }
+                                }
+                            },
+                        },
+                    },
+                },
+            },
+        }, examples=True))
+        assert text == textwrap.dedent('''
+            .. http:post:: /problem
+               :synopsis: Problem
+
+               **Problem**
+
+               ~ some useful description ~
+
+
+               **Example request:**
+
+               .. sourcecode:: http
+
+                  POST /problem HTTP/1.1
+                  Host: example.com
+                  Content-Type: application/problem+json
+
+                  {
+                      "type": "string",
+                      "title": "string",
+                      "status": 1,
+                      "detail": "string",
+                      "instance": "string"
+                  }
+
+               :status 200:
+                  An array of resources.
+
+                  **Example response:**
+
+                  .. sourcecode:: http
+
+                     HTTP/1.1 200 OK
+                     Content-Type: application/json
+
+                     {"foo": "bar"}
+
+        ''').lstrip()
+
     def test_groups(self):
         text = '\n'.join(openapi30.openapihttpdomain({
             'openapi': '3.0.0',
