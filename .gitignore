@@ -47,6 +47,9 @@ docs/_build/
 *.sublime-project
 *.sublime-workspace
 
+# Ignore VSCode folder
+/.vscode/
+
 # Ignore virtualenvs (who places it near)
 .venv/
 
