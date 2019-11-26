@@ -1618,16 +1618,19 @@ class TestResolveRefs(object):
             },
             # check also JSON to YAML references:
             'baz': {
-                '$ref': 'testdata/foo.yaml#/foo/b',
+                '$ref': 'testdata/foo.yaml#/foo',
             }
         }
 
+        # import pdb
+        # pdb.set_trace()
         assert utils._resolve_refs(baseuri, data) == {
             'bar': {
                 'c': True,
             },
             'baz': {
-                'c': True,
+                'a': 17,
+                'b': 13,
             },
         }
 
