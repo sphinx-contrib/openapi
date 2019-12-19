@@ -426,12 +426,14 @@ def openapihttpdomain(spec, **options):
 
     # https://github.com/OAI/OpenAPI-Specification/blob/3.0.2/versions/3.0.0.md#paths-object
     if 'group' in options:
-        groups = collections.defaultdict(list)
+        groups = collections.OrderedDict(
+            [(x['name'], []) for x in spec.get('tags', {})]
+            )
 
         for endpoint in paths:
             for method, properties in spec['paths'][endpoint].items():
                 key = properties.get('tags', [''])[0]
-                groups[key].append(_httpresource(
+                groups.setdefault(key, []).append(_httpresource(
                     endpoint,
                     method,
                     properties,
@@ -439,7 +441,7 @@ def openapihttpdomain(spec, **options):
                     render_examples='examples' in options,
                     render_request=render_request))
 
-        for key in sorted(groups.keys()):
+        for key in groups.keys():
             if key:
                 generators.append(_header(key))
             else:
