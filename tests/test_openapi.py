@@ -757,6 +757,7 @@ class TestOpenApi3HttpDomain(object):
                             {
                                 'name': 'limit',
                                 'in': 'query',
+                                'required': True,
                                 'schema': {'type': 'integer'},
                                 'description': 'Show up to `limit` entries.',
                             },
@@ -908,6 +909,15 @@ class TestOpenApi3HttpDomain(object):
                   Kind of resource to list.
                :query integer limit:
                   Show up to `limit` entries.
+                  (Required)
+
+               **Example request:**
+
+               .. sourcecode:: http
+
+                  GET /resources/?limit=1 HTTP/1.1
+                  Host: example.com
+
                :status 200:
                   An array of resources.
 
@@ -976,6 +986,14 @@ class TestOpenApi3HttpDomain(object):
 
                :param string kind:
                   Kind of resource to list.
+
+               **Example request:**
+
+               .. sourcecode:: http
+
+                  GET /resources/{kind} HTTP/1.1
+                  Host: example.com
+
                :status 200:
                   The created resource.
 
@@ -1032,6 +1050,86 @@ class TestOpenApi3HttpDomain(object):
                          "data": "c3RyaW5n"
                      }
 
+        ''').lstrip()
+
+    def test_get_example_with_explode(self):
+        text = '\n'.join(openapi30.openapihttpdomain({
+            'openapi': '3.0.0',
+            'paths': collections.OrderedDict([
+                ('/resources/', collections.OrderedDict([
+                    ('get', {
+                        'summary': 'List Resources',
+                        'description': '~ some useful description ~',
+                        'parameters': [
+                            {
+                                'name': 'params',
+                                'in': 'query',
+                                'required': True,
+                                'schema': {
+                                    'type': 'array',
+                                    'items': {
+                                        'type': 'string'
+                                    }
+                                },
+                                'style': 'form',
+                                'explode': True,
+                                'example': [
+                                    'p1',
+                                    'p2',
+                                ],
+                                'description': 'List with explode set to True'
+                            },
+                            {
+                                'name': 'values',
+                                'in': 'query',
+                                'required': True,
+                                'schema': {
+                                    'type': 'object',
+                                    'additionalProperties': True
+                                },
+                                'style': 'form',
+                                'explode': True,
+                                'example': collections.OrderedDict([
+                                    ('v1', 'V1'),
+                                    ('v2', 'V2'),
+                                ]),
+                                'description': 'Dict with explode set to True'
+                            },
+                        ],
+                        'responses': {
+                            '200': {
+                                'description': 'OK'
+                            },
+                        },
+                    }),
+                ])),
+            ]),
+        }, examples=True))
+
+        assert text == textwrap.dedent('''
+            .. http:get:: /resources/
+               :synopsis: List Resources
+
+               **List Resources**
+
+               ~ some useful description ~
+
+               :query array params:
+                  List with explode set to True
+                  (Required)
+               :query object values:
+                  Dict with explode set to True
+                  (Required)
+
+               **Example request:**
+
+               .. sourcecode:: http
+
+                  GET /resources/?params=p1&params=p2&v1=V1&v2=V2 HTTP/1.1
+                  Host: example.com
+
+               :status 200:
+                  OK
         ''').lstrip()
 
     def test_callback(self):
