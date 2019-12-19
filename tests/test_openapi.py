@@ -87,6 +87,155 @@ class TestOpenApi2HttpDomain(object):
                   Resource ETag.
         ''').lstrip()
 
+    def test_groups(self):
+        text = '\n'.join(openapi20.openapihttpdomain({
+            'tags': [
+                {'name': 'tags'},
+                {'name': 'pets'},
+            ],
+            'paths': collections.OrderedDict([
+                ('/', {
+                    'get': {
+                        'summary': 'Index',
+                        'description': '~ some useful description ~',
+                        'responses': {
+                            '200': {
+                                'description': 'Index',
+                                'content': {
+                                    'application/json': {
+                                        'pets': 'https://example.com/api/pets',
+                                        'tags': 'https://example.com/api/tags',
+                                    }
+                                }
+                            },
+                        },
+                    },
+                }),
+                ('/pets', {
+                    'get': {
+                        'summary': 'List Pets',
+                        'description': '~ some useful description ~',
+                        'responses': {
+                            '200': {
+                                'description': 'Pets',
+                                'content': {
+                                    'application/json': [
+                                        {
+                                            'example': '{"foo": "bar"}'
+                                        },
+                                    ],
+                                },
+                            },
+                        },
+                        'tags': [
+                            'pets',
+                        ],
+                    },
+                }),
+                ('/pets/{name}', {
+                    'get': {
+                        'summary': 'Show Pet',
+                        'description': '~ some useful description ~',
+                        'parameters': [
+                            {
+                                'name': 'name',
+                                'in': 'path',
+                                'type': 'string',
+                                'description': 'Name of pet.',
+                            },
+                        ],
+                        'responses': {
+                            '200': {
+                                'description': 'A Pet',
+                                'content': {
+                                    'application/json': {
+                                        'example': '{"foo": "bar"}'
+                                    }
+                                }
+                            },
+                        },
+                        'tags': [
+                            'pets',
+                        ],
+                    },
+                }),
+                ('/tags', {
+                    'get': {
+                        'summary': 'List Tags',
+                        'description': '~ some useful description ~',
+                        'responses': {
+                            '200': {
+                                'description': 'Tags',
+                                'content': {
+                                    'application/json': [
+                                        {
+                                            'example': '{"foo": "bar"}'
+                                        },
+                                    ],
+                                }
+                            },
+                        },
+                        'tags': [
+                            'tags',
+                            'pets',
+                        ],
+                    },
+                }),
+            ]),
+        }, group=True))
+        assert text == textwrap.dedent('''
+            tags
+            ====
+
+            .. http:get:: /tags
+               :synopsis: List Tags
+
+               **List Tags**
+
+               ~ some useful description ~
+
+               :status 200:
+                  Tags
+
+            pets
+            ====
+
+            .. http:get:: /pets
+               :synopsis: List Pets
+
+               **List Pets**
+
+               ~ some useful description ~
+
+               :status 200:
+                  Pets
+
+            .. http:get:: /pets/{name}
+               :synopsis: Show Pet
+
+               **Show Pet**
+
+               ~ some useful description ~
+
+               :param string name:
+                  Name of pet.
+               :status 200:
+                  A Pet
+
+            default
+            =======
+
+            .. http:get:: /
+               :synopsis: Index
+
+               **Index**
+
+               ~ some useful description ~
+
+               :status 200:
+                  Index
+        ''').lstrip()
+
     def test_two_resources(self):
         spec = collections.defaultdict(collections.OrderedDict)
         spec['paths']['/resource_a'] = {
