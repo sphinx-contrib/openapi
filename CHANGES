@@ -5,6 +5,15 @@
 Here you can see the list of changes between each 'sphinxcontrib-openapi'
 release.
 
+0.6.0 (2019-12-20)
+==================
+
+- Add ``include`` and ``exclude`` options to exclude certain paths out from
+  rendering.
+- Generate samples for ``GET`` requests.
+- When rendering by groups, preserve order of groups specified in the spec.
+
+
 0.5.0 (2019-09-04)
 ==================
 
