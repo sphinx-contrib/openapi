@@ -1,0 +1,48 @@
+repos:
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v2.4.0
+    hooks:
+      - id: trailing-whitespace
+      - id: end-of-file-fixer
+      - id: check-docstring-first
+      - id: check-json
+      - id: check-yaml
+      - id: debug-statements
+
+  - repo: https://github.com/psf/black
+    rev: 19.10b0
+    hooks:
+      - id: black
+        args: [--line-length=88, --target-version=py35]
+        exclude: >
+          (?x)(
+            # black defaults
+              \.eggs
+            | \.git\
+            | \.hg
+            | \.mypy_cache
+            | \.nox
+            | \.tox
+            | \.venv
+            | _build
+            | buck-out
+            | build
+            | dist
+
+            # sphinxcontrib-openapi
+            | sphinxcontrib/openapi/__init__.py
+            | sphinxcontrib/openapi/__main__.py
+            | sphinxcontrib/openapi/openapi20.py
+            | sphinxcontrib/openapi/openapi30.py
+            | sphinxcontrib/openapi/directive.py
+            | sphinxcontrib/openapi/utils.py
+            | tests/test_openapi.py
+            | tests/conftest.py
+            | tests/test_spec_examples.py
+          )
+
+  - repo: https://gitlab.com/pycqa/flake8
+    rev: 3.7.9
+    hooks:
+      - id: flake8
+        args: [--max-line-length=99]
