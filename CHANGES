@@ -5,6 +5,11 @@
 Here you can see the list of changes between each 'sphinxcontrib-openapi'
 release.
 
+0.6.0 (unreleased)
+==================
+
+- Drop Python 2.7 support because it reached its end-of-life.
+
 0.5.0 (2019-09-04)
 ==================
 

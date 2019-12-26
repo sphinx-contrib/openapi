@@ -8,25 +8,19 @@
     :license: BSD, see LICENSE for details.
 """
 
-from __future__ import unicode_literals
-
 import copy
 import collections
 from datetime import datetime
 import itertools
 import json
 import re
+from urllib import parse
+from http.client import responses as http_status_codes
 
-import six
-from six.moves.urllib import parse
 from sphinx.util import logging
 
 from sphinxcontrib.openapi import utils
 
-try:
-    from httplib import responses as http_status_codes  # python2
-except ImportError:
-    from http.client import responses as http_status_codes  # python3
 
 LOG = logging.getLogger(__name__)
 
@@ -194,7 +188,7 @@ def _example(media_type_objects, method=None, endpoint=None, status=None,
                 }
 
         for example in examples.values():
-            if not isinstance(example['value'], six.string_types):
+            if not isinstance(example['value'], str):
                 example['value'] = json.dumps(
                     example['value'], indent=4, separators=(',', ': '))
 
