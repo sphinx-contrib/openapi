@@ -8,27 +8,8 @@
     :license: BSD, see LICENSE for details.
 """
 
-from __future__ import unicode_literals
-
 import collections
-try:
-    from functools import lru_cache as simple_cache
-except ImportError:
-    def simple_cache():
-        def decorate(user_function):
-            cache = dict()
-
-            def wrapper(*args):
-                try:
-                    result = cache[args]
-                except KeyError:
-                    result = user_function(*args)
-                    cache[args] = result
-                return result
-            return wrapper
-        return decorate
-
-import io
+import functools
 
 from docutils import nodes
 from docutils.parsers.rst import Directive, directives
@@ -58,9 +39,9 @@ _YamlOrderedLoader.add_constructor(
 
 # Locally cache spec to speedup processing of same spec file in multiple
 # openapi directives
-@simple_cache()
+@functools.lru_cache()
 def _get_spec(abspath, encoding):
-    with io.open(abspath, 'rt', encoding=encoding) as stream:
+    with open(abspath, 'rt', encoding=encoding) as stream:
         return yaml.load(stream, _YamlOrderedLoader)
 
 

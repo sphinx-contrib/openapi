@@ -1,7 +1,5 @@
 """Smoke test examples from OAI/OpenAPI-Specification repo."""
 
-from __future__ import unicode_literals
-
 import os
 import glob
 import itertools

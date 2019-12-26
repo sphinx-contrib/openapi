@@ -1,5 +1,3 @@
-from __future__ import unicode_literals
-
 import os
 
 # Unfortunately, Sphinx doesn't support code highlighting for standard
