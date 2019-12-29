@@ -15,15 +15,16 @@ import collections
 import py
 import pytest
 
+from sphinxcontrib.openapi import renderers
 from sphinxcontrib.openapi import openapi20
-from sphinxcontrib.openapi import openapi30
 from sphinxcontrib.openapi import utils
 
 
 class TestOpenApi2HttpDomain(object):
 
     def test_basic(self):
-        text = '\n'.join(openapi20.openapihttpdomain({
+        renderer = renderers.HttpdomainOldRenderer(None, {})
+        text = '\n'.join(renderer.render_restructuredtext_markup({
             'paths': {
                 '/resources/{kind}': {
                     'get': {
@@ -86,7 +87,8 @@ class TestOpenApi2HttpDomain(object):
         ''').lstrip()
 
     def test_groups(self):
-        text = '\n'.join(openapi20.openapihttpdomain({
+        renderer = renderers.HttpdomainOldRenderer(None, {'group': True})
+        text = '\n'.join(renderer.render_restructuredtext_markup({
             'tags': [
                 {'name': 'tags'},
                 {'name': 'pets'},
@@ -180,7 +182,7 @@ class TestOpenApi2HttpDomain(object):
                     },
                 }),
             ]),
-        }, group=True))
+        }))
         assert text == textwrap.dedent('''
             tags
             ====
@@ -253,7 +255,8 @@ class TestOpenApi2HttpDomain(object):
             }
         }
 
-        text = '\n'.join(openapi20.openapihttpdomain(spec))
+        renderer = renderers.HttpdomainOldRenderer(None, {})
+        text = '\n'.join(renderer.render_restructuredtext_markup(spec))
         assert text == textwrap.dedent('''
             .. http:get:: /resource_a
                :synopsis: null
@@ -291,9 +294,10 @@ class TestOpenApi2HttpDomain(object):
             }
         }
 
-        text = '\n'.join(openapi20.openapihttpdomain(spec, paths=[
+        renderer = renderers.HttpdomainOldRenderer(None, {'paths': [
             '/resource_a',
-        ]))
+        ]})
+        text = '\n'.join(renderer.render_restructuredtext_markup(spec))
         assert text == textwrap.dedent('''
             .. http:get:: /resource_a
                :synopsis: null
@@ -323,9 +327,10 @@ class TestOpenApi2HttpDomain(object):
             }
         }
 
-        text = '\n'.join(openapi20.openapihttpdomain(spec, include=[
+        renderer = renderers.HttpdomainOldRenderer(None, {'include': [
             '/resource',
-        ]))
+        ]})
+        text = '\n'.join(renderer.render_restructuredtext_markup(spec))
         assert text == textwrap.dedent('''
             .. http:get:: /resource_a
                :synopsis: null
@@ -363,9 +368,10 @@ class TestOpenApi2HttpDomain(object):
             }
         }
 
-        text = '\n'.join(openapi20.openapihttpdomain(spec, exclude=[
+        renderer = renderers.HttpdomainOldRenderer(None, {'exclude': [
             '/.*_a',
-        ]))
+        ]})
+        text = '\n'.join(renderer.render_restructuredtext_markup(spec))
         assert text == textwrap.dedent('''
             .. http:post:: /resource_b
                :synopsis: null
@@ -407,7 +413,8 @@ class TestOpenApi2HttpDomain(object):
             },
         }
 
-        text = '\n'.join(openapi20.openapihttpdomain(spec))
+        renderer = renderers.HttpdomainOldRenderer(None, {})
+        text = '\n'.join(renderer.render_restructuredtext_markup(spec))
 
         assert text == textwrap.dedent('''
             .. http:get:: /resources/{name}
@@ -454,11 +461,13 @@ class TestOpenApi2HttpDomain(object):
             }
         }
 
+        renderer = renderers.HttpdomainOldRenderer(None, {'paths': [
+            '/resource_a',
+            '/resource_invalid_name',
+        ]})
+
         with pytest.raises(ValueError) as exc:
-            openapi20.openapihttpdomain(spec, paths=[
-                '/resource_a',
-                '/resource_invalid_name',
-            ])
+            '\n'.join(renderer.render_restructuredtext_markup(spec))
 
         assert str(exc.value) == (
             'One or more paths are not defined in the spec: '
@@ -479,7 +488,8 @@ class TestOpenApi2HttpDomain(object):
             }
         }
 
-        text = '\n'.join(openapi20.openapihttpdomain(spec))
+        renderer = renderers.HttpdomainOldRenderer(None, {})
+        text = '\n'.join(renderer.render_restructuredtext_markup(spec))
 
         assert text == textwrap.dedent('''
             .. http:get:: /resource_a
@@ -492,7 +502,8 @@ class TestOpenApi2HttpDomain(object):
         ''').lstrip()
 
     def test_json_in_out(self):
-        text = '\n'.join(openapi20.openapihttpdomain({
+        renderer = renderers.HttpdomainOldRenderer(None, {})
+        text = '\n'.join(renderer.render_restructuredtext_markup({
             'definitions': {
                 'CreateResourceSchema': {
                     'additionalProperties': False,
@@ -603,7 +614,8 @@ class TestOpenApi2HttpDomain(object):
 class TestOpenApi3HttpDomain(object):
 
     def test_basic(self):
-        text = '\n'.join(openapi30.openapihttpdomain({
+        renderer = renderers.HttpdomainOldRenderer(None, {})
+        text = '\n'.join(renderer.render_restructuredtext_markup({
             'openapi': '3.0.0',
             'paths': {
                 '/resources/{kind}': {
@@ -670,7 +682,8 @@ class TestOpenApi3HttpDomain(object):
         ''').lstrip()
 
     def test_groups(self):
-        text = '\n'.join(openapi30.openapihttpdomain({
+        renderer = renderers.HttpdomainOldRenderer(None, {'group': True})
+        text = '\n'.join(renderer.render_restructuredtext_markup({
             'openapi': '3.0.0',
             'tags': [
                 {'name': 'tags'},
@@ -765,7 +778,7 @@ class TestOpenApi3HttpDomain(object):
                     },
                 }),
             ]),
-        }, group=True))
+        }))
         assert text == textwrap.dedent('''
             tags
             ====
@@ -820,7 +833,8 @@ class TestOpenApi3HttpDomain(object):
         ''').lstrip()
 
     def test_required_parameters(self):
-        text = '\n'.join(openapi30.openapihttpdomain({
+        renderer = renderers.HttpdomainOldRenderer(None, {})
+        text = '\n'.join(renderer.render_restructuredtext_markup({
             'openapi': '3.0.0',
             'paths': {
                 '/resources/{kind}': {
@@ -891,7 +905,8 @@ class TestOpenApi3HttpDomain(object):
         ''').lstrip()
 
     def test_example_generation(self):
-        text = '\n'.join(openapi30.openapihttpdomain({
+        renderer = renderers.HttpdomainOldRenderer(None, {'examples': True})
+        text = '\n'.join(renderer.render_restructuredtext_markup({
             'openapi': '3.0.0',
             'paths': collections.OrderedDict([
                 ('/resources/', collections.OrderedDict([
@@ -1045,8 +1060,7 @@ class TestOpenApi3HttpDomain(object):
                     },
                 },
             },
-        },
-        examples=True))
+        }))
 
         assert text == textwrap.dedent('''
             .. http:get:: /resources/
@@ -1204,7 +1218,8 @@ class TestOpenApi3HttpDomain(object):
         ''').lstrip()
 
     def test_get_example_with_explode(self):
-        text = '\n'.join(openapi30.openapihttpdomain({
+        renderer = renderers.HttpdomainOldRenderer(None, {'examples': True})
+        text = '\n'.join(renderer.render_restructuredtext_markup({
             'openapi': '3.0.0',
             'paths': collections.OrderedDict([
                 ('/resources/', collections.OrderedDict([
@@ -1255,7 +1270,7 @@ class TestOpenApi3HttpDomain(object):
                     }),
                 ])),
             ]),
-        }, examples=True))
+        }))
 
         assert text == textwrap.dedent('''
             .. http:get:: /resources/
@@ -1284,7 +1299,8 @@ class TestOpenApi3HttpDomain(object):
         ''').lstrip()
 
     def test_callback(self):
-        text = '\n'.join(openapi30.openapihttpdomain({
+        renderer = renderers.HttpdomainOldRenderer(None, {})
+        text = '\n'.join(renderer.render_restructuredtext_markup({
             'openapi': '3.0.0',
             'paths': {
                 '/resources/{kind}': {
@@ -1448,7 +1464,8 @@ class TestResolveRefs(object):
         }
 
     def test_noproperties(self):
-        text = '\n'.join(openapi30.openapihttpdomain({
+        renderer = renderers.HttpdomainOldRenderer(None, {'examples': True})
+        text = '\n'.join(renderer.render_restructuredtext_markup({
             'openapi': '3.0.0',
             'paths': {
                 '/resources': {
@@ -1481,7 +1498,7 @@ class TestResolveRefs(object):
                 },
             },
 
-        }, examples=True))
+        }))
         assert text == textwrap.dedent('''
             .. http:post:: /resources
                :synopsis: Create Resources

@@ -9,10 +9,8 @@
     :license: BSD, see LICENSE for details.
 """
 
-
 from pkg_resources import get_distribution, DistributionNotFound
-
-from sphinxcontrib.openapi import directive
+from sphinxcontrib.openapi import renderers, directive
 
 try:
     __version__ = get_distribution(__name__).version
@@ -21,8 +19,42 @@ except DistributionNotFound:
     __version__ = None
 
 
-def setup(app):
-    app.setup_extension('sphinxcontrib.httpdomain')
-    app.add_directive('openapi', directive.OpenApi)
+_BUILTIN_RENDERERS = {
+    "httpdomain:old": renderers.HttpdomainOldRenderer,
+}
+_DEFAULT_RENDERER_NAME = "httpdomain:old"
 
-    return {'version': __version__, 'parallel_read_safe': True}
+
+def _register_rendering_directives(app, conf):
+    """Register rendering directives based on effective configuration."""
+
+    renderers_map = dict(_BUILTIN_RENDERERS, **conf.openapi_renderers)
+
+    for renderer_name, renderer_cls in renderers_map.items():
+        app.add_directive(
+            "openapi:%s" % renderer_name,
+            directive.create_directive_from_renderer(renderer_cls),
+        )
+
+    if conf.openapi_default_renderer not in renderers_map:
+        raise ValueError(
+            "invalid 'openapi_default_renderer' value: "
+            "no such renderer: '%s'" % conf.openapi_default_renderer
+        )
+
+    app.add_directive(
+        "openapi",
+        directive.create_directive_from_renderer(
+            renderers_map[conf.openapi_default_renderer]
+        ),
+    )
+
+
+def setup(app):
+    app.add_config_value("openapi_default_renderer", _DEFAULT_RENDERER_NAME, "html")
+    app.add_config_value("openapi_renderers", {}, "html")
+
+    app.setup_extension("sphinxcontrib.httpdomain")
+    app.connect("config-inited", _register_rendering_directives)
+
+    return {"version": __version__, "parallel_read_safe": True}
