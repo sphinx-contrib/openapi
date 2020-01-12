@@ -682,7 +682,15 @@ class TestOpenApi3HttpDomain(object):
         ''').lstrip()
 
     def test_rfc7807(self):
-        text = '\n'.join(openapi30.openapihttpdomain({
+        # Fix order to have a reliable test
+        pb_example = collections.OrderedDict()
+        pb_example["type"] = "string"
+        pb_example["title"] = "string"
+        pb_example["status"] = 1
+        pb_example["detail"] = "string"
+        pb_example["instance"] = "string"
+        renderer = renderers.HttpdomainOldRenderer(None, {'examples': True})
+        text = '\n'.join(renderer.render_restructuredtext_markup({
             'openapi': '3.0.0',
             'paths': {
                 '/problem': {
@@ -692,13 +700,7 @@ class TestOpenApi3HttpDomain(object):
                         'requestBody': {
                             'content': {
                                 'application/problem+json':  {
-                                    'example': {
-                                        "type": "string",
-                                        "title": "string",
-                                        "status": 1,
-                                        "detail": "string",
-                                        "instance": "string",
-                                        }
+                                    'example': pb_example
                                 }
                             }
                         },
@@ -715,7 +717,7 @@ class TestOpenApi3HttpDomain(object):
                     },
                 },
             },
-        }, examples=True))
+        }))
         assert text == textwrap.dedent('''
             .. http:post:: /problem
                :synopsis: Problem
