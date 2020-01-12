@@ -1445,9 +1445,9 @@ class TestOpenApi3HttpDomain(object):
 
 
                **Example request:**
-          
+
                .. sourcecode:: http
-          
+
                   GET /resources HTTP/1.1
                   Host: example.com
 
@@ -1510,9 +1510,9 @@ class TestOpenApi3HttpDomain(object):
 
 
                **Example request:**
-          
+
                .. sourcecode:: http
-          
+
                   GET /resources HTTP/1.1
                   Host: example.com
 
