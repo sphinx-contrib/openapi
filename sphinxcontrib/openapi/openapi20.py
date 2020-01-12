@@ -9,8 +9,7 @@
     :license: BSD, see LICENSE for details.
 """
 
-from __future__ import unicode_literals
-
+import collections
 import itertools
 import re
 
@@ -166,6 +165,12 @@ def is_2xx_response(status):
     return False
 
 
+def _header(title):
+    yield title
+    yield '=' * len(title)
+    yield ''
+
+
 def openapihttpdomain(spec, **options):
     if 'examples' in options:
         raise ValueError(
@@ -219,13 +224,36 @@ def openapihttpdomain(spec, **options):
                     _paths.append(path)
         paths = _paths
 
-    for endpoint in paths:
-        for method, properties in spec['paths'][endpoint].items():
-            generators.append(_httpresource(
-                endpoint,
-                method,
-                properties,
-                utils.get_text_converter(options),
-                ))
+    if 'group' in options:
+        groups = collections.OrderedDict(
+            [(x['name'], []) for x in spec.get('tags', {})]
+            )
+
+        for endpoint in paths:
+            for method, properties in spec['paths'][endpoint].items():
+                key = properties.get('tags', [''])[0]
+                groups.setdefault(key, []).append(_httpresource(
+                    endpoint,
+                    method,
+                    properties,
+                    utils.get_text_converter(options),
+                    ))
+
+        for key in groups.keys():
+            if key:
+                generators.append(_header(key))
+            else:
+                generators.append(_header('default'))
+
+            generators.extend(groups[key])
+    else:
+        for endpoint in paths:
+            for method, properties in spec['paths'][endpoint].items():
+                generators.append(_httpresource(
+                    endpoint,
+                    method,
+                    properties,
+                    utils.get_text_converter(options),
+                    ))
 
     return iter(itertools.chain(*generators))

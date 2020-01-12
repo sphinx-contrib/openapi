@@ -8,8 +8,6 @@
     :license: BSD, see LICENSE for details.
 """
 
-from __future__ import unicode_literals
-
 import os
 import textwrap
 import collections
@@ -17,15 +15,16 @@ import collections
 import py
 import pytest
 
+from sphinxcontrib.openapi import renderers
 from sphinxcontrib.openapi import openapi20
-from sphinxcontrib.openapi import openapi30
 from sphinxcontrib.openapi import utils
 
 
 class TestOpenApi2HttpDomain(object):
 
     def test_basic(self):
-        text = '\n'.join(openapi20.openapihttpdomain({
+        renderer = renderers.HttpdomainOldRenderer(None, {})
+        text = '\n'.join(renderer.render_restructuredtext_markup({
             'paths': {
                 '/resources/{kind}': {
                     'get': {
@@ -87,6 +86,156 @@ class TestOpenApi2HttpDomain(object):
                   Resource ETag.
         ''').lstrip()
 
+    def test_groups(self):
+        renderer = renderers.HttpdomainOldRenderer(None, {'group': True})
+        text = '\n'.join(renderer.render_restructuredtext_markup({
+            'tags': [
+                {'name': 'tags'},
+                {'name': 'pets'},
+            ],
+            'paths': collections.OrderedDict([
+                ('/', {
+                    'get': {
+                        'summary': 'Index',
+                        'description': '~ some useful description ~',
+                        'responses': {
+                            '200': {
+                                'description': 'Index',
+                                'content': {
+                                    'application/json': {
+                                        'pets': 'https://example.com/api/pets',
+                                        'tags': 'https://example.com/api/tags',
+                                    }
+                                }
+                            },
+                        },
+                    },
+                }),
+                ('/pets', {
+                    'get': {
+                        'summary': 'List Pets',
+                        'description': '~ some useful description ~',
+                        'responses': {
+                            '200': {
+                                'description': 'Pets',
+                                'content': {
+                                    'application/json': [
+                                        {
+                                            'example': '{"foo": "bar"}'
+                                        },
+                                    ],
+                                },
+                            },
+                        },
+                        'tags': [
+                            'pets',
+                        ],
+                    },
+                }),
+                ('/pets/{name}', {
+                    'get': {
+                        'summary': 'Show Pet',
+                        'description': '~ some useful description ~',
+                        'parameters': [
+                            {
+                                'name': 'name',
+                                'in': 'path',
+                                'type': 'string',
+                                'description': 'Name of pet.',
+                            },
+                        ],
+                        'responses': {
+                            '200': {
+                                'description': 'A Pet',
+                                'content': {
+                                    'application/json': {
+                                        'example': '{"foo": "bar"}'
+                                    }
+                                }
+                            },
+                        },
+                        'tags': [
+                            'pets',
+                        ],
+                    },
+                }),
+                ('/tags', {
+                    'get': {
+                        'summary': 'List Tags',
+                        'description': '~ some useful description ~',
+                        'responses': {
+                            '200': {
+                                'description': 'Tags',
+                                'content': {
+                                    'application/json': [
+                                        {
+                                            'example': '{"foo": "bar"}'
+                                        },
+                                    ],
+                                }
+                            },
+                        },
+                        'tags': [
+                            'tags',
+                            'pets',
+                        ],
+                    },
+                }),
+            ]),
+        }))
+        assert text == textwrap.dedent('''
+            tags
+            ====
+
+            .. http:get:: /tags
+               :synopsis: List Tags
+
+               **List Tags**
+
+               ~ some useful description ~
+
+               :status 200:
+                  Tags
+
+            pets
+            ====
+
+            .. http:get:: /pets
+               :synopsis: List Pets
+
+               **List Pets**
+
+               ~ some useful description ~
+
+               :status 200:
+                  Pets
+
+            .. http:get:: /pets/{name}
+               :synopsis: Show Pet
+
+               **Show Pet**
+
+               ~ some useful description ~
+
+               :param string name:
+                  Name of pet.
+               :status 200:
+                  A Pet
+
+            default
+            =======
+
+            .. http:get:: /
+               :synopsis: Index
+
+               **Index**
+
+               ~ some useful description ~
+
+               :status 200:
+                  Index
+        ''').lstrip()
+
     def test_two_resources(self):
         spec = collections.defaultdict(collections.OrderedDict)
         spec['paths']['/resource_a'] = {
@@ -106,7 +255,8 @@ class TestOpenApi2HttpDomain(object):
             }
         }
 
-        text = '\n'.join(openapi20.openapihttpdomain(spec))
+        renderer = renderers.HttpdomainOldRenderer(None, {})
+        text = '\n'.join(renderer.render_restructuredtext_markup(spec))
         assert text == textwrap.dedent('''
             .. http:get:: /resource_a
                :synopsis: null
@@ -144,9 +294,10 @@ class TestOpenApi2HttpDomain(object):
             }
         }
 
-        text = '\n'.join(openapi20.openapihttpdomain(spec, paths=[
+        renderer = renderers.HttpdomainOldRenderer(None, {'paths': [
             '/resource_a',
-        ]))
+        ]})
+        text = '\n'.join(renderer.render_restructuredtext_markup(spec))
         assert text == textwrap.dedent('''
             .. http:get:: /resource_a
                :synopsis: null
@@ -176,9 +327,10 @@ class TestOpenApi2HttpDomain(object):
             }
         }
 
-        text = '\n'.join(openapi20.openapihttpdomain(spec, include=[
+        renderer = renderers.HttpdomainOldRenderer(None, {'include': [
             '/resource',
-        ]))
+        ]})
+        text = '\n'.join(renderer.render_restructuredtext_markup(spec))
         assert text == textwrap.dedent('''
             .. http:get:: /resource_a
                :synopsis: null
@@ -216,9 +368,10 @@ class TestOpenApi2HttpDomain(object):
             }
         }
 
-        text = '\n'.join(openapi20.openapihttpdomain(spec, exclude=[
+        renderer = renderers.HttpdomainOldRenderer(None, {'exclude': [
             '/.*_a',
-        ]))
+        ]})
+        text = '\n'.join(renderer.render_restructuredtext_markup(spec))
         assert text == textwrap.dedent('''
             .. http:post:: /resource_b
                :synopsis: null
@@ -260,7 +413,8 @@ class TestOpenApi2HttpDomain(object):
             },
         }
 
-        text = '\n'.join(openapi20.openapihttpdomain(spec))
+        renderer = renderers.HttpdomainOldRenderer(None, {})
+        text = '\n'.join(renderer.render_restructuredtext_markup(spec))
 
         assert text == textwrap.dedent('''
             .. http:get:: /resources/{name}
@@ -307,11 +461,13 @@ class TestOpenApi2HttpDomain(object):
             }
         }
 
+        renderer = renderers.HttpdomainOldRenderer(None, {'paths': [
+            '/resource_a',
+            '/resource_invalid_name',
+        ]})
+
         with pytest.raises(ValueError) as exc:
-            openapi20.openapihttpdomain(spec, paths=[
-                '/resource_a',
-                '/resource_invalid_name',
-            ])
+            '\n'.join(renderer.render_restructuredtext_markup(spec))
 
         assert str(exc.value) == (
             'One or more paths are not defined in the spec: '
@@ -332,7 +488,8 @@ class TestOpenApi2HttpDomain(object):
             }
         }
 
-        text = '\n'.join(openapi20.openapihttpdomain(spec))
+        renderer = renderers.HttpdomainOldRenderer(None, {})
+        text = '\n'.join(renderer.render_restructuredtext_markup(spec))
 
         assert text == textwrap.dedent('''
             .. http:get:: /resource_a
@@ -345,7 +502,8 @@ class TestOpenApi2HttpDomain(object):
         ''').lstrip()
 
     def test_json_in_out(self):
-        text = '\n'.join(openapi20.openapihttpdomain({
+        renderer = renderers.HttpdomainOldRenderer(None, {})
+        text = '\n'.join(renderer.render_restructuredtext_markup({
             'definitions': {
                 'CreateResourceSchema': {
                     'additionalProperties': False,
@@ -456,7 +614,8 @@ class TestOpenApi2HttpDomain(object):
 class TestOpenApi3HttpDomain(object):
 
     def test_basic(self):
-        text = '\n'.join(openapi30.openapihttpdomain({
+        renderer = renderers.HttpdomainOldRenderer(None, {})
+        text = '\n'.join(renderer.render_restructuredtext_markup({
             'openapi': '3.0.0',
             'paths': {
                 '/resources/{kind}': {
@@ -597,8 +756,13 @@ class TestOpenApi3HttpDomain(object):
         ''').lstrip()
 
     def test_groups(self):
-        text = '\n'.join(openapi30.openapihttpdomain({
+        renderer = renderers.HttpdomainOldRenderer(None, {'group': True})
+        text = '\n'.join(renderer.render_restructuredtext_markup({
             'openapi': '3.0.0',
+            'tags': [
+                {'name': 'tags'},
+                {'name': 'pets'},
+            ],
             'paths': collections.OrderedDict([
                 ('/', {
                     'get': {
@@ -688,20 +852,20 @@ class TestOpenApi3HttpDomain(object):
                     },
                 }),
             ]),
-        }, group=True))
+        }))
         assert text == textwrap.dedent('''
-            default
-            =======
+            tags
+            ====
 
-            .. http:get:: /
-               :synopsis: Index
+            .. http:get:: /tags
+               :synopsis: List Tags
 
-               **Index**
+               **List Tags**
 
                ~ some useful description ~
 
                :status 200:
-                  Index
+                  Tags
 
             pets
             ====
@@ -728,22 +892,23 @@ class TestOpenApi3HttpDomain(object):
                :status 200:
                   A Pet
 
-            tags
-            ====
+            default
+            =======
 
-            .. http:get:: /tags
-               :synopsis: List Tags
+            .. http:get:: /
+               :synopsis: Index
 
-               **List Tags**
+               **Index**
 
                ~ some useful description ~
 
                :status 200:
-                  Tags
+                  Index
         ''').lstrip()
 
     def test_required_parameters(self):
-        text = '\n'.join(openapi30.openapihttpdomain({
+        renderer = renderers.HttpdomainOldRenderer(None, {})
+        text = '\n'.join(renderer.render_restructuredtext_markup({
             'openapi': '3.0.0',
             'paths': {
                 '/resources/{kind}': {
@@ -814,7 +979,8 @@ class TestOpenApi3HttpDomain(object):
         ''').lstrip()
 
     def test_example_generation(self):
-        text = '\n'.join(openapi30.openapihttpdomain({
+        renderer = renderers.HttpdomainOldRenderer(None, {'examples': True})
+        text = '\n'.join(renderer.render_restructuredtext_markup({
             'openapi': '3.0.0',
             'paths': collections.OrderedDict([
                 ('/resources/', collections.OrderedDict([
@@ -831,6 +997,7 @@ class TestOpenApi3HttpDomain(object):
                             {
                                 'name': 'limit',
                                 'in': 'query',
+                                'required': True,
                                 'schema': {'type': 'integer'},
                                 'description': 'Show up to `limit` entries.',
                             },
@@ -967,8 +1134,7 @@ class TestOpenApi3HttpDomain(object):
                     },
                 },
             },
-        },
-        examples=True))
+        }))
 
         assert text == textwrap.dedent('''
             .. http:get:: /resources/
@@ -982,6 +1148,15 @@ class TestOpenApi3HttpDomain(object):
                   Kind of resource to list.
                :query integer limit:
                   Show up to `limit` entries.
+                  (Required)
+
+               **Example request:**
+
+               .. sourcecode:: http
+
+                  GET /resources/?limit=1 HTTP/1.1
+                  Host: example.com
+
                :status 200:
                   An array of resources.
 
@@ -1050,6 +1225,14 @@ class TestOpenApi3HttpDomain(object):
 
                :param string kind:
                   Kind of resource to list.
+
+               **Example request:**
+
+               .. sourcecode:: http
+
+                  GET /resources/{kind} HTTP/1.1
+                  Host: example.com
+
                :status 200:
                   The created resource.
 
@@ -1108,8 +1291,90 @@ class TestOpenApi3HttpDomain(object):
 
         ''').lstrip()
 
+    def test_get_example_with_explode(self):
+        renderer = renderers.HttpdomainOldRenderer(None, {'examples': True})
+        text = '\n'.join(renderer.render_restructuredtext_markup({
+            'openapi': '3.0.0',
+            'paths': collections.OrderedDict([
+                ('/resources/', collections.OrderedDict([
+                    ('get', {
+                        'summary': 'List Resources',
+                        'description': '~ some useful description ~',
+                        'parameters': [
+                            {
+                                'name': 'params',
+                                'in': 'query',
+                                'required': True,
+                                'schema': {
+                                    'type': 'array',
+                                    'items': {
+                                        'type': 'string'
+                                    }
+                                },
+                                'style': 'form',
+                                'explode': True,
+                                'example': [
+                                    'p1',
+                                    'p2',
+                                ],
+                                'description': 'List with explode set to True'
+                            },
+                            {
+                                'name': 'values',
+                                'in': 'query',
+                                'required': True,
+                                'schema': {
+                                    'type': 'object',
+                                    'additionalProperties': True
+                                },
+                                'style': 'form',
+                                'explode': True,
+                                'example': collections.OrderedDict([
+                                    ('v1', 'V1'),
+                                    ('v2', 'V2'),
+                                ]),
+                                'description': 'Dict with explode set to True'
+                            },
+                        ],
+                        'responses': {
+                            '200': {
+                                'description': 'OK'
+                            },
+                        },
+                    }),
+                ])),
+            ]),
+        }))
+
+        assert text == textwrap.dedent('''
+            .. http:get:: /resources/
+               :synopsis: List Resources
+
+               **List Resources**
+
+               ~ some useful description ~
+
+               :query array params:
+                  List with explode set to True
+                  (Required)
+               :query object values:
+                  Dict with explode set to True
+                  (Required)
+
+               **Example request:**
+
+               .. sourcecode:: http
+
+                  GET /resources/?params=p1&params=p2&v1=V1&v2=V2 HTTP/1.1
+                  Host: example.com
+
+               :status 200:
+                  OK
+        ''').lstrip()
+
     def test_callback(self):
-        text = '\n'.join(openapi30.openapihttpdomain({
+        renderer = renderers.HttpdomainOldRenderer(None, {})
+        text = '\n'.join(renderer.render_restructuredtext_markup({
             'openapi': '3.0.0',
             'paths': {
                 '/resources/{kind}': {
@@ -1273,7 +1538,8 @@ class TestResolveRefs(object):
         }
 
     def test_noproperties(self):
-        text = '\n'.join(openapi30.openapihttpdomain({
+        renderer = renderers.HttpdomainOldRenderer(None, {'examples': True})
+        text = '\n'.join(renderer.render_restructuredtext_markup({
             'openapi': '3.0.0',
             'paths': {
                 '/resources': {
@@ -1306,7 +1572,7 @@ class TestResolveRefs(object):
                 },
             },
 
-        }, examples=True))
+        }))
         assert text == textwrap.dedent('''
             .. http:post:: /resources
                :synopsis: Create Resources

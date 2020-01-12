@@ -8,8 +8,6 @@
     :license: BSD, see LICENSE for details.
 """
 
-from __future__ import unicode_literals
-
 import collections
 
 import jsonschema

@@ -8,24 +8,19 @@
     :license: BSD, see LICENSE for details.
 """
 
-from __future__ import unicode_literals
-
 import copy
 import collections
 from datetime import datetime
 import itertools
 import json
 import re
+from urllib import parse
+from http.client import responses as http_status_codes
 
-import six
 from sphinx.util import logging
 
 from sphinxcontrib.openapi import utils
 
-try:
-    from httplib import responses as http_status_codes  # python2
-except ImportError:
-    from http.client import responses as http_status_codes  # python3
 
 LOG = logging.getLogger(__name__)
 
@@ -166,6 +161,11 @@ def _example(media_type_objects, method=None, endpoint=None, status=None,
         except (ValueError, KeyError):
             status_text = '-'
 
+    # Provide request samples for GET requests
+    if method == 'GET':
+        media_type_objects[''] = {
+            'examples': {'Example request': {'value': ''}}}
+
     for content_type, content in media_type_objects.items():
         examples = content.get('examples')
         example = content.get('example')
@@ -189,7 +189,7 @@ def _example(media_type_objects, method=None, endpoint=None, status=None,
                 }
 
         for example in examples.values():
-            if not isinstance(example['value'], six.string_types):
+            if not isinstance(example['value'], str):
                 example['value'] = json.dumps(
                     example['value'], indent=4, separators=(',', ': '))
 
@@ -212,8 +212,9 @@ def _example(media_type_objects, method=None, endpoint=None, status=None,
                     .format(**locals())
                 yield '{extra_indent}{indent}Host: example.com' \
                     .format(**locals())
-                yield '{extra_indent}{indent}Content-Type: {content_type}' \
-                    .format(**locals())
+                if content_type:
+                    yield '{extra_indent}{indent}Content-Type: {content_type}'\
+                        .format(**locals())
 
             # Print http response example
             else:
@@ -225,7 +226,8 @@ def _example(media_type_objects, method=None, endpoint=None, status=None,
             yield ''
             for example_line in example['value'].splitlines():
                 yield '{extra_indent}{indent}{example_line}'.format(**locals())
-            yield ''
+            if example['value'].splitlines():
+                yield ''
 
 
 def _httpresource(endpoint, method, properties, convert, render_examples,
@@ -233,6 +235,7 @@ def _httpresource(endpoint, method, properties, convert, render_examples,
     # https://github.com/OAI/OpenAPI-Specification/blob/3.0.2/versions/3.0.0.md#operation-object
     parameters = properties.get('parameters', [])
     responses = properties['responses']
+    query_param_examples = []
     indent = '   '
 
     yield '.. http:{0}:: {1}'.format(method, endpoint)
@@ -267,6 +270,16 @@ def _httpresource(endpoint, method, properties, convert, render_examples,
             yield '{indent}{indent}{line}'.format(**locals())
         if param.get('required', False):
             yield '{indent}{indent}(Required)'.format(**locals())
+            example = _parse_schema(param['schema'], method)
+            example = param.get('example', example)
+            if param.get('explode', False) and isinstance(example, list):
+                for v in example:
+                    query_param_examples.append((param['name'], v))
+            elif param.get('explode', False) and isinstance(example, dict):
+                for k, v in example.items():
+                    query_param_examples.append((k, v))
+            else:
+                query_param_examples.append((param['name'], example))
 
     # print request content
     if render_request:
@@ -286,9 +299,18 @@ def _httpresource(endpoint, method, properties, convert, render_examples,
 
     # print request example
     if render_examples:
+        endpoint_examples = endpoint
+        if query_param_examples:
+            endpoint_examples = endpoint + "?" + \
+                parse.urlencode(query_param_examples)
+
+        # print request example
         request_content = properties.get('requestBody', {}).get('content', {})
         for line in _example(
-                request_content, method, endpoint=endpoint, nb_indent=1):
+                request_content,
+                method,
+                endpoint=endpoint_examples,
+                nb_indent=1):
             yield line
 
     # print response status codes
@@ -399,12 +421,14 @@ def openapihttpdomain(spec, **options):
 
     # https://github.com/OAI/OpenAPI-Specification/blob/3.0.2/versions/3.0.0.md#paths-object
     if 'group' in options:
-        groups = collections.defaultdict(list)
+        groups = collections.OrderedDict(
+            [(x['name'], []) for x in spec.get('tags', {})]
+            )
 
         for endpoint in paths:
             for method, properties in spec['paths'][endpoint].items():
                 key = properties.get('tags', [''])[0]
-                groups[key].append(_httpresource(
+                groups.setdefault(key, []).append(_httpresource(
                     endpoint,
                     method,
                     properties,
@@ -412,7 +436,7 @@ def openapihttpdomain(spec, **options):
                     render_examples='examples' in options,
                     render_request=render_request))
 
-        for key in sorted(groups.keys()):
+        for key in groups.keys():
             if key:
                 generators.append(_header(key))
             else:
