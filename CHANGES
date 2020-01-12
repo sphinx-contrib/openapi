@@ -5,11 +5,28 @@
 Here you can see the list of changes between each 'sphinxcontrib-openapi'
 release.
 
-0.3.3 (unreleased)
+0.6.0 (unreleased)
+==================
+
+- Drop Python 2.7 support because it reached its end-of-life.
+
+0.5.0 (2019-09-04)
+==================
+
+- Fix example generation when a byte string is used in a schema.
+- Support CommonMark in spec where applied. ``m2r`` package is required.
+- Show "required" marker near required query parameters.
+- Show request body properties for OpenAPI v2 specs.
+- CLI command to render OpenAPI spec as reStructuredText is added.
+
+0.4.0 (2019-01-17)
 ==================
 
 - Add OpenAPI 3.x support.
 - Drop Python 3.3 support because it reached its end-of-life.
+- Add Python 3.7 support.
+- Add sample request/response generation from schema for OpenAPI v3.
+- Add grouping by OpenAPI tags.
 
 0.3.2 (2017-10-05)
 ==================
@@ -34,7 +51,7 @@ release.
 0.2.1 (2017-01-10)
 ==================
 
-- Resolve relative JSON references. 
+- Resolve relative JSON references.
 
 
 0.2.0 (2016-11-16)

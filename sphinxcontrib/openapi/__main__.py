@@ -1,9 +1,7 @@
-from __future__ import unicode_literals
-
 import argparse
 import logging
 
-from sphinxcontrib.openapi import directive
+from sphinxcontrib.openapi import directive, renderers
 
 
 def main():
@@ -60,13 +58,12 @@ def main():
         openapi_options['examples'] = True
     if options.group:
         openapi_options['group'] = True
-    openapihttpdomain, spec = \
-        directive.get_openapihttpdomain(
-            openapi_options,
-            options.input,
-            options.encoding)
 
-    for line in openapihttpdomain(spec, **openapi_options):
+    openapi_options.setdefault('uri', 'file://%s' % options.input)
+    spec = directive._get_spec(options.input, options.encoding)
+    renderer = renderers.HttpdomainOldRenderer(None, openapi_options)
+
+    for line in renderer.render_restructuredtext_markup(spec):
         options.output.write(line+'\n')
         logging.debug(line)
 

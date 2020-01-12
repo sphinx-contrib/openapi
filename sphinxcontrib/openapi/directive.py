@@ -8,20 +8,12 @@
     :license: BSD, see LICENSE for details.
 """
 
-from __future__ import unicode_literals
-
 import collections
-import io
+import functools
 
-from docutils import nodes
-from docutils.parsers.rst import Directive, directives
-from docutils.statemachine import ViewList
+from docutils.parsers.rst import directives
+from sphinx.util.docutils import SphinxDirective
 import yaml
-
-from sphinx.util.nodes import nested_parse_with_titles
-
-from sphinxcontrib.openapi import openapi20
-from sphinxcontrib.openapi import openapi30
 
 
 # Dictionaries do not guarantee to preserve the keys order so when we load
@@ -39,67 +31,44 @@ _YamlOrderedLoader.add_constructor(
 )
 
 
-def get_openapihttpdomain(options, abspath, encoding):
-    with io.open(abspath, 'rt', encoding=encoding) as stream:
-        spec = yaml.load(stream, _YamlOrderedLoader)
-
-    # URI parameter is crucial for resolving relative references. So
-    # we need to set this option properly as it's used later down the
-    # stack.
-    options.setdefault('uri', 'file://%s' % abspath)
-
-    # We support both OpenAPI 2.0 (f.k.a. Swagger) and OpenAPI 3.0.0, so
-    # determine which version we are parsing here.
-    spec_version = spec.get('openapi', spec.get('swagger', '2.0'))
-    if spec_version.startswith('2.'):
-        openapihttpdomain = openapi20.openapihttpdomain
-    elif spec_version.startswith('3.'):
-        openapihttpdomain = openapi30.openapihttpdomain
-    else:
-        raise ValueError('Unsupported OpenAPI version (%s)' % spec_version)
-    return openapihttpdomain, spec
+# Locally cache spec to speedup processing of same spec file in multiple
+# openapi directives
+@functools.lru_cache()
+def _get_spec(abspath, encoding):
+    with open(abspath, 'rt', encoding=encoding) as stream:
+        return yaml.load(stream, _YamlOrderedLoader)
 
 
-class OpenApi(Directive):
+def create_directive_from_renderer(renderer_cls):
+    """Create rendering directive from a renderer class."""
 
-    required_arguments = 1                  # path to openapi spec
-    final_argument_whitespace = True        # path may contain whitespaces
-    option_spec = {
-        'encoding': directives.encoding,    # useful for non-ascii cases :)
-        'paths': lambda s: s.split(),       # endpoints to be rendered
-        'examples': directives.flag,        # render examples when passed
-        'group': directives.flag,           # group paths by tag when passed
-        'format': str,                      # "rst" (default) or "markdown"
-    }
+    class _RenderingDirective(SphinxDirective):
+        required_arguments = 1                  # path to openapi spec
+        final_argument_whitespace = True        # path may contain whitespaces
+        option_spec = dict(
+            {
+                'encoding': directives.encoding,    # useful for non-ascii cases :)
+            },
+            **renderer_cls.option_spec
+        )
 
-    def run(self):
-        env = self.state.document.settings.env
-        relpath, abspath = env.relfn2path(directives.path(self.arguments[0]))
+        def run(self):
+            relpath, abspath = self.env.relfn2path(directives.path(self.arguments[0]))
 
-        # Add OpenAPI spec as a dependency to the current document. That means
-        # the document will be rebuilt if the spec is changed.
-        env.note_dependency(relpath)
+            # URI parameter is crucial for resolving relative references. So we
+            # need to set this option properly as it's used later down the
+            # stack.
+            self.options.setdefault('uri', 'file://%s' % abspath)
 
-        # Read the spec using encoding passed to the directive or fallback to
-        # the one specified in Sphinx's config.
-        encoding = self.options.get('encoding', env.config.source_encoding)
+            # Add a given OpenAPI spec as a dependency of the referring
+            # reStructuredText document, so the document is rebuilt each time
+            # the spec is changed.
+            self.env.note_dependency(relpath)
 
-        # Open the specification file
-        openapihttpdomain, spec = \
-            get_openapihttpdomain(self.options, abspath, encoding)
+            # Read the spec using encoding passed to the directive or fallback to
+            # the one specified in Sphinx's config.
+            encoding = self.options.get('encoding', self.config.source_encoding)
+            spec = _get_spec(abspath, encoding)
+            return renderer_cls(self.state, self.options).render(spec)
 
-        # reStructuredText DOM manipulation is pretty tricky task. It requires
-        # passing dozen arguments which is not easy without well-documented
-        # internals. So the idea here is to represent OpenAPI spec as
-        # reStructuredText in-memory text and parse it in order to produce a
-        # real DOM.
-        viewlist = ViewList()
-        for line in openapihttpdomain(spec, **self.options):
-            viewlist.append(line, '<openapi>')
-
-        # Parse reStructuredText contained in `viewlist` and return produced
-        # DOM nodes.
-        node = nodes.section()
-        node.document = self.state.document
-        nested_parse_with_titles(self.state, viewlist, node)
-        return node.children
+    return _RenderingDirective

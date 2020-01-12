@@ -1,7 +1,5 @@
 """Smoke test examples from OAI/OpenAPI-Specification repo."""
 
-from __future__ import unicode_literals
-
 import os
 import glob
 import itertools
@@ -36,6 +34,7 @@ def test_openapi2_success(tmpdir, run_sphinx, spec):
 
 @pytest.mark.parametrize('group_paths', [False, True])
 @pytest.mark.parametrize('render_examples', [False, True])
+@pytest.mark.parametrize('render_request', [False, True])
 @pytest.mark.parametrize('spec', glob.glob(
     os.path.join(
         os.path.abspath(os.path.dirname(__file__)),
@@ -45,9 +44,10 @@ def test_openapi2_success(tmpdir, run_sphinx, spec):
         '*.yaml')
 ))
 def test_openapi3_success(tmpdir, run_sphinx, spec, render_examples,
-                          group_paths):
+                          render_request, group_paths):
     py.path.local(spec).copy(tmpdir.join('src', 'test-spec.yml'))
     run_sphinx('test-spec.yml', options={
         'examples': render_examples,
+        'request': render_request,
         'group': group_paths,
     })

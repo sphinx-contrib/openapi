@@ -9,7 +9,7 @@ reinvent the wheel.
 
 .. code:: bash
 
-   pip install sphinxcontrib-openapi
+   $ python3 -m pip install sphinxcontrib-openapi
 
 
 Usage
@@ -35,8 +35,8 @@ Links
 =====
 
 * Documentation: https://sphinxcontrib-openapi.readthedocs.org/
-* Source: https://github.com/ikalnytskyi/sphinxcontrib-openapi
-* Bugs: https://github.com/ikalnytskyi/sphinxcontrib-openapi/issues
+* Source: https://github.com/sphinx-contrib/openapi
+* Bugs: https://github.com/sphinx-contrib/openapi/issues
 
 
 .. _Sphinx: https://www.sphinx-doc.org/en/master/
