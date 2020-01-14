@@ -26,6 +26,7 @@ class HttpdomainOldRenderer(abc.RestructuredTextRenderer):
         "group": directives.flag,
         # Markup format to render OpenAPI descriptions.
         "format": str,
+        "content_type": str,
     }
 
     def __init__(self, state, options):
