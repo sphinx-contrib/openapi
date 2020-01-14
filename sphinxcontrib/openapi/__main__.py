@@ -32,6 +32,12 @@ def main():
         dest='examples',
         help="Include examples")
     parser.add_argument(
+        "-t", "--content_type",
+        action='store',
+        dest='content_type',
+        default="application/json",
+        help="Expected Content-Type of requests and responses")
+    parser.add_argument(
         "-g", "--group",
         action='store_true',
         dest='group',
@@ -54,6 +60,8 @@ def main():
     openapi_options = {}
     if options.paths:
         openapi_options['paths'] = options.paths
+    if options.content_type:
+        openapi_options['content_type'] = options.content_type
     if options.examples:
         openapi_options['examples'] = True
     if options.group:
