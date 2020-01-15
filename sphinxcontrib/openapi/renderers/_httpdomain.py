@@ -9,7 +9,26 @@ import m2r
 import requests
 import sphinx.util.logging as logging
 
-from . import abc
+from sphinxcontrib.openapi.renderers import abc
+
+
+_DEFAULT_EXAMPLES = {
+    "string": "string",
+    "integer": 1,
+    "number": 1.0,
+    "boolean": True,
+    "array": [],
+}
+
+
+_DEFAULT_STRING_EXAMPLES = {
+    "date": "2020-01-01",
+    "date-time": "2020-01-01T01:01:01Z",
+    "password": "********",
+    "byte": "QG1pY2hhZWxncmFoYW1ldmFucw==",
+    "ipv4": "127.0.0.1",
+    "ipv6": "::1",
+}
 
 
 logger = logging.getLogger(__name__)
@@ -36,7 +55,7 @@ def _iterexamples(media_type, example_preference, examples_from_schemas):
     for content_type, media_type in media_type:
         # Look for a example in a bunch of possible places. According to
         # OpenAPI v3 spec, `examples` and `example` keys are mutually
-        # exlusive, so there's no much difference between their
+        # exclusive, so there's no much difference between their
         # inspection order, while both must take precedence over a
         # schema example.
         if media_type.get("examples", {}):
@@ -77,6 +96,7 @@ def _iterexamples(media_type, example_preference, examples_from_schemas):
             example = {"value": media_type["schema"]["example"]}
         elif "schema" in media_type and examples_from_schemas:
             # do some dark magic to convert schema to example
+            example = {"value": _generate_example_from_schema(media_type["schema"])}
             pass
         else:
             continue
@@ -104,7 +124,7 @@ class HttpdomainRenderer(abc.RestructuredTextRenderer):
         ]
         self._request_parameters_order = ["header", "path", "query", "cookie"]
         self._response_example_preference = options.get("response-example-preference")
-        self._generate_example_from_schema = False
+        self._generate_example_from_schema = options.get("generate-example-from-schema")
 
     def render_restructuredtext_markup(self, spec):
         """Spec render entry point."""
@@ -315,3 +335,53 @@ class HttpdomainRenderer(abc.RestructuredTextRenderer):
             yield f"   Content-Type: {content_type}"
             yield f""
             yield from indented(example.splitlines())
+
+
+def _generate_example_from_schema(schema):
+    """
+    Generates an example request/response body from the provided schema.
+
+    >>> schema = {
+    ...     "type": "object",
+    ...     "required": ["id", "name"],
+    ...     "properties": {
+    ...         "id": {
+    ...             "type": "integer",
+    ...             "format": "int64"
+    ...         },
+    ...         "name": {
+    ...             "type": "string",
+    ...             "example": "John Smith"
+    ...         },
+    ...         "tag": {
+    ...             "type": "string"
+    ...         }
+    ...     }
+    ... }
+    >>> example = _generate_example_from_schema(schema)
+    >>> assert example == {
+    ...     "id": 1,
+    ...     "name": "John Smith",
+    ...     "tag": "string"
+    ... }
+    """
+    # If an example was provided then we use that
+    if "example" in schema:
+        return schema["example"]
+
+    # Otherwise we use a default value based on the type
+    if schema["type"] == "object" or "properties" in schema:
+        example = {}
+        for prop, prop_schema in schema.get("properties", {}).items():
+            example[prop] = _generate_example_from_schema(prop_schema)
+        return example
+    elif schema["type"] == "array":
+        prop_schema = schema["items"]
+        example = _generate_example_from_schema(prop_schema)
+        return [example, example]
+    elif schema["type"] == "string" and "format" in schema:
+        return _DEFAULT_STRING_EXAMPLES.get(
+            schema["format"], _DEFAULT_EXAMPLES["string"]
+        )
+    else:
+        return _DEFAULT_EXAMPLES[schema["type"]]

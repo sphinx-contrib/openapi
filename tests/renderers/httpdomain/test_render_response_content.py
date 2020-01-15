@@ -542,3 +542,188 @@ def test_render_response_content_status_code_default(testrenderer):
            bar,42
         """.rstrip()
     )
+
+
+@pytest.mark.parametrize(
+    ["content", "expected"],
+    [
+        pytest.param(
+            {
+                "application/json": {
+                    "schema": {
+                        "type": "object",
+                        "properties": {
+                            "string": {"type": "string"},
+                            "integer": {"type": "integer"},
+                            "number": {"type": "number"},
+                            "array_of_numbers": {
+                                "type": "array",
+                                "items": {"type": "number"},
+                            },
+                            "array_of_strings": {
+                                "type": "array",
+                                "items": {"type": "string"},
+                            },
+                        },
+                    }
+                }
+            },
+            """\
+            .. sourcecode:: http
+
+               HTTP/1.1 000 Reason-Phrase
+               Content-Type: application/json
+
+               {
+                 "string": "string",
+                 "integer": 1,
+                 "number": 1.0,
+                 "array_of_numbers": [
+                   1.0,
+                   1.0
+                 ],
+                 "array_of_strings": [
+                   "string",
+                   "string"
+                 ]
+               }
+            """,
+            id="no_examples",
+        ),
+        pytest.param(
+            {
+                "application/json": {
+                    "schema": {
+                        "type": "object",
+                        "properties": {
+                            "string": {"type": "string", "example": "example_string"},
+                            "integer": {"type": "integer", "example": 2},
+                            "number": {"type": "number", "example": 2.0},
+                            "array_of_numbers": {
+                                "type": "array",
+                                "items": {"type": "number", "example": 3.0},
+                            },
+                            "array_of_strings": {
+                                "type": "array",
+                                "items": {
+                                    "type": "string",
+                                    "example": "example_string",
+                                },
+                            },
+                        },
+                    }
+                }
+            },
+            """\
+            .. sourcecode:: http
+
+               HTTP/1.1 000 Reason-Phrase
+               Content-Type: application/json
+
+               {
+                 "string": "example_string",
+                 "integer": 2,
+                 "number": 2.0,
+                 "array_of_numbers": [
+                   3.0,
+                   3.0
+                 ],
+                 "array_of_strings": [
+                   "example_string",
+                   "example_string"
+                 ]
+               }
+            """,
+            id="with_examples",
+        ),
+        pytest.param(
+            {
+                "application/json": {
+                    "schema": {
+                        "type": "object",
+                        "properties": {
+                            "date": {"type": "string", "format": "date"},
+                            "date-time": {"type": "string", "format": "date-time"},
+                            "password": {"type": "string", "format": "password"},
+                            "byte": {"type": "string", "format": "byte"},
+                            "ipv4": {"type": "string", "format": "ipv4"},
+                            "ipv6": {"type": "string", "format": "ipv6"},
+                            "unknown": {"type": "string", "format": "unknown"},
+                        },
+                    }
+                }
+            },
+            """\
+            .. sourcecode:: http
+
+               HTTP/1.1 000 Reason-Phrase
+               Content-Type: application/json
+
+               {
+                 "date": "2020-01-01",
+                 "date-time": "2020-01-01T01:01:01Z",
+                 "password": "********",
+                 "byte": "QG1pY2hhZWxncmFoYW1ldmFucw==",
+                 "ipv4": "127.0.0.1",
+                 "ipv6": "::1",
+                 "unknown": "string"
+               }
+            """,
+            id="string_formats",
+        ),
+        pytest.param(
+            {
+                "application/json": {
+                    "schema": {
+                        "type": "object",
+                        "properties": {
+                            "inner_object": {"type": "object"},
+                            "inner_array_of_objects": {
+                                "type": "array",
+                                "items": {"type": "object"},
+                            },
+                            "inner_array_of_arrays": {
+                                "type": "array",
+                                "items": {
+                                    "type": "array",
+                                    "items": {"type": "integer"},
+                                },
+                            },
+                        },
+                    }
+                }
+            },
+            """\
+            .. sourcecode:: http
+
+               HTTP/1.1 000 Reason-Phrase
+               Content-Type: application/json
+
+               {
+                 "inner_object": {},
+                 "inner_array_of_objects": [
+                   {},
+                   {}
+                 ],
+                 "inner_array_of_arrays": [
+                   [
+                     1,
+                     1
+                   ],
+                   [
+                     1,
+                     1
+                   ]
+                 ]
+               }
+            """,
+            id="nested",
+        ),
+    ],
+)
+def test_generate_example_from_schema(fakestate, content, expected):
+    testrenderer = renderers.HttpdomainRenderer(
+        fakestate, {"generate-example-from-schema": True}
+    )
+    markup = textify(testrenderer.render_response_content(content, "default"))
+    assert markup == textwrap.dedent(expected.rstrip())
