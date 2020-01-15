@@ -345,9 +345,14 @@ def _httpresource(endpoint, method, properties, convert, render_examples, render
 
         for cb_endpoint in cb_specs.keys():
             for cb_method, cb_properties in cb_specs[cb_endpoint].items():
-                for line in _httpresource(cb_endpoint, cb_method, cb_properties, convert=convert,
-                                          render_examples=render_examples, render_request=render_request,
-                                          content_type=content_type):
+                for line in _httpresource(
+                        cb_endpoint,
+                        cb_method,
+                        cb_properties,
+                        convert=convert,
+                        render_examples=render_examples,
+                        render_request=render_request,
+                        content_type=content_type):
                     if line:
                         yield indent+indent+line
                     else:
@@ -428,9 +433,14 @@ def openapihttpdomain(spec, **options):
         for endpoint in paths:
             for method, properties in spec['paths'][endpoint].items():
                 key = properties.get('tags', [''])[0]
-                groups.setdefault(key, []).append(
-                    _httpresource(endpoint, method, properties, convert, render_examples='examples' in options,
-                                  render_request=render_request, content_type=options.get('content_type')))
+                groups.setdefault(key, []).append(_httpresource(
+                    endpoint,
+                    method,
+                    properties,
+                    convert,
+                    render_examples='examples' in options,
+                    render_request=render_request,
+                    content_type=options.get('content_type')))
 
         for key in groups.keys():
             if key:
@@ -442,8 +452,13 @@ def openapihttpdomain(spec, **options):
     else:
         for endpoint in paths:
             for method, properties in spec['paths'][endpoint].items():
-                generators.append(
-                    _httpresource(endpoint, method, properties, convert, render_examples='examples' in options,
-                                  render_request=render_request, content_type=options.get('content_type')))
+                generators.append(_httpresource(
+                    endpoint,
+                    method,
+                    properties,
+                    convert,
+                    render_examples='examples' in options,
+                    render_request=render_request,
+                    content_type=options.get('content_type')))
 
     return iter(itertools.chain(*generators))
