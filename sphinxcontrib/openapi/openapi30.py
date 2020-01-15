@@ -236,13 +236,18 @@ def _httpresource(endpoint, method, properties, convert, render_examples, render
     query_param_examples = []
     indent = '   '
 
+    operation_title = _get_operation_title(properties.get('operationId'))
+
+    yield operation_title
+    yield '^' * len(operation_title)
+    yield ''
     yield '.. http:{0}:: {1}'.format(method, endpoint)
     yield '   :synopsis: {0}'.format(properties.get('summary', 'null'))
     yield ''
 
     if 'summary' in properties:
         for line in properties['summary'].splitlines():
-            yield '{indent}**{line}**'.format(**locals())
+            yield '{indent}{line}'.format(**locals())
         yield ''
 
     if 'description' in properties:
@@ -349,6 +354,12 @@ def _httpresource(endpoint, method, properties, convert, render_examples, render
                         yield ''
 
     yield ''
+
+
+def _get_operation_title(operation_id):
+    matches = re.search(r'^(get|post|delete|patch)(.*?)(Collection|Item)$', operation_id)
+
+    return operation_id if matches is None else matches[1].capitalize() + ' ' + matches[2] + ' ' + matches[3]
 
 
 def _header(title):

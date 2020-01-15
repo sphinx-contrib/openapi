@@ -14,6 +14,8 @@ import functools
 from docutils.parsers.rst import directives
 from sphinx.util.docutils import SphinxDirective
 import yaml
+import requests
+import re
 
 
 # Dictionaries do not guarantee to preserve the keys order so when we load
@@ -35,8 +37,12 @@ _YamlOrderedLoader.add_constructor(
 # openapi directives
 @functools.lru_cache()
 def _get_spec(abspath, encoding):
-    with open(abspath, 'rt', encoding=encoding) as stream:
-        return yaml.load(stream, _YamlOrderedLoader)
+    if _is_url(abspath):
+        r = requests.get(abspath, allow_redirects=True)
+        return yaml.load(r.content, _YamlOrderedLoader)
+    else:
+        with open(abspath, 'rt', encoding=encoding) as stream:
+            return yaml.load(stream, _YamlOrderedLoader)
 
 
 def create_directive_from_renderer(renderer_cls):
@@ -53,17 +59,20 @@ def create_directive_from_renderer(renderer_cls):
         )
 
         def run(self):
-            relpath, abspath = self.env.relfn2path(directives.path(self.arguments[0]))
+            if _is_url(self.arguments[0]):
+                abspath = self.arguments[0]
+            else:
+                relpath, abspath = self.env.relfn2path(directives.path(self.arguments[0]))
 
-            # URI parameter is crucial for resolving relative references. So we
-            # need to set this option properly as it's used later down the
-            # stack.
-            self.options.setdefault('uri', 'file://%s' % abspath)
+                # URI parameter is crucial for resolving relative references. So we
+                # need to set this option properly as it's used later down the
+                # stack.
+                self.options.setdefault('uri', 'file://%s' % abspath)
 
-            # Add a given OpenAPI spec as a dependency of the referring
-            # reStructuredText document, so the document is rebuilt each time
-            # the spec is changed.
-            self.env.note_dependency(relpath)
+                # Add a given OpenAPI spec as a dependency of the referring
+                # reStructuredText document, so the document is rebuilt each time
+                # the spec is changed.
+                self.env.note_dependency(relpath)
 
             # Read the spec using encoding passed to the directive or fallback to
             # the one specified in Sphinx's config.
@@ -72,3 +81,8 @@ def create_directive_from_renderer(renderer_cls):
             return renderer_cls(self.state, self.options).render(spec)
 
     return _RenderingDirective
+
+
+def _is_url(path):
+    regex = r'http[s]?://(?:[a-zA-Z]|[0-9]|[$-_@.&+]|[!*\(\),]|(?:%[0-9a-fA-F][0-9a-fA-F]))+'
+    return re.match(regex, path) is not None
