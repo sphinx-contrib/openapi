@@ -380,20 +380,24 @@ def _generate_example_from_schema(schema):
 
     elif schema["type"] == "array":
         items = schema["items"]
+        min_length = schema.get("minItems", 0)  # Good
+        max_length = schema.get("maxItems", max(min_length, 2))
+        assert min_length <= max_length
+        # Try generate at least 2 example array items
+        gen_length = min(2, max_length) if min_length <= 2 else min_length
+
+        example_items = []
         if items == {}:
-            # Any type
-            return [
-                _DEFAULT_EXAMPLES["integer"],
-                _DEFAULT_EXAMPLES["string"],
-                _DEFAULT_EXAMPLES["boolean"],
-            ]
+            # Any-type arrays
+            example_items.extend(_DEFAULT_EXAMPLES.values())
         elif isinstance(items, dict) and "oneOf" in items:
             # Mixed-type arrays
-            example = _DEFAULT_EXAMPLES[sorted(items["oneOf"])[0]]
-            return [example, example]
+            example_items.append(_DEFAULT_EXAMPLES[sorted(items["oneOf"])[0]])
         else:
-            example = _generate_example_from_schema(items)
-            return [example, example]
+            example_items.append(_generate_example_from_schema(items))
+
+        # Generate array containing example_items and satisfying min_length and max_length
+        return [example_items[i % len(example_items)] for i in range(gen_length)]
 
     elif schema["type"] == "string" and "format" in schema:
         return _DEFAULT_STRING_EXAMPLES.get(

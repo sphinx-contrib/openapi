@@ -758,6 +758,18 @@ def test_render_response_content_status_code_default(testrenderer):
                                 "items": {"oneOf": {"string", "integer"}},
                             },
                             "any_type_array": {"type": "array", "items": {}},
+                            "0_to_1_length_array": {
+                                "type": "array",
+                                "minItems": 0,
+                                "maxItems": 1,
+                                "items": {"type": "integer"},
+                            },
+                            "5_to_10_length_array": {
+                                "type": "array",
+                                "minItems": 5,
+                                "maxItems": 10,
+                                "items": {"type": "integer"},
+                            },
                         },
                     }
                 }
@@ -774,9 +786,18 @@ def test_render_response_content_status_code_default(testrenderer):
                    1
                  ],
                  "any_type_array": [
-                   1,
                    "string",
-                   true
+                   1
+                 ],
+                 "0_to_1_length_array": [
+                   1
+                 ],
+                 "5_to_10_length_array": [
+                   1,
+                   1,
+                   1,
+                   1,
+                   1
                  ]
                }
             """,
