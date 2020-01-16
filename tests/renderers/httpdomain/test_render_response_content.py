@@ -719,6 +719,34 @@ def test_render_response_content_status_code_default(testrenderer):
             """,
             id="nested",
         ),
+        pytest.param(
+            {
+                "application/json": {
+                    "schema": {
+                        "type": "object",
+                        "properties": {
+                            "string_enum": {
+                                "type": "string",
+                                "enum": ["three", "two", "one"],
+                            },
+                            "integer_enum": {"type": "integer", "enum": [3, 2, 1]},
+                        },
+                    }
+                }
+            },
+            """\
+            .. sourcecode:: http
+
+               HTTP/1.1 000 Reason-Phrase
+               Content-Type: application/json
+
+               {
+                 "string_enum": "three",
+                 "integer_enum": 3
+               }
+            """,
+            id="enum",
+        ),
     ],
 )
 def test_generate_example_from_schema(fakestate, content, expected):

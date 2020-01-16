@@ -369,6 +369,9 @@ def _generate_example_from_schema(schema):
     if "example" in schema:
         return schema["example"]
 
+    elif "enum" in schema:
+        return schema["enum"][0]
+
     # Otherwise we use a default value based on the type
     if schema["type"] == "object" or "properties" in schema:
         example = {}
