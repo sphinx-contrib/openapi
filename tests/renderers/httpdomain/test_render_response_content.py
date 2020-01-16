@@ -747,6 +747,41 @@ def test_render_response_content_status_code_default(testrenderer):
             """,
             id="enum",
         ),
+        pytest.param(
+            {
+                "application/json": {
+                    "schema": {
+                        "type": "object",
+                        "properties": {
+                            "mixed_type_array": {
+                                "type": "array",
+                                "items": {"oneOf": {"string", "integer"}},
+                            },
+                            "any_type_array": {"type": "array", "items": {}},
+                        },
+                    }
+                }
+            },
+            """\
+            .. sourcecode:: http
+
+               HTTP/1.1 000 Reason-Phrase
+               Content-Type: application/json
+
+               {
+                 "mixed_type_array": [
+                   1,
+                   1
+                 ],
+                 "any_type_array": [
+                   1,
+                   "string",
+                   true
+                 ]
+               }
+            """,
+            id="arrays",
+        ),
     ],
 )
 def test_generate_example_from_schema(fakestate, content, expected):

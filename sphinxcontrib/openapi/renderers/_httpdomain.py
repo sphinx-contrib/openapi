@@ -372,19 +372,33 @@ def _generate_example_from_schema(schema):
     elif "enum" in schema:
         return schema["enum"][0]
 
-    # Otherwise we use a default value based on the type
     if schema["type"] == "object" or "properties" in schema:
         example = {}
         for prop, prop_schema in schema.get("properties", {}).items():
             example[prop] = _generate_example_from_schema(prop_schema)
         return example
+
     elif schema["type"] == "array":
-        prop_schema = schema["items"]
-        example = _generate_example_from_schema(prop_schema)
-        return [example, example]
+        items = schema["items"]
+        if items == {}:
+            # Any type
+            return [
+                _DEFAULT_EXAMPLES["integer"],
+                _DEFAULT_EXAMPLES["string"],
+                _DEFAULT_EXAMPLES["boolean"],
+            ]
+        elif isinstance(items, dict) and "oneOf" in items:
+            # Mixed-type arrays
+            example = _DEFAULT_EXAMPLES[sorted(items["oneOf"])[0]]
+            return [example, example]
+        else:
+            example = _generate_example_from_schema(items)
+            return [example, example]
+
     elif schema["type"] == "string" and "format" in schema:
         return _DEFAULT_STRING_EXAMPLES.get(
             schema["format"], _DEFAULT_EXAMPLES["string"]
         )
+
     else:
         return _DEFAULT_EXAMPLES[schema["type"]]
