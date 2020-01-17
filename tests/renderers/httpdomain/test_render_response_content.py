@@ -893,6 +893,57 @@ def test_render_response_content_status_code_default(testrenderer):
             """,
             id="any_type",
         ),
+        pytest.param(
+            {
+                "application/json": {
+                    "schema": {
+                        "type": "object",
+                        "properties": {
+                            "min_int": {"type": "integer", "minimum": 10},
+                            "max_int": {"type": "integer", "maximum": -10},
+                            "min_and_max_int": {
+                                "type": "integer",
+                                "minimum": 10,
+                                "maximum": 20,
+                            },
+                            "exclusive_int": {
+                                "type": "integer",
+                                "minimum": -10,
+                                "maximum": 10,
+                                "exclusiveMinimum": True,
+                                "exclusiveMaximum": True,
+                            },
+                            "min_num": {"type": "number", "minimum": 10.0},
+                            "max_num": {"type": "number", "maximum": -10.0},
+                            "exclusive_num": {
+                                "type": "number",
+                                "minimum": -10,
+                                "maximum": 10,
+                                "exclusiveMinimum": True,
+                                "exclusiveMaximum": True,
+                            },
+                        },
+                    }
+                }
+            },
+            """\
+            .. sourcecode:: http
+
+               HTTP/1.1 000 Reason-Phrase
+               Content-Type: application/json
+
+               {
+                 "min_int": 11,
+                 "max_int": -11,
+                 "min_and_max_int": 15,
+                 "exclusive_int": 0,
+                 "min_num": 11.0,
+                 "max_num": -11.0,
+                 "exclusive_num": 0.0
+               }
+            """,
+            id="min_max",
+        ),
     ],
 )
 def test_generate_example_from_schema(fakestate, content, expected):

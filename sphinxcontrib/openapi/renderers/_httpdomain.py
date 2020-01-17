@@ -397,7 +397,7 @@ def _generate_example_from_schema(schema):
 
     elif schema["type"] == "array":
         items = schema["items"]
-        min_length = schema.get("minItems", 0)  # Good
+        min_length = schema.get("minItems", 0)
         max_length = schema.get("maxItems", max(min_length, 2))
         assert min_length <= max_length
         # Try generate at least 2 example array items
@@ -420,6 +420,17 @@ def _generate_example_from_schema(schema):
         return _DEFAULT_STRING_EXAMPLES.get(
             schema["format"], _DEFAULT_EXAMPLES["string"]
         )
+
+    elif schema["type"] in ("integer", "number"):
+        example = _DEFAULT_EXAMPLES[schema["type"]]
+        if "minimum" in schema and "maximum" in schema:
+            # Take average
+            example = schema["minimum"] + (schema["maximum"] - schema["minimum"]) / 2
+        elif "minimum" in schema and example <= schema["minimum"]:
+            example = schema["minimum"] + 1
+        elif "maximum" in schema and example >= schema["maximum"]:
+            example = schema["maximum"] - 1
+        return float(example) if schema["type"] == "number" else int(example)
 
     else:
         return _DEFAULT_EXAMPLES[schema["type"]]
