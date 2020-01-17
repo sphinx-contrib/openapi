@@ -803,6 +803,73 @@ def test_render_response_content_status_code_default(testrenderer):
             """,
             id="arrays",
         ),
+        pytest.param(
+            {
+                "application/json": {
+                    "schema": {
+                        "type": "object",
+                        "properties": {
+                            "oneOf": {
+                                "oneOf": [
+                                    {
+                                        "type": "object",
+                                        "properties": {"one": {"type": "string"}},
+                                    },
+                                    {
+                                        "type": "object",
+                                        "properties": {"two": {"type": "string"}},
+                                    },
+                                ]
+                            },
+                            "anyOf": {
+                                "anyOf": [
+                                    {
+                                        "type": "object",
+                                        "properties": {"three": {"type": "string"}},
+                                    },
+                                    {
+                                        "type": "object",
+                                        "properties": {"four": {"type": "string"}},
+                                    },
+                                ]
+                            },
+                            "allOf": {
+                                "allOf": [
+                                    {
+                                        "type": "object",
+                                        "properties": {"five": {"type": "string"}},
+                                    },
+                                    {
+                                        "type": "object",
+                                        "properties": {"six": {"type": "string"}},
+                                    },
+                                ]
+                            },
+                        },
+                    }
+                }
+            },
+            """\
+            .. sourcecode:: http
+
+               HTTP/1.1 000 Reason-Phrase
+               Content-Type: application/json
+
+               {
+                 "oneOf": {
+                   "one": "string"
+                 },
+                 "anyOf": {
+                   "three": "string"
+                 },
+                 "allOf": {
+                   "five": "string",
+                   "six": "string"
+                 }
+               }
+            """,
+            id="oneOf_anyOf_allOf",
+        ),
     ],
 )
 def test_generate_example_from_schema(fakestate, content, expected):

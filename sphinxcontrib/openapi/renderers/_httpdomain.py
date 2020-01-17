@@ -369,6 +369,19 @@ def _generate_example_from_schema(schema):
     if "example" in schema:
         return schema["example"]
 
+    elif "oneOf" in schema:
+        return _generate_example_from_schema(schema["oneOf"][0])
+
+    elif "anyOf" in schema:
+        return _generate_example_from_schema(schema["anyOf"][0])
+
+    elif "allOf" in schema:
+        # Combine schema examples
+        example = {}
+        for sub_schema in schema["allOf"]:
+            example.update(_generate_example_from_schema(sub_schema))
+        return example
+
     elif "enum" in schema:
         return schema["enum"][0]
 
