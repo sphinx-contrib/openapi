@@ -870,6 +870,29 @@ def test_render_response_content_status_code_default(testrenderer):
             """,
             id="oneOf_anyOf_allOf",
         ),
+        pytest.param(
+            {
+                "application/json": {
+                    "schema": {
+                        "type": "object",
+                        "properties": {
+                            "anything": {"description": "this can be anything"}
+                        },
+                    }
+                }
+            },
+            """\
+            .. sourcecode:: http
+
+               HTTP/1.1 000 Reason-Phrase
+               Content-Type: application/json
+
+               {
+                 "anything": 1
+               }
+            """,
+            id="any_type",
+        ),
     ],
 )
 def test_generate_example_from_schema(fakestate, content, expected):

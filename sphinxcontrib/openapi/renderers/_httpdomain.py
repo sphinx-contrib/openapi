@@ -385,7 +385,11 @@ def _generate_example_from_schema(schema):
     elif "enum" in schema:
         return schema["enum"][0]
 
-    if schema["type"] == "object" or "properties" in schema:
+    elif "type" not in schema:
+        # Any type
+        return _DEFAULT_EXAMPLES["integer"]
+
+    elif schema["type"] == "object" or "properties" in schema:
         example = {}
         for prop, prop_schema in schema.get("properties", {}).items():
             example[prop] = _generate_example_from_schema(prop_schema)
