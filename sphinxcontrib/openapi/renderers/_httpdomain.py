@@ -3,6 +3,7 @@
 import functools
 import http.client
 import json
+from io import StringIO
 
 import docutils.parsers.rst.directives as directives
 import m2r
@@ -416,10 +417,26 @@ def _generate_example_from_schema(schema):
         # Generate array containing example_items and satisfying min_length and max_length
         return [example_items[i % len(example_items)] for i in range(gen_length)]
 
-    elif schema["type"] == "string" and "format" in schema:
-        return _DEFAULT_STRING_EXAMPLES.get(
-            schema["format"], _DEFAULT_EXAMPLES["string"]
+    elif schema["type"] == "string":
+        example_string = _DEFAULT_STRING_EXAMPLES.get(
+            schema.get("format", None), _DEFAULT_EXAMPLES["string"]
         )
+        min_length = schema.get("minLength", 0)
+        max_length = schema.get("maxLength", max(min_length, len(example_string)))
+        gen_length = (
+            min(len(example_string), max_length)
+            if min_length <= len(example_string)
+            else min_length
+        )
+        assert 0 <= min_length <= max_length
+        if min_length <= len(example_string) <= max_length:
+            return example_string
+        else:
+            example_builder = StringIO()
+            for i in range(gen_length):
+                example_builder.write(example_string[i % len(example_string)])
+            example_builder.seek(0)
+            return example_builder.read()
 
     elif schema["type"] in ("integer", "number"):
         example = _DEFAULT_EXAMPLES[schema["type"]]

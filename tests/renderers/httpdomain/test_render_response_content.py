@@ -642,6 +642,7 @@ def test_render_response_content_status_code_default(testrenderer):
                     "schema": {
                         "type": "object",
                         "properties": {
+                            "string": {"type": "string"},
                             "date": {"type": "string", "format": "date"},
                             "date-time": {"type": "string", "format": "date-time"},
                             "password": {"type": "string", "format": "password"},
@@ -649,6 +650,18 @@ def test_render_response_content_status_code_default(testrenderer):
                             "ipv4": {"type": "string", "format": "ipv4"},
                             "ipv6": {"type": "string", "format": "ipv6"},
                             "unknown": {"type": "string", "format": "unknown"},
+                            "max": {"type": "string", "maxLength": 3},
+                            "min": {"type": "string", "minLength": 10},
+                            "max_min_big": {
+                                "type": "string",
+                                "maxLength": 15,
+                                "minLength": 10,
+                            },
+                            "max_min_small": {
+                                "type": "string",
+                                "maxLength": 3,
+                                "minLength": 1,
+                            },
                         },
                     }
                 }
@@ -660,16 +673,21 @@ def test_render_response_content_status_code_default(testrenderer):
                Content-Type: application/json
 
                {
+                 "string": "string",
                  "date": "2020-01-01",
                  "date-time": "2020-01-01T01:01:01Z",
                  "password": "********",
                  "byte": "QG1pY2hhZWxncmFoYW1ldmFucw==",
                  "ipv4": "127.0.0.1",
                  "ipv6": "::1",
-                 "unknown": "string"
+                 "unknown": "string",
+                 "max": "str",
+                 "min": "stringstri",
+                 "max_min_big": "stringstri",
+                 "max_min_small": "str"
                }
             """,
-            id="string_formats",
+            id="strings",
         ),
         pytest.param(
             {
