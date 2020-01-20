@@ -681,6 +681,82 @@ class TestOpenApi3HttpDomain(object):
                   Last known resource ETag.
         ''').lstrip()
 
+    def test_rfc7807(self):
+        # Fix order to have a reliable test
+        pb_example = collections.OrderedDict()
+        pb_example["type"] = "string"
+        pb_example["title"] = "string"
+        pb_example["status"] = 1
+        pb_example["detail"] = "string"
+        pb_example["instance"] = "string"
+        renderer = renderers.HttpdomainOldRenderer(None, {'examples': True})
+        text = '\n'.join(renderer.render_restructuredtext_markup({
+            'openapi': '3.0.0',
+            'paths': {
+                '/problem': {
+                    'post': {
+                        'summary': 'Problem',
+                        'description': '~ some useful description ~',
+                        'requestBody': {
+                            'content': {
+                                'application/problem+json':  {
+                                    'example': pb_example
+                                }
+                            }
+                        },
+                        'responses': {
+                            '200': {
+                                'description': 'An array of resources.',
+                                'content': {
+                                    'application/json': {
+                                        'example': '{"foo": "bar"}'
+                                    }
+                                }
+                            },
+                        },
+                    },
+                },
+            },
+        }))
+        assert text == textwrap.dedent('''
+            .. http:post:: /problem
+               :synopsis: Problem
+
+               **Problem**
+
+               ~ some useful description ~
+
+
+               **Example request:**
+
+               .. sourcecode:: http
+
+                  POST /problem HTTP/1.1
+                  Host: example.com
+                  Content-Type: application/problem+json
+
+                  {
+                      "type": "string",
+                      "title": "string",
+                      "status": 1,
+                      "detail": "string",
+                      "instance": "string"
+                  }
+
+               :status 200:
+                  An array of resources.
+
+                  **Example response:**
+
+                  .. sourcecode:: http
+
+                     HTTP/1.1 200 OK
+                     Content-Type: application/json
+
+                     {"foo": "bar"}
+
+        ''').lstrip()
+
     def test_groups(self):
         renderer = renderers.HttpdomainOldRenderer(None, {'group': True})
         text = '\n'.join(renderer.render_restructuredtext_markup({
