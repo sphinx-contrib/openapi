@@ -10,11 +10,8 @@
 
 import copy
 
-try:
-    import collections.abc
-except ImportError:
-    import collections
-    collections.abc = collections
+import collections
+import collections.abc
 
 from datetime import datetime
 import itertools

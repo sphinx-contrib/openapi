@@ -11,10 +11,7 @@
 from __future__ import unicode_literals
 
 import collections
-try:
-    import collections.abc
-except ImportError:
-    collections.abc = collections
+import collections.abc
 
 from contextlib import closing
 import jsonschema
@@ -24,15 +21,8 @@ try:
 except ImportError:
     convert_markdown = None
 
-try:
-    from urllib.parse import urlsplit
-except ImportError:
-    from urlparse import urlsplit
-
-try:
-    from urllib.request import urlopen
-except ImportError:
-    from urllib import urlopen
+from urllib.parse import urlsplit
+from urllib.request import urlopen
 
 import os.path
 
