@@ -8,13 +8,71 @@
     :license: BSD, see LICENSE for details.
 """
 
-import collections
+from __future__ import unicode_literals
 
+import collections
+import collections.abc
+
+from contextlib import closing
 import jsonschema
+import yaml
 try:
     from m2r import convert as convert_markdown
 except ImportError:
     convert_markdown = None
+
+from urllib.parse import urlsplit
+from urllib.request import urlopen
+
+import os.path
+
+
+# Dictionaries do not guarantee to preserve the keys order so when we load
+# JSON or YAML - we may loose the order. In most cases it's not important
+# because we're interested in data. However, in case of OpenAPI spec it'd
+# be really nice to preserve them since, for example, endpoints may be
+# grouped logically and that improved readability.
+class _YamlOrderedLoader(yaml.SafeLoader):
+    pass
+
+
+_YamlOrderedLoader.add_constructor(
+    yaml.resolver.BaseResolver.DEFAULT_MAPPING_TAG,
+    lambda loader, node: collections.OrderedDict(loader.construct_pairs(node))
+)
+
+
+class OpenApiRefResolver(jsonschema.RefResolver):
+    """
+    Overrides resolve_remote to support both YAML and JSON
+    OpenAPI schemas.
+    """
+
+    try:
+        import requests
+        _requests = requests
+    except ImportError:
+        _requests = None
+
+    def resolve_remote(self, uri):
+        scheme, _, path, _, _ = urlsplit(uri)
+        _, extension = os.path.splitext(path)
+
+        if extension not in [".yml", ".yaml"] or scheme in self.handlers:
+            return super(OpenApiRefResolver, self).resolve_remote(uri)
+
+        if scheme in [u"http", u"https"] and self._requests:
+            response = self._requests.get(uri)
+            result = yaml.load(response, _YamlOrderedLoader)
+        else:
+            # Otherwise, pass off to urllib and assume utf-8
+            with closing(urlopen(uri)) as url:
+                response = url.read().decode("utf-8")
+                result = yaml.load(response, _YamlOrderedLoader)
+
+        if self.cache_remote:
+            self.store[uri] = result
+        return result
 
 
 def _resolve_refs(uri, spec):
@@ -30,13 +88,14 @@ def _resolve_refs(uri, spec):
     The input spec is modified in-place despite being returned from
     the function.
     """
-    resolver = jsonschema.RefResolver(uri, spec)
+
+    resolver = OpenApiRefResolver(uri, spec)
 
     def _do_resolve(node):
-        if isinstance(node, collections.Mapping) and '$ref' in node:
+        if isinstance(node, collections.abc.Mapping) and '$ref' in node:
             with resolver.resolving(node['$ref']) as resolved:
-                return resolved
-        elif isinstance(node, collections.Mapping):
+                return _do_resolve(resolved)  # might have recursive references
+        elif isinstance(node, collections.abc.Mapping):
             for k, v in node.items():
                 node[k] = _do_resolve(v)
         elif isinstance(node, (list, tuple)):

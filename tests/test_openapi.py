@@ -1611,16 +1611,27 @@ class TestResolveRefs(object):
 
     def test_relative_ref_resolving_on_fs(self):
         baseuri = 'file://%s' % os.path.abspath(__file__)
+
         data = {
             'bar': {
                 '$ref': 'testdata/foo.json#/foo/b',
+            },
+            # check also JSON to YAML references:
+            'baz': {
+                '$ref': 'testdata/foo.yaml#/foo',
             }
         }
 
+        # import pdb
+        # pdb.set_trace()
         assert utils._resolve_refs(baseuri, data) == {
             'bar': {
                 'c': True,
-            }
+            },
+            'baz': {
+                'a': 17,
+                'b': 13,
+            },
         }
 
     def test_noproperties(self):
