@@ -95,8 +95,123 @@ def test_render_response_description_restructuredtext(fakestate):
     )
 
 
-def test_render_response_content(testrenderer):
+@pytest.mark.parametrize(
+    ["status_code", "status"],
+    [
+        pytest.param("200", "OK", id="200"),
+        pytest.param("201", "Created", id="201"),
+        pytest.param("202", "Accepted", id="202"),
+    ],
+)
+def test_render_response_content_2xx(testrenderer, status_code, status):
     """Path response's 'content' definition is rendered."""
+
+    markup = textify(
+        testrenderer.render_response(
+            status_code,
+            {
+                "description": "An evidence.",
+                "content": {"application/json": {"example": {"foo": "bar", "baz": 42}}},
+            },
+        )
+    )
+    assert markup == textwrap.dedent(
+        f"""\
+        :statuscode {status_code}:
+           An evidence.
+
+           .. sourcecode:: http
+
+              HTTP/1.1 {status_code} {status}
+              Content-Type: application/json
+
+              {{
+                "foo": "bar",
+                "baz": 42
+              }}
+        """.rstrip()
+    )
+
+
+@pytest.mark.parametrize(
+    ["status_code"],
+    [
+        pytest.param("301"),
+        pytest.param("307"),
+        pytest.param("401"),
+        pytest.param("422"),
+        pytest.param("502"),
+    ],
+)
+def test_render_response_content_non_2xx(testrenderer, status_code):
+    """Path response's 'content' definition is NOT rendered."""
+
+    markup = textify(
+        testrenderer.render_response(
+            status_code,
+            {
+                "description": "An evidence.",
+                "content": {"application/json": {"example": {"foo": "bar", "baz": 42}}},
+            },
+        )
+    )
+    assert markup == textwrap.dedent(
+        f"""\
+        :statuscode {status_code}:
+           An evidence.
+        """.rstrip()
+    )
+
+
+@pytest.mark.parametrize(
+    ["status_code", "status"],
+    [
+        pytest.param("301", "Moved Permanently", id="301"),
+        pytest.param("307", "Temporary Redirect", id="307"),
+        pytest.param("401", "Unauthorized", id="401"),
+        pytest.param("422", "Unprocessable Entity", id="422"),
+    ],
+)
+def test_render_response_content_custom(fakestate, status_code, status):
+    """Path response's 'content' definition is rendered."""
+
+    testrenderer = renderers.HttpdomainRenderer(
+        fakestate, {"response-examples-for": ["301", "307", "401", "422"]}
+    )
+
+    markup = textify(
+        testrenderer.render_response(
+            status_code,
+            {
+                "description": "An evidence.",
+                "content": {"application/json": {"example": {"foo": "bar", "baz": 42}}},
+            },
+        )
+    )
+    assert markup == textwrap.dedent(
+        f"""\
+        :statuscode {status_code}:
+           An evidence.
+
+           .. sourcecode:: http
+
+              HTTP/1.1 {status_code} {status}
+              Content-Type: application/json
+
+              {{
+                "foo": "bar",
+                "baz": 42
+              }}
+        """.rstrip()
+    )
+
+
+def test_render_response_content_custom_mismatch(fakestate):
+    """Path response's 'content' definition is NOT rendered."""
+
+    testrenderer = renderers.HttpdomainRenderer(
+        fakestate, {"response-examples-for": ["301", "307", "401", "422"]}
+    )
 
     markup = textify(
         testrenderer.render_response(
@@ -108,19 +223,9 @@ def test_render_response_content(testrenderer):
         )
     )
     assert markup == textwrap.dedent(
-        """\
+        f"""\
         :statuscode 200:
            An evidence.
-
-           .. sourcecode:: http
-
-              HTTP/1.1 200 OK
-              Content-Type: application/json
-
-              {
-                "foo": "bar",
-                "baz": 42
-              }
         """.rstrip()
     )
 

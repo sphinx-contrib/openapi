@@ -13,6 +13,9 @@ from sphinxcontrib.openapi.renderers import abc
 from sphinxcontrib.openapi.schema_utils import example_from_schema
 
 
+CaseInsensitiveDict = requests.structures.CaseInsensitiveDict
+
+
 logger = logging.getLogger(__name__)
 
 
@@ -23,7 +26,16 @@ def indented(generator, indent=3):
         yield item
 
 
+def _index(l, value, default):
+    try:
+        return l.index(value)
+    except ValueError:
+        return default
+
+
 def _iterexamples(media_type, example_preference, examples_from_schemas):
+    """Iterate over examples and return them according to the caller preference."""
+
     if example_preference:
         order_by = dict(
             ((value, index) for index, value in enumerate(example_preference))
@@ -90,12 +102,18 @@ class HttpdomainRenderer(abc.RestructuredTextRenderer):
     """Render OpenAPI v3 using `sphinxcontrib-httpdomain` extension."""
 
     _markup_converters = {"commonmark": m2r.convert, "restructuredtext": lambda x: x}
+    _response_examples_for = {"200", "201", "202", "2XX"}
+    _request_parameters_order = ["header", "path", "query", "cookie"]
 
     option_spec = {
         "markup": functools.partial(directives.choice, values=_markup_converters),
+        "http-methods-order": None,
+        "response-examples-for": None,
         "request-parameters-order": None,
-        "response-example-preference": "",
-        "generate-example-from-schema": "",
+        "example-preference": None,
+        "request-example-preference": None,
+        "response-example-preference": None,
+        "generate-examples-from-schemas": None,
     }
 
     def __init__(self, state, options):
@@ -104,9 +122,26 @@ class HttpdomainRenderer(abc.RestructuredTextRenderer):
         self._convert_markup = self._markup_converters[
             options.get("markup", "commonmark")
         ]
-        self._request_parameters_order = ["header", "path", "query", "cookie"]
-        self._response_example_preference = options.get("response-example-preference")
-        self._generate_example_from_schema = options.get("generate-example-from-schema")
+        self._http_methods_order = options.get("http-methods-order")
+        self._response_examples_for = options.get(
+            "response-examples-for", self._response_examples_for
+        )
+        self._request_parameters_order = [
+            parameter_type.lower()
+            for parameter_type in options.get(
+                "request-parameters-order", self._request_parameters_order
+            )
+        ]
+        self._example_preference = options.get("example-preference")
+        self._request_example_preference = options.get(
+            "request-example-preference", self._example_preference
+        )
+        self._response_example_preference = options.get(
+            "response-example-preference", self._example_preference
+        )
+        self._generate_example_from_schema = options.get(
+            "generate-examples-from-schemas", False
+        )
 
     def render_restructuredtext_markup(self, spec):
         """Spec render entry point."""
@@ -138,11 +173,11 @@ class HttpdomainRenderer(abc.RestructuredTextRenderer):
         yield f".. http:{method}:: {endpoint}"
 
         if operation.get("deprecated"):
-            yield f"    :deprecated:"
+            yield f"   :deprecated:"
         yield f""
 
         if operation.get("summary"):
-            yield f"    **{operation['summary']}**"
+            yield f"   **{operation['summary']}**"
             yield f""
 
         if operation.get("description"):
@@ -152,6 +187,10 @@ class HttpdomainRenderer(abc.RestructuredTextRenderer):
             yield f""
 
         yield from indented(self.render_parameters(operation.get("parameters", [])))
+        if "requestBody" in operation:
+            yield from indented(
+                self.render_request_body(operation["requestBody"], endpoint, method)
+            )
         yield from indented(self.render_responses(operation["responses"]))
 
     def render_parameters(self, parameters):
@@ -159,14 +198,18 @@ class HttpdomainRenderer(abc.RestructuredTextRenderer):
 
         for parameter in sorted(
             parameters,
-            key=lambda p: self._request_parameters_order.index(p["in"].lower()),
+            key=lambda p: _index(
+                self._request_parameters_order, p["in"].lower(), float("inf")
+            ),
         ):
             yield from self.render_parameter(parameter)
 
     def render_parameter(self, parameter):
         """Render OAS operation's parameter."""
 
-        kinds = {"path": "param", "query": "queryparam", "header": "reqheader"}
+        kinds = CaseInsensitiveDict(
+            {"path": "param", "query": "queryparam", "header": "reqheader"}
+        )
         markers = []
         schema = parameter.get("schema", {})
 
@@ -208,11 +251,45 @@ class HttpdomainRenderer(abc.RestructuredTextRenderer):
             markers = ", ".join(markers)
             yield f":{kinds[parameter['in']]}type {parameter['name']}: {markers}"
 
+    def render_request_body(self, request_body, endpoint, method):
+        """Render OAS operation's requestBody."""
+
+        yield from self.render_request_body_example(request_body, endpoint, method)
+        yield ""
+
+    def render_request_body_example(self, request_body, endpoint, method):
+        """Render OAS operation's requestBody's example."""
+
+        content_type, example = next(
+            _iterexamples(
+                request_body["content"],
+                self._request_example_preference,
+                self._generate_example_from_schema,
+            ),
+            (None, None),
+        )
+
+        if content_type and example:
+            example = example["value"]
+
+            if not isinstance(example, str):
+                example = json.dumps(example, indent=2)
+
+            yield f".. sourcecode:: http"
+            yield f""
+            yield f"   {method.upper()} {endpoint} HTTP/1.1"
+            yield f"   Content-Type: {content_type}"
+            yield f""
+            yield from indented(example.splitlines())
+
     def render_responses(self, responses):
         """Render OAS operation's responses."""
 
         for status_code, response in responses.items():
-            yield from self.render_response(status_code, response)
+            # Due to the way how YAML spec is parsed, status code may be
+            # infered as integer. In order to spare some cycles on type
+            # guessing going on, let's ensure it's always string at this point.
+            yield from self.render_response(str(status_code), response)
 
     def render_response(self, status_code, response):
         """Render OAS operation's response."""
@@ -222,7 +299,7 @@ class HttpdomainRenderer(abc.RestructuredTextRenderer):
             self._convert_markup(response["description"]).strip().splitlines()
         )
 
-        if "content" in response:
+        if "content" in response and status_code in self._response_examples_for:
             yield ""
             yield from indented(
                 self.render_response_content(response["content"], status_code)
@@ -308,7 +385,7 @@ class HttpdomainRenderer(abc.RestructuredTextRenderer):
                 # of response codes. Since we're talking about rendered example
                 # here, we may show either code from range, but for the sake of
                 # simplicity let's pick the first one.
-                status_code = str(status_code).replace("XX", "00")
+                status_code = status_code.replace("XX", "00")
                 status_text = http.client.responses.get(int(status_code), "-")
 
             yield f".. sourcecode:: http"

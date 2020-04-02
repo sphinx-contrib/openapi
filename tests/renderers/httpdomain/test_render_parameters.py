@@ -5,6 +5,8 @@ import itertools
 import textwrap
 import pytest
 
+from sphinxcontrib.openapi import renderers
+
 
 def textify(generator):
     return "\n".join(generator)
@@ -207,5 +209,236 @@ def test_render_parameters_many_items_stable_order(testrenderer):
         :queryparam related:
            If true, links to related evidences are returned.
         :queryparamtype related: boolean
+        """.rstrip()
+    )
+
+
+def test_render_parameters_custom_order(fakestate):
+    """Many parameter definitions are rendered w/ preserved order."""
+
+    testrenderer = renderers.HttpdomainRenderer(
+        fakestate, {"request-parameters-order": ["query", "path", "header"]}
+    )
+
+    markup = textify(
+        testrenderer.render_parameters(
+            [
+                {
+                    "name": "kind",
+                    "in": "path",
+                    "required": True,
+                    "description": "An evidence kind.",
+                    "schema": {"type": "string"},
+                },
+                {
+                    "name": "Api-Version",
+                    "in": "header",
+                    "default": "1",
+                    "description": "API version to use for the request.",
+                    "schema": {"type": "integer"},
+                },
+                {
+                    "name": "details",
+                    "in": "query",
+                    "description": "If true, information w/ details is returned.",
+                    "schema": {"type": "boolean"},
+                },
+                {
+                    "name": "evidenceId",
+                    "in": "path",
+                    "required": True,
+                    "description": "A unique evidence identifier to query.",
+                    "schema": {"type": "string"},
+                },
+                {
+                    "name": "related",
+                    "in": "query",
+                    "description": "If true, links to related evidences are returned.",
+                    "schema": {"type": "boolean"},
+                },
+                {
+                    "name": "Accept",
+                    "in": "header",
+                    "default": "application/json",
+                    "description": "A desired Content-Type of HTTP response.",
+                    "schema": {"type": "string"},
+                },
+            ]
+        )
+    )
+    assert markup == textwrap.dedent(
+        """\
+        :queryparam details:
+           If true, information w/ details is returned.
+        :queryparamtype details: boolean
+        :queryparam related:
+           If true, links to related evidences are returned.
+        :queryparamtype related: boolean
+        :param kind:
+           An evidence kind.
+        :paramtype kind: string, required
+        :param evidenceId:
+           A unique evidence identifier to query.
+        :paramtype evidenceId: string, required
+        :reqheader Api-Version:
+           API version to use for the request.
+        :reqheadertype Api-Version: integer
+        :reqheader Accept:
+           A desired Content-Type of HTTP response.
+        :reqheadertype Accept: string
+        """.rstrip()
+    )
+
+
+def test_render_parameters_custom_order_partial(fakestate):
+    """Many parameter definitions are rendered w/ preserved order."""
+
+    testrenderer = renderers.HttpdomainRenderer(
+        fakestate, {"request-parameters-order": ["query", "path"]}
+    )
+
+    markup = textify(
+        testrenderer.render_parameters(
+            [
+                {
+                    "name": "kind",
+                    "in": "path",
+                    "required": True,
+                    "description": "An evidence kind.",
+                    "schema": {"type": "string"},
+                },
+                {
+                    "name": "Api-Version",
+                    "in": "header",
+                    "default": "1",
+                    "description": "API version to use for the request.",
+                    "schema": {"type": "integer"},
+                },
+                {
+                    "name": "details",
+                    "in": "query",
+                    "description": "If true, information w/ details is returned.",
+                    "schema": {"type": "boolean"},
+                },
+                {
+                    "name": "evidenceId",
+                    "in": "path",
+                    "required": True,
+                    "description": "A unique evidence identifier to query.",
+                    "schema": {"type": "string"},
+                },
+                {
+                    "name": "related",
+                    "in": "query",
+                    "description": "If true, links to related evidences are returned.",
+                    "schema": {"type": "boolean"},
+                },
+                {
+                    "name": "Accept",
+                    "in": "header",
+                    "default": "application/json",
+                    "description": "A desired Content-Type of HTTP response.",
+                    "schema": {"type": "string"},
+                },
+            ]
+        )
+    )
+    assert markup == textwrap.dedent(
+        """\
+        :queryparam details:
+           If true, information w/ details is returned.
+        :queryparamtype details: boolean
+        :queryparam related:
+           If true, links to related evidences are returned.
+        :queryparamtype related: boolean
+        :param kind:
+           An evidence kind.
+        :paramtype kind: string, required
+        :param evidenceId:
+           A unique evidence identifier to query.
+        :paramtype evidenceId: string, required
+        :reqheader Api-Version:
+           API version to use for the request.
+        :reqheadertype Api-Version: integer
+        :reqheader Accept:
+           A desired Content-Type of HTTP response.
+        :reqheadertype Accept: string
+        """.rstrip()
+    )
+
+
+def test_render_parameters_case_insensitive(fakestate):
+    """Many parameter definitions are rendered w/ preserved order."""
+
+    testrenderer = renderers.HttpdomainRenderer(
+        fakestate, {"request-parameters-order": ["QUERY", "pAth", "Header"]}
+    )
+
+    markup = textify(
+        testrenderer.render_parameters(
+            [
+                {
+                    "name": "kind",
+                    "in": "PATH",
+                    "required": True,
+                    "description": "An evidence kind.",
+                    "schema": {"type": "string"},
+                },
+                {
+                    "name": "Api-Version",
+                    "in": "header",
+                    "default": "1",
+                    "description": "API version to use for the request.",
+                    "schema": {"type": "integer"},
+                },
+                {
+                    "name": "details",
+                    "in": "query",
+                    "description": "If true, information w/ details is returned.",
+                    "schema": {"type": "boolean"},
+                },
+                {
+                    "name": "evidenceId",
+                    "in": "Path",
+                    "required": True,
+                    "description": "A unique evidence identifier to query.",
+                    "schema": {"type": "string"},
+                },
+                {
+                    "name": "related",
+                    "in": "qUery",
+                    "description": "If true, links to related evidences are returned.",
+                    "schema": {"type": "boolean"},
+                },
+                {
+                    "name": "Accept",
+                    "in": "headeR",
+                    "default": "application/json",
+                    "description": "A desired Content-Type of HTTP response.",
+                    "schema": {"type": "string"},
+                },
+            ]
+        )
+    )
+    assert markup == textwrap.dedent(
+        """\
+        :queryparam details:
+           If true, information w/ details is returned.
+        :queryparamtype details: boolean
+        :queryparam related:
+           If true, links to related evidences are returned.
+        :queryparamtype related: boolean
+        :param kind:
+           An evidence kind.
+        :paramtype kind: string, required
+        :param evidenceId:
+           A unique evidence identifier to query.
+        :paramtype evidenceId: string, required
+        :reqheader Api-Version:
+           API version to use for the request.
+        :reqheadertype Api-Version: integer
+        :reqheader Accept:
+           A desired Content-Type of HTTP response.
+        :reqheadertype Accept: string
         """.rstrip()
     )

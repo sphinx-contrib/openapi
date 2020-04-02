@@ -177,11 +177,15 @@ def test_render_response_content_example_1st_from_media_type(testrenderer):
     )
 
 
-def test_render_response_content_example_preference(fakestate):
+@pytest.mark.parametrize(
+    ["example_preference_key"],
+    [pytest.param("response-example-preference"), pytest.param("example-preference")],
+)
+def test_render_response_content_example_preference(fakestate, example_preference_key):
     """Path response's example from preferred media type is rendered."""
 
     testrenderer = renderers.HttpdomainRenderer(
-        fakestate, {"response-example-preference": ["text/plain"]}
+        fakestate, {example_preference_key: ["text/plain"]}
     )
 
     markup = textify(
@@ -207,11 +211,17 @@ def test_render_response_content_example_preference(fakestate):
     )
 
 
-def test_render_response_content_example_preference_complex(fakestate):
+@pytest.mark.parametrize(
+    ["example_preference_key"],
+    [pytest.param("response-example-preference"), pytest.param("example-preference")],
+)
+def test_render_response_content_example_preference_complex(
+    fakestate, example_preference_key
+):
     """Path response's example from preferred media type is rendered."""
 
     testrenderer = renderers.HttpdomainRenderer(
-        fakestate, {"response-example-preference": ["application/json", "text/plain"]}
+        fakestate, {example_preference_key: ["application/json", "text/plain"]}
     )
 
     markup = textify(
@@ -220,6 +230,40 @@ def test_render_response_content_example_preference_complex(fakestate):
                 "text/csv": {"example": "foo,baz\nbar,42"},
                 "text/plain": {"example": 'foo = "bar"\nbaz = 42'},
                 "application/json": {"schema": {"type": "object"}},
+            },
+            "200",
+        )
+    )
+
+    assert markup == textwrap.dedent(
+        """\
+        .. sourcecode:: http
+
+           HTTP/1.1 200 OK
+           Content-Type: text/plain
+
+           foo = "bar"
+           baz = 42
+        """.rstrip()
+    )
+
+
+def test_render_response_content_example_preference_priority(fakestate):
+    """Path response's example from preferred media type is rendered."""
+
+    testrenderer = renderers.HttpdomainRenderer(
+        fakestate,
+        {
+            "example-preference": ["application/json"],
+            "response-example-preference": ["text/plain"],
+        },
+    )
+
+    markup = textify(
+        testrenderer.render_response_content(
+            {
+                "application/json": {"example": {"foo": "bar", "baz": 42}},
+                "text/plain": {"example": 'foo = "bar"\nbaz = 42'},
             },
             "200",
         )
@@ -475,9 +519,9 @@ def test_render_response_content_status_code_range(
 @pytest.mark.parametrize(
     ["status_code", "status_text"],
     [
-        pytest.param(201, "Created", id="201"),
-        pytest.param(307, "Temporary Redirect", id="307"),
-        pytest.param(422, "Unprocessable Entity", id="422"),
+        pytest.param("201", "Created", id="201"),
+        pytest.param("307", "Temporary Redirect", id="307"),
+        pytest.param("422", "Unprocessable Entity", id="422"),
     ],
 )
 def test_render_response_content_status_code_int(
