@@ -105,7 +105,7 @@ class HttpdomainRenderer(abc.RestructuredTextRenderer):
 
     option_spec = {
         "markup": functools.partial(directives.choice, values=_markup_converters),
-        "http-methods-order": None,
+        "http-methods-order": lambda s: s.split(),
         "response-examples-for": None,
         "request-parameters-order": None,
         "example-preference": None,
@@ -120,7 +120,7 @@ class HttpdomainRenderer(abc.RestructuredTextRenderer):
         self._convert_markup = self._markup_converters[
             options.get("markup", "commonmark")
         ]
-        self._http_methods_order = options.get("http-methods-order")
+        self._http_methods_order = options.get("http-methods-order", [])
         self._response_examples_for = options.get(
             "response-examples-for", self._response_examples_for
         )
@@ -149,7 +149,7 @@ class HttpdomainRenderer(abc.RestructuredTextRenderer):
         """Render OAS paths item."""
 
         for endpoint, pathitem in node.get("paths", {}).items():
-            for method, operation in pathitem.items():
+            for method, operation in self._sorted_methods(pathitem):
                 operation.setdefault("parameters", [])
                 parameters = [
                     parameter
@@ -164,6 +164,12 @@ class HttpdomainRenderer(abc.RestructuredTextRenderer):
 
                 yield from self.render_operation(endpoint, method, operation)
                 yield ""
+
+    def _sorted_methods(self, pathitem):
+        order_by = {m: i for i, m in enumerate(self._http_methods_order)}
+        yield from sorted(
+            pathitem.items(), key=lambda item: order_by.get(item[0], float("inf"))
+        )
 
     def render_operation(self, endpoint, method, operation):
         """Render OAS operation item."""
