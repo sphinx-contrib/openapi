@@ -89,7 +89,7 @@ def _iterexamples(media_type, example_preference, examples_from_schemas):
             # allows to treat all returned examples the same way.
             example = {"value": media_type["schema"]["example"]}
         elif "schema" in media_type and examples_from_schemas:
-            # do some dark magic to convert schema to example
+            # Convert schema to example
             example = {"value": example_from_schema(media_type["schema"])}
             pass
         else:
@@ -113,7 +113,7 @@ class HttpdomainRenderer(abc.RestructuredTextRenderer):
         "example-preference": None,
         "request-example-preference": None,
         "response-example-preference": None,
-        "generate-examples-from-schemas": None,
+        "generate-examples-from-schemas": directives.flag,
     }
 
     def __init__(self, state, options):
@@ -139,9 +139,7 @@ class HttpdomainRenderer(abc.RestructuredTextRenderer):
         self._response_example_preference = options.get(
             "response-example-preference", self._example_preference
         )
-        self._generate_example_from_schema = options.get(
-            "generate-examples-from-schemas", False
-        )
+        self._generate_example_from_schema = "generate-examples-from-schemas" in options
 
     def render_restructuredtext_markup(self, spec):
         """Spec render entry point."""
