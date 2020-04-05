@@ -118,6 +118,18 @@ The ``openapi`` directive supports the following options:
 ``exclude``, ``include`` and ``paths`` can also be used together (``exclude``
 taking precedence over ``include`` and ``paths``)
 
+``http-methods-order``
+  A whitespace delimited list of HTTP methods to render first. For example:
+
+  .. code:: restructuredtext
+
+     .. openapi:: specs/openapi.yml
+        :http-methods-order:
+            head
+            get
+
+  Would render the ``head`` method, followed by the ``get`` method, followed by the rest of the methods in their declared ordered.
+
 
 .. _Sphinx: https://www.sphinx-doc.org/en/master/
 .. _OpenAPI: https://github.com/OAI/OpenAPI-Specification
