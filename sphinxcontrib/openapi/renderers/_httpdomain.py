@@ -1,5 +1,6 @@
 """OpenAPI spec renderer."""
 
+import collections
 import functools
 import http.client
 import json
@@ -26,27 +27,34 @@ def indented(generator, indent=3):
         yield item
 
 
-def _index(l, value, default):
-    try:
-        return l.index(value)
-    except ValueError:
-        return default
+def _iterinorder(iterable, order_by, key=lambda x: x, case_sensitive=False):
+    """Iterate over iterable in a given order."""
+
+    order_by = collections.defaultdict(
+        # Assume default priority is `Infinity` which means the lowest one.
+        # This value is effectively used if there's no corresponding value in a
+        # given 'order_by' array.
+        lambda: float("Inf"),
+        # Passed 'order_by' may be 'None' which means *do not reorder, use
+        # natural order*. In order to avoid special cases in the code, we're
+        # simply falling back to an empty 'order_by' array since it effectively
+        # means *assume every item in 'iterable' has equal priority*.
+        ((value, i) for i, value in enumerate(order_by or [])),
+    )
+    yield from sorted(
+        iterable,
+        key=lambda value: order_by[
+            key(value) if case_sensitive else key(value).lower()
+        ],
+    )
 
 
-def _iterexamples(media_type, example_preference, examples_from_schemas):
+def _iterexamples(media_types, example_preference, examples_from_schemas):
     """Iterate over examples and return them according to the caller preference."""
 
-    if example_preference:
-        order_by = dict(
-            ((value, index) for index, value in enumerate(example_preference))
-        )
-        media_type = sorted(
-            media_type.items(), key=lambda item: order_by.get(item[0], float("inf"))
-        )
-    else:
-        media_type = media_type.items()
+    for content_type in _iterinorder(media_types, example_preference):
+        media_type = media_types[content_type]
 
-    for content_type, media_type in media_type:
         # Look for a example in a bunch of possible places. According to
         # OpenAPI v3 spec, `examples` and `example` keys are mutually
         # exclusive, so there's no much difference between their
@@ -122,7 +130,9 @@ class HttpdomainRenderer(abc.RestructuredTextRenderer):
         self._convert_markup = self._markup_converters[
             options.get("markup", "commonmark")
         ]
-        self._http_methods_order = options.get("http-methods-order", [])
+        self._http_methods_order = [
+            http_method.lower() for http_method in options.get("http-methods-order", [])
+        ]
         self._response_examples_for = options.get(
             "response-examples-for", self._response_examples_for
         )
@@ -143,33 +153,37 @@ class HttpdomainRenderer(abc.RestructuredTextRenderer):
 
     def render_restructuredtext_markup(self, spec):
         """Spec render entry point."""
-        yield from self.render_paths(spec)
+        yield from self.render_paths(spec.get("paths", {}))
 
-    def render_paths(self, node):
+    def render_paths(self, paths):
         """Render OAS paths item."""
 
-        for endpoint, pathitem in node.get("paths", {}).items():
-            for method, operation in self._sorted_methods(pathitem):
+        for endpoint, path in paths.items():
+            common_parameters = path.pop("parameters", [])
+
+            # OpenAPI's path description may contain objects of different
+            # types. Since we're interested in rendering only objects of
+            # operation type, let's remove irrelevant one from the definition
+            # in order to simplify further code.
+            for key in {"summary", "description", "servers"}:
+                path.pop(key, None)
+
+            for method in _iterinorder(path, self._http_methods_order):
+                operation = path[method]
                 operation.setdefault("parameters", [])
-                parameters = [
+                operation_parameters_ids = set(
+                    (parameter["name"], parameter["in"])
+                    for parameter in operation["parameters"]
+                )
+                operation["parameters"] = [
                     parameter
-                    for parameter in pathitem.get("parameters", [])
+                    for parameter in common_parameters
                     if (parameter["name"], parameter["in"])
-                    not in [
-                        (op_parameter["name"], op_parameter["in"])
-                        for op_parameter in operation.get("parameters", [])
-                    ]
-                ]
-                operation["parameters"] += parameters
+                    not in operation_parameters_ids
+                ] + operation["parameters"]
 
                 yield from self.render_operation(endpoint, method, operation)
                 yield ""
-
-    def _sorted_methods(self, pathitem):
-        order_by = {m: i for i, m in enumerate(self._http_methods_order)}
-        yield from sorted(
-            pathitem.items(), key=lambda item: order_by.get(item[0], float("inf"))
-        )
 
     def render_operation(self, endpoint, method, operation):
         """Render OAS operation item."""
@@ -200,11 +214,8 @@ class HttpdomainRenderer(abc.RestructuredTextRenderer):
     def render_parameters(self, parameters):
         """Render OAS operation's parameters."""
 
-        for parameter in sorted(
-            parameters,
-            key=lambda p: _index(
-                self._request_parameters_order, p["in"].lower(), float("inf")
-            ),
+        for parameter in _iterinorder(
+            parameters, self._request_parameters_order, key=lambda value: value["in"]
         ):
             yield from self.render_parameter(parameter)
 
