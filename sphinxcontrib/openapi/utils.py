@@ -27,21 +27,6 @@ from urllib.request import urlopen
 import os.path
 
 
-# Dictionaries do not guarantee to preserve the keys order so when we load
-# JSON or YAML - we may loose the order. In most cases it's not important
-# because we're interested in data. However, in case of OpenAPI spec it'd
-# be really nice to preserve them since, for example, endpoints may be
-# grouped logically and that improved readability.
-class _YamlOrderedLoader(yaml.SafeLoader):
-    pass
-
-
-_YamlOrderedLoader.add_constructor(
-    yaml.resolver.BaseResolver.DEFAULT_MAPPING_TAG,
-    lambda loader, node: collections.OrderedDict(loader.construct_pairs(node))
-)
-
-
 class OpenApiRefResolver(jsonschema.RefResolver):
     """
     Overrides resolve_remote to support both YAML and JSON
@@ -63,12 +48,12 @@ class OpenApiRefResolver(jsonschema.RefResolver):
 
         if scheme in [u"http", u"https"] and self._requests:
             response = self._requests.get(uri)
-            result = yaml.load(response, _YamlOrderedLoader)
+            result = yaml.safe_load(response)
         else:
             # Otherwise, pass off to urllib and assume utf-8
             with closing(urlopen(uri)) as url:
                 response = url.read().decode("utf-8")
-                result = yaml.load(response, _YamlOrderedLoader)
+                result = yaml.safe_load(response)
 
         if self.cache_remote:
             self.store[uri] = result
