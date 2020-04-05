@@ -14,15 +14,13 @@ from docutils.parsers.rst import directives
 from sphinx.util.docutils import SphinxDirective
 import yaml
 
-from sphinxcontrib.openapi.utils import _YamlOrderedLoader
-
 
 # Locally cache spec to speedup processing of same spec file in multiple
 # openapi directives
 @functools.lru_cache()
 def _get_spec(abspath, encoding):
     with open(abspath, 'rt', encoding=encoding) as stream:
-        return yaml.load(stream, _YamlOrderedLoader)
+        return yaml.safe_load(stream)
 
 
 def create_directive_from_renderer(renderer_cls):
