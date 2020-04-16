@@ -108,11 +108,17 @@ def _parse_schema(schema, method):
     schema_type = schema.get('type', 'object')
 
     if schema_type == 'array':
-        # special case oneOf so that we can show examples for all possible
-        # combinations
+        # special case oneOf and anyOf so that we can show examples for all
+        # possible combinations
         if 'oneOf' in schema['items']:
             return [
-                _parse_schema(x, method) for x in schema['items']['oneOf']]
+                _parse_schema(x, method) for x in schema['items']['oneOf']
+            ]
+
+        if 'anyOf' in schema['items']:
+            return [
+                _parse_schema(x, method) for x in schema['items']['anyOf']
+            ]
 
         return [_parse_schema(schema['items'], method)]
 
