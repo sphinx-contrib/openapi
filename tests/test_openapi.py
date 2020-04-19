@@ -1529,6 +1529,127 @@ class TestOpenApi3HttpDomain(object):
 
         ''').lstrip()
 
+    def test_string_example(self):
+        renderer = renderers.HttpdomainOldRenderer(None, {'examples': True})
+        text = '\n'.join(renderer.render_restructuredtext_markup({
+            'openapi': '3.0.0',
+            'paths': {
+                '/resources': {
+                    'get': {
+                        'summary': 'Get resources',
+                        'responses': {
+                            '200': {
+                                'description': 'Something',
+                                'content': {
+                                    'application/json': {
+                                        'schema': {
+                                            'type': 'string',
+                                            'example': '"A sample"',
+                                        }
+                                    }
+                                }
+                            },
+                        },
+                    },
+                },
+            },
+        }))
+
+        assert text == textwrap.dedent('''
+            .. http:get:: /resources
+               :synopsis: Get resources
+
+               **Get resources**
+
+
+               **Example request:**
+
+               .. sourcecode:: http
+
+                  GET /resources HTTP/1.1
+                  Host: example.com
+
+               :status 200:
+                  Something
+
+                  **Example response:**
+
+                  .. sourcecode:: http
+
+                     HTTP/1.1 200 OK
+                     Content-Type: application/json
+
+                     "A sample"
+
+        ''').lstrip()
+
+    def test_ref_example(self):
+        renderer = renderers.HttpdomainOldRenderer(None, {'examples': True})
+        text = '\n'.join(renderer.render_restructuredtext_markup({
+            'openapi': '3.0.0',
+            'paths': {
+                '/resources': {
+                    'get': {
+                        'summary': 'Get resources',
+                        'responses': {
+                            '200': {
+                                'description': 'Something',
+                                'content': {
+                                    'application/json': {
+                                        'schema': {
+                                            '$ref':
+                                                '#/components/schemas/Data',
+                                        }
+                                    }
+                                }
+                            },
+                        },
+                    },
+                },
+            },
+            'components': {
+                'schemas': {
+                    'Data': {
+                        'type': 'object',
+                        'additionalProperties': True,
+                        'example': {
+                            'prop1': "Sample 1",
+                        }
+                    }
+                }
+            }
+        }))
+
+        assert text == textwrap.dedent('''
+            .. http:get:: /resources
+               :synopsis: Get resources
+
+               **Get resources**
+
+
+               **Example request:**
+
+               .. sourcecode:: http
+
+                  GET /resources HTTP/1.1
+                  Host: example.com
+
+               :status 200:
+                  Something
+
+                  **Example response:**
+
+                  .. sourcecode:: http
+
+                     HTTP/1.1 200 OK
+                     Content-Type: application/json
+
+                     {
+                         "prop1": "Sample 1"
+                     }
+
+        ''').lstrip()
+
     def test_method_option(self):
         spec = collections.defaultdict(collections.OrderedDict)
         spec['paths']['/resource_a'] = {

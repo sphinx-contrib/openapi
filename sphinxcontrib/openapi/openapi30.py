@@ -179,6 +179,10 @@ def _example(media_type_objects, method=None, endpoint=None, status=None,
         examples = content.get('examples')
         example = content.get('example')
 
+        # Try to get the example from the schema
+        if example is None and 'schema' in content:
+            example = content['schema'].get('example')
+
         if examples is None:
             examples = {}
             if not example:
@@ -198,6 +202,7 @@ def _example(media_type_objects, method=None, endpoint=None, status=None,
                 }
 
         for example in examples.values():
+            # According to OpenAPI v3 specs, string examples should be left unchanged
             if not isinstance(example['value'], str):
                 example['value'] = json.dumps(
                     example['value'], indent=4, separators=(',', ': '))
