@@ -17,6 +17,8 @@ class HttpdomainOldRenderer(abc.RestructuredTextRenderer):
         # delimited.
         "include": lambda s: s.split(),
         "exclude": lambda s: s.split(),
+        # Endpoints to be included based on HTTP method names.
+        "methods": lambda s: s.split(),
         # Render the request body structure when passed.
         "request": directives.flag,
         # Render request/response examples when passed.

@@ -1,0 +1,5 @@
+foo:
+  a: 17
+  # and jump to JSON to test recursive resolutions:
+  b:
+    $ref: 'foo.json#/foo/a'

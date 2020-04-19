@@ -20,6 +20,7 @@ except DistributionNotFound:
 
 
 _BUILTIN_RENDERERS = {
+    "httpdomain": renderers.HttpdomainRenderer,
     "httpdomain:old": renderers.HttpdomainOldRenderer,
 }
 _DEFAULT_RENDERER_NAME = "httpdomain:old"
@@ -53,6 +54,27 @@ def _register_rendering_directives(app, conf):
 def setup(app):
     app.add_config_value("openapi_default_renderer", _DEFAULT_RENDERER_NAME, "html")
     app.add_config_value("openapi_renderers", {}, "html")
+
+    from sphinxcontrib import httpdomain
+
+    for idx, fieldtype in enumerate(httpdomain.HTTPResource.doc_field_types):
+        if fieldtype.name == 'requestheader':
+            httpdomain.HTTPResource.doc_field_types[idx] = httpdomain.TypedField(
+                fieldtype.name,
+                label=fieldtype.label,
+                names=fieldtype.names,
+                typerolename='header',
+                typenames=('reqheadertype', ),
+            )
+
+        if fieldtype.name == 'responseheader':
+            httpdomain.HTTPResource.doc_field_types[idx] = httpdomain.TypedField(
+                fieldtype.name,
+                label=fieldtype.label,
+                names=fieldtype.names,
+                typerolename='header',
+                typenames=('resheadertype', ),
+            )
 
     app.setup_extension("sphinxcontrib.httpdomain")
     app.connect("config-inited", _register_rendering_directives)

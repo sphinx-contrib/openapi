@@ -9,7 +9,10 @@
 """
 
 import copy
+
 import collections
+import collections.abc
+
 from datetime import datetime
 import itertools
 import json
@@ -64,9 +67,9 @@ def _dict_merge(dct, merge_dct):
         dct: dict onto which the merge is executed
         merge_dct: dct merged into dct
     """
-    for k, v in merge_dct.items():
+    for k in merge_dct.keys():
         if (k in dct and isinstance(dct[k], dict)
-                and isinstance(merge_dct[k], collections.Mapping)):
+                and isinstance(merge_dct[k], collections.abc.Mapping)):
             _dict_merge(dct[k], merge_dct[k])
         else:
             dct[k] = merge_dct[k]
@@ -105,11 +108,17 @@ def _parse_schema(schema, method):
     schema_type = schema.get('type', 'object')
 
     if schema_type == 'array':
-        # special case oneOf so that we can show examples for all possible
-        # combinations
+        # special case oneOf and anyOf so that we can show examples for all
+        # possible combinations
         if 'oneOf' in schema['items']:
             return [
-                _parse_schema(x, method) for x in schema['items']['oneOf']]
+                _parse_schema(x, method) for x in schema['items']['oneOf']
+            ]
+
+        if 'anyOf' in schema['items']:
+            return [
+                _parse_schema(x, method) for x in schema['items']['anyOf']
+            ]
 
         return [_parse_schema(schema['items'], method)]
 
@@ -181,7 +190,8 @@ def _example(media_type_objects, method=None, endpoint=None, status=None,
         if examples is None:
             examples = {}
             if not example:
-                if content_type != 'application/json':
+                if re.match(r"application/[a-zA-Z\+]*json", content_type) is \
+                        None:
                     LOG.info('skipping non-JSON example generation.')
                     continue
                 example = _parse_schema(content['schema'], method=method)
