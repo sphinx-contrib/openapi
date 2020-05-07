@@ -5,10 +5,24 @@
 Here you can see the list of changes between each 'sphinxcontrib-openapi'
 release.
 
-0.6.0 (unreleased)
+0.7.0 (2020-05-07)
 ==================
 
 - Drop Python 2.7 support because it reached its end-of-life.
+- Add support for examples defined in schema.
+- Add support for 'anyOf' during example generation based on schema.
+- Fix loading $ref in other YAML files.
+- Fix freeforom (property-less) obhect schema rendering.
+- Respect RFC7807 in example generation.
+- Add new experimental OpenAPI v3 renderer.
+
+0.6.0 (2019-12-20)
+==================
+
+- Add ``include`` and ``exclude`` options to exclude certain paths out from
+  rendering.
+- Generate samples for ``GET`` requests.
+- When rendering by groups, preserve order of groups specified in the spec.
 
 0.5.0 (2019-09-04)
 ==================
@@ -38,7 +52,6 @@ release.
 
 - Make 'sphinxcontrib-openapi' compatible with Sphinx 1.6.
 
-
 0.3.0 (2017-01-29)
 ==================
 
@@ -47,18 +60,15 @@ release.
 - Resolve references inside list objects.
 - Handle common ``parameters` specified at the endpoint's root.
 
-
 0.2.1 (2017-01-10)
 ==================
 
 - Resolve relative JSON references.
 
-
 0.2.0 (2016-11-16)
 ==================
 
 - Resolve JSON references in the spec before attempt to generate a doc.
-
 
 0.1.0 (2016-10-03)
 ==================
