@@ -277,9 +277,25 @@ def _httpresource(endpoint, method, properties, convert, render_examples,
 
     # print request's query params
     for param in filter(lambda p: p['in'] == 'query', parameters):
-        yield indent + ':query {type} {name}:'.format(
-            type=param['schema']['type'],
-            name=param['name'])
+        if 'schema' in param:
+            yield indent + ':query {type} {name}:'.format(
+                type=param['schema']['type'],
+                name=param['name']
+            )
+        if 'content' in param:
+            yield ''
+            yield indent + ':query {name}'.format(
+                name=param['name']
+            )
+            yield ''
+            schema = json.dumps(
+                param['content']['application/json']['schema'],
+                indent=2
+            )
+            yield '{indent}.. sourcecode:: json'.format(**locals())
+            yield ''
+            yield '{indent}{indent}{schema}'.format(**locals())
+            yield ''
         for line in convert(param.get('description', '')).splitlines():
             yield '{indent}{indent}{line}'.format(**locals())
         if param.get('required', False):
@@ -296,20 +312,20 @@ def _httpresource(endpoint, method, properties, convert, render_examples,
                 query_param_examples.append((param['name'], example))
 
     # print request content
-    if render_request:
+    if True: # render_request:
         request_content = properties.get('requestBody', {}).get('content', {})
         if request_content and 'application/json' in request_content:
-            schema = request_content['application/json']['schema']
-            req_properties = json.dumps(schema['properties'], indent=2,
-                                        separators=(',', ':'))
+            schema = json.dumps(
+                request_content['application/json']['schema']['properties'],
+                indent=2
+            )
+            yield ''
             yield '{indent}**Request body:**'.format(**locals())
             yield ''
             yield '{indent}.. sourcecode:: json'.format(**locals())
             yield ''
-            for line in req_properties.splitlines():
-                # yield indent + line
-                yield '{indent}{indent}{line}'.format(**locals())
-                # yield ''
+            yield '{indent}{indent}{schema}'.format(**locals())
+            yield ''
 
     # print request example
     if render_examples:
