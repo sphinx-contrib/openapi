@@ -312,7 +312,7 @@ def _httpresource(endpoint, method, properties, convert, render_examples,
                 query_param_examples.append((param['name'], example))
 
     # print request content
-    if True: # render_request:
+    if True:
         request_content = properties.get('requestBody', {}).get('content', {})
         if request_content and 'application/json' in request_content:
             schema = json.dumps(
