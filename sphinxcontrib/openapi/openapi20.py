@@ -111,7 +111,15 @@ def convert_json_schema(schema, directive=':<json'):
                     (prop in required_properties))
 
         elif type_ == 'array':
-            _convert(schema['items'], name + '[]')
+            if schema['items'].get('type', 'any') in ['string', 'number', 'integer', 'boolean']:
+                name = name.lstrip('.')
+                description = schema.get('description', '')
+                output.append((
+                    name,
+                    '{type_} {name}:'
+                    ' {description}'.format(**locals())))
+            else:
+                _convert(schema['items'], name + '[]')
 
         else:
             if name:
