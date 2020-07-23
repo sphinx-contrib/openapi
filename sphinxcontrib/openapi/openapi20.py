@@ -111,14 +111,13 @@ def convert_json_schema(schema, directive=':<json'):
                     (prop in required_properties))
 
         elif type_ == 'array':
-            if schema['items'].get('type', 'any') in ['string', 'number', 'integer', 'boolean']:
-                name = name.lstrip('.')
-                description = schema.get('description', '')
-                output.append((
-                    name,
-                    '{type_} {name}:'
-                    ' {description}'.format(**locals())))
-            else:
+            name = name.lstrip('.')
+            description = schema.get('description', '')
+            output.append((
+                name,
+                '{type_} {name}:'
+                ' {description}'.format(**locals())))
+            if schema['items'].get('type', 'any') not in ['string', 'number', 'integer', 'boolean']:
                 _convert(schema['items'], name + '[]')
 
         else:
@@ -235,7 +234,7 @@ def openapihttpdomain(spec, **options):
     if 'group' in options:
         groups = collections.OrderedDict(
             [(x['name'], []) for x in spec.get('tags', {})]
-            )
+        )
 
         for endpoint in paths:
             for method, properties in spec['paths'][endpoint].items():
@@ -247,7 +246,7 @@ def openapihttpdomain(spec, **options):
                     method,
                     properties,
                     utils.get_text_converter(options),
-                    ))
+                ))
 
         for key in groups.keys():
             if key:
@@ -266,6 +265,6 @@ def openapihttpdomain(spec, **options):
                     method,
                     properties,
                     utils.get_text_converter(options),
-                    ))
+                ))
 
     return iter(itertools.chain(*generators))
