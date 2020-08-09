@@ -31,6 +31,7 @@ setup(
         "PyYAML >= 3.12",
         "jsonschema >= 2.5.1",
         "m2r >= 0.2",
+        "picobox >= 2.2",
     ],
     project_urls={
         "Documentation": "https://sphinxcontrib-openapi.readthedocs.io/",
