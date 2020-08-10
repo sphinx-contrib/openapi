@@ -11,36 +11,36 @@ def textify(generator):
     return "\n".join(generator)
 
 
-def test_render_operation(testrenderer):
+def test_render_operation(testrenderer, oas_fragment):
     """Usual operation definition is rendered."""
 
     markup = textify(
         testrenderer.render_operation(
             "/evidences/{evidenceId}",
             "get",
-            {
-                "summary": "Retrieve an evidence by ID.",
-                "description": "More verbose description...",
-                "parameters": [
-                    {
-                        "name": "evidenceId",
-                        "in": "path",
-                        "required": True,
-                        "description": "A unique evidence identifier to query.",
-                        "schema": {"type": "string"},
-                    },
-                    {
-                        "name": "details",
-                        "in": "query",
-                        "description": "If true, information w/ details is returned.",
-                        "schema": {"type": "boolean"},
-                    },
-                ],
-                "responses": {
-                    "200": {"description": "An evidence."},
-                    "404": {"description": "An evidence not found."},
-                },
-            },
+            oas_fragment(
+                """
+                summary: Retrieve an evidence by ID.
+                description: More verbose description...
+                parameters:
+                  - name: evidenceId
+                    in: path
+                    required: true
+                    description: A unique evidence identifier to query.
+                    schema:
+                      type: string
+                  - name: details
+                    in: query
+                    description: If true, information w/ details is returned.
+                    schema:
+                      type: boolean
+                responses:
+                  '200':
+                    description: An evidence.
+                  '404':
+                    description: An evidence not found.
+                """
+            ),
         )
     )
     assert markup == textwrap.dedent(
@@ -65,14 +65,20 @@ def test_render_operation(testrenderer):
     )
 
 
-def test_render_operation_minimal(testrenderer):
+def test_render_operation_minimal(testrenderer, oas_fragment):
     """Operation minimal definition is rendered."""
 
     markup = textify(
         testrenderer.render_operation(
             "/evidences",
             "post",
-            {"responses": {"201": {"description": "An evidence created."}}},
+            oas_fragment(
+                """
+                responses:
+                  '201':
+                    description: An evidence created.
+                """
+            ),
         )
     )
     assert markup == textwrap.dedent(
@@ -85,17 +91,21 @@ def test_render_operation_minimal(testrenderer):
     )
 
 
-def test_render_operation_summary(testrenderer):
+def test_render_operation_summary(testrenderer, oas_fragment):
     """Operation's 'summary' is rendered in bold."""
 
     markup = textify(
         testrenderer.render_operation(
             "/evidences",
             "post",
-            {
-                "summary": "Create an evidence.",
-                "responses": {"201": {"description": "An evidence created."}},
-            },
+            oas_fragment(
+                """
+                summary: Create an evidence.
+                responses:
+                  '201':
+                    description: An evidence created.
+                """
+            ),
         )
     )
     assert markup == textwrap.dedent(
@@ -110,17 +120,21 @@ def test_render_operation_summary(testrenderer):
     )
 
 
-def test_render_operation_description(testrenderer):
+def test_render_operation_description(testrenderer, oas_fragment):
     """Operation's 'description' is rendered."""
 
     markup = textify(
         testrenderer.render_operation(
             "/evidences",
             "post",
-            {
-                "description": "Create an evidence.",
-                "responses": {"201": {"description": "An evidence created."}},
-            },
+            oas_fragment(
+                """
+                description: Create an evidence.
+                responses:
+                  '201':
+                    description: An evidence created.
+                """
+            ),
         )
     )
     assert markup == textwrap.dedent(
@@ -135,17 +149,23 @@ def test_render_operation_description(testrenderer):
     )
 
 
-def test_render_operation_description_multiline(testrenderer):
+def test_render_operation_description_multiline(testrenderer, oas_fragment):
     """Operation's multiline 'description' is rendered."""
 
     markup = textify(
         testrenderer.render_operation(
             "/evidences",
             "post",
-            {
-                "description": "Create\nan evidence.",
-                "responses": {"201": {"description": "An evidence created."}},
-            },
+            oas_fragment(
+                """
+                description: |
+                  Create
+                  an evidence.
+                responses:
+                  '201':
+                    description: An evidence created.
+                """
+            ),
         )
     )
     assert markup == textwrap.dedent(
@@ -161,17 +181,21 @@ def test_render_operation_description_multiline(testrenderer):
     )
 
 
-def test_render_operation_description_commonmark_default(testrenderer):
+def test_render_operation_description_commonmark_default(testrenderer, oas_fragment):
     """Operation's 'description' must be in commonmark by default."""
 
     markup = textify(
         testrenderer.render_operation(
             "/evidences",
             "post",
-            {
-                "description": "__Create__ an `evidence`.",
-                "responses": {"201": {"description": "An evidence created."}},
-            },
+            oas_fragment(
+                """
+                description: __Create__ an `evidence`.
+                responses:
+                  '201':
+                    description: An evidence created.
+                """
+            ),
         )
     )
     assert markup == textwrap.dedent(
@@ -186,7 +210,7 @@ def test_render_operation_description_commonmark_default(testrenderer):
     )
 
 
-def test_render_operation_description_commonmark(fakestate):
+def test_render_operation_description_commonmark(fakestate, oas_fragment):
     """Operation's 'description' can be in commonmark."""
 
     testrenderer = renderers.HttpdomainRenderer(fakestate, {"markup": "commonmark"})
@@ -194,10 +218,14 @@ def test_render_operation_description_commonmark(fakestate):
         testrenderer.render_operation(
             "/evidences",
             "post",
-            {
-                "description": "__Create__ an `evidence`.",
-                "responses": {"201": {"description": "An evidence created."}},
-            },
+            oas_fragment(
+                """
+                description: __Create__ an `evidence`.
+                responses:
+                  '201':
+                    description: An evidence created.
+                """
+            ),
         )
     )
     assert markup == textwrap.dedent(
@@ -212,7 +240,9 @@ def test_render_operation_description_commonmark(fakestate):
     )
 
 
-def test_render_operation_description_commonmark_restructuredtext(fakestate):
+def test_render_operation_description_commonmark_restructuredtext(
+    fakestate, oas_fragment
+):
     """Operation's 'description' can be in restructuredtext."""
 
     testrenderer = renderers.HttpdomainRenderer(
@@ -222,10 +252,14 @@ def test_render_operation_description_commonmark_restructuredtext(fakestate):
         testrenderer.render_operation(
             "/evidences",
             "post",
-            {
-                "description": "__Create__ an `evidence`.",
-                "responses": {"201": {"description": "An evidence created."}},
-            },
+            oas_fragment(
+                """
+                description: __Create__ an `evidence`.
+                responses:
+                  '201':
+                    description: An evidence created.
+                """
+            ),
         )
     )
     assert markup == textwrap.dedent(
@@ -240,17 +274,21 @@ def test_render_operation_description_commonmark_restructuredtext(fakestate):
     )
 
 
-def test_render_operation_deprecated(testrenderer):
+def test_render_operation_deprecated(testrenderer, oas_fragment):
     """Operation's 'deprecated' mark is rendered."""
 
     markup = textify(
         testrenderer.render_operation(
             "/evidences",
             "post",
-            {
-                "deprecated": True,
-                "responses": {"201": {"description": "An evidence created."}},
-            },
+            oas_fragment(
+                """
+                responses:
+                  '201':
+                    description: An evidence created.
+                deprecated: true
+                """
+            ),
         )
     )
     assert markup == textwrap.dedent(
@@ -264,21 +302,26 @@ def test_render_operation_deprecated(testrenderer):
     )
 
 
-def test_render_operation_w_requestbody(testrenderer):
+def test_render_operation_w_requestbody(testrenderer, oas_fragment):
     """Operation's 'requestBody' is rendered."""
 
     markup = textify(
         testrenderer.render_operation(
             "/evidences",
             "post",
-            {
-                "requestBody": {
-                    "content": {
-                        "application/json": {"example": {"foo": "bar", "baz": 42}}
-                    },
-                },
-                "responses": {"201": {"description": "An evidence created."}},
-            },
+            oas_fragment(
+                """
+                requestBody:
+                  content:
+                    application/json:
+                      example:
+                        foo: bar
+                        baz: 42
+                responses:
+                  '201':
+                    description: An evidence created.
+                """
+            ),
         )
     )
     assert markup == textwrap.dedent(
@@ -304,21 +347,26 @@ def test_render_operation_w_requestbody(testrenderer):
 @pytest.mark.parametrize(
     ["method"], [pytest.param("POST"), pytest.param("pOst"), pytest.param("post")]
 )
-def test_render_operation_caseinsensitive_method(testrenderer, method):
+def test_render_operation_caseinsensitive_method(testrenderer, method, oas_fragment):
     """Operation's 'method' is case insensitive."""
 
     markup = textify(
         testrenderer.render_operation(
             "/evidences",
             method,
-            {
-                "requestBody": {
-                    "content": {
-                        "application/json": {"example": {"foo": "bar", "baz": 42}}
-                    },
-                },
-                "responses": {"201": {"description": "An evidence created."}},
-            },
+            oas_fragment(
+                """
+                requestBody:
+                  content:
+                    application/json:
+                      example:
+                        foo: bar
+                        baz: 42
+                responses:
+                  '201':
+                    description: An evidence created.
+                """
+            ),
         )
     )
     assert markup == textwrap.dedent(

@@ -12,27 +12,36 @@ def textify(generator):
     return "\n".join(generator)
 
 
-def test_render_parameters_no_items(testrenderer):
+def test_render_parameters_no_items(testrenderer, oas_fragment):
     """No parameter definitions are rendered."""
 
-    markup = textify(testrenderer.render_parameters([]))
+    markup = textify(
+        testrenderer.render_parameters(
+            oas_fragment(
+                """
+                []
+                """
+            )
+        )
+    )
     assert markup == ""
 
 
-def test_render_parameters_one_item(testrenderer):
+def test_render_parameters_one_item(testrenderer, oas_fragment):
     """One usual parameter definition is rendered."""
 
     markup = textify(
         testrenderer.render_parameters(
-            [
-                {
-                    "name": "evidenceId",
-                    "in": "path",
-                    "required": True,
-                    "description": "A unique evidence identifier to query.",
-                    "schema": {"type": "string"},
-                }
-            ]
+            oas_fragment(
+                """
+                - name: evidenceId
+                  in: path
+                  required: true
+                  description: A unique evidence identifier to query.
+                  schema:
+                    type: string
+                """
+            )
         )
     )
     assert markup == textwrap.dedent(
@@ -44,33 +53,32 @@ def test_render_parameters_one_item(testrenderer):
     )
 
 
-def test_render_parameters_many_items(testrenderer):
+def test_render_parameters_many_items(testrenderer, oas_fragment):
     """Many parameter definitions are rendered."""
 
     markup = textify(
         testrenderer.render_parameters(
-            [
-                {
-                    "name": "evidenceId",
-                    "in": "path",
-                    "required": True,
-                    "description": "A unique evidence identifier to query.",
-                    "schema": {"type": "string"},
-                },
-                {
-                    "name": "details",
-                    "in": "query",
-                    "description": "If true, information w/ details is returned.",
-                    "schema": {"type": "boolean"},
-                },
-                {
-                    "name": "Api-Version",
-                    "in": "header",
-                    "default": "1",
-                    "description": "API version to use for the request.",
-                    "schema": {"type": "integer"},
-                },
-            ]
+            oas_fragment(
+                """
+                - name: evidenceId
+                  in: path
+                  required: true
+                  description: A unique evidence identifier to query.
+                  schema:
+                    type: string
+                - name: details
+                  in: query
+                  description: If true, information w/ details is returned.
+                  schema:
+                    type: boolean
+                - name: Api-Version
+                  in: header
+                  default: '1'
+                  description: API version to use for the request.
+                  schema:
+                    type: integer
+                """
+            )
         )
     )
     assert markup == textwrap.dedent(
@@ -89,32 +97,33 @@ def test_render_parameters_many_items(testrenderer):
 
 
 @pytest.mark.parametrize("permutation_seq", itertools.permutations(range(3)))
-def test_render_parameters_many_items_ordered(testrenderer, permutation_seq):
+def test_render_parameters_many_items_ordered(
+    testrenderer, oas_fragment, permutation_seq
+):
     """Many parameter definitions are rendered and properly ordered."""
 
-    parameters = [
-        {
-            "name": "evidenceId",
-            "in": "path",
-            "required": True,
-            "description": "A unique evidence identifier to query.",
-            "schema": {"type": "string"},
-        },
-        {
-            "name": "details",
-            "in": "query",
-            "description": "If true, information w/ details is returned.",
-            "schema": {"type": "boolean"},
-        },
-        {
-            "name": "Api-Version",
-            "in": "header",
-            "required": False,
-            "default": "1",
-            "description": "API version to use for the request.",
-            "schema": {"type": "integer"},
-        },
-    ]
+    parameters = oas_fragment(
+        """
+        - name: evidenceId
+          in: path
+          required: true
+          description: A unique evidence identifier to query.
+          schema:
+            type: string
+        - name: details
+          in: query
+          description: If true, information w/ details is returned.
+          schema:
+            type: boolean
+        - name: Api-Version
+          in: header
+          required: false
+          default: '1'
+          description: API version to use for the request.
+          schema:
+            type: integer
+        """
+    )
 
     markup = textify(
         testrenderer.render_parameters(
@@ -140,53 +149,49 @@ def test_render_parameters_many_items_ordered(testrenderer, permutation_seq):
     )
 
 
-def test_render_parameters_many_items_stable_order(testrenderer):
+def test_render_parameters_many_items_stable_order(testrenderer, oas_fragment):
     """Many parameter definitions are rendered w/ preserved order."""
 
     markup = textify(
         testrenderer.render_parameters(
-            [
-                {
-                    "name": "kind",
-                    "in": "path",
-                    "required": True,
-                    "description": "An evidence kind.",
-                    "schema": {"type": "string"},
-                },
-                {
-                    "name": "Api-Version",
-                    "in": "header",
-                    "default": "1",
-                    "description": "API version to use for the request.",
-                    "schema": {"type": "integer"},
-                },
-                {
-                    "name": "details",
-                    "in": "query",
-                    "description": "If true, information w/ details is returned.",
-                    "schema": {"type": "boolean"},
-                },
-                {
-                    "name": "evidenceId",
-                    "in": "path",
-                    "required": True,
-                    "description": "A unique evidence identifier to query.",
-                    "schema": {"type": "string"},
-                },
-                {
-                    "name": "related",
-                    "in": "query",
-                    "description": "If true, links to related evidences are returned.",
-                    "schema": {"type": "boolean"},
-                },
-                {
-                    "name": "Accept",
-                    "in": "header",
-                    "default": "application/json",
-                    "description": "A desired Content-Type of HTTP response.",
-                    "schema": {"type": "string"},
-                },
-            ]
+            oas_fragment(
+                """
+                - name: kind
+                  in: path
+                  required: true
+                  description: An evidence kind.
+                  schema:
+                    type: string
+                - name: Api-Version
+                  in: header
+                  default: '1'
+                  description: API version to use for the request.
+                  schema:
+                    type: integer
+                - name: details
+                  in: query
+                  description: If true, information w/ details is returned.
+                  schema:
+                    type: boolean
+                - name: evidenceId
+                  in: path
+                  required: true
+                  description: A unique evidence identifier to query.
+                  schema:
+                    type: string
+                - name: related
+                  in: query
+                  description: If true, links to related evidences are returned.
+                  schema:
+                    type: boolean
+                - name: Accept
+                  in: header
+                  default: application/json
+                  description: A desired Content-Type of HTTP response.
+                  schema:
+                    type: string
+                """
+            )
         )
     )
     assert markup == textwrap.dedent(
@@ -213,7 +218,7 @@ def test_render_parameters_many_items_stable_order(testrenderer):
     )
 
 
-def test_render_parameters_custom_order(fakestate):
+def test_render_parameters_custom_order(fakestate, oas_fragment):
     """Many parameter definitions are rendered w/ preserved order."""
 
     testrenderer = renderers.HttpdomainRenderer(
@@ -222,48 +227,44 @@ def test_render_parameters_custom_order(fakestate):
 
     markup = textify(
         testrenderer.render_parameters(
-            [
-                {
-                    "name": "kind",
-                    "in": "path",
-                    "required": True,
-                    "description": "An evidence kind.",
-                    "schema": {"type": "string"},
-                },
-                {
-                    "name": "Api-Version",
-                    "in": "header",
-                    "default": "1",
-                    "description": "API version to use for the request.",
-                    "schema": {"type": "integer"},
-                },
-                {
-                    "name": "details",
-                    "in": "query",
-                    "description": "If true, information w/ details is returned.",
-                    "schema": {"type": "boolean"},
-                },
-                {
-                    "name": "evidenceId",
-                    "in": "path",
-                    "required": True,
-                    "description": "A unique evidence identifier to query.",
-                    "schema": {"type": "string"},
-                },
-                {
-                    "name": "related",
-                    "in": "query",
-                    "description": "If true, links to related evidences are returned.",
-                    "schema": {"type": "boolean"},
-                },
-                {
-                    "name": "Accept",
-                    "in": "header",
-                    "default": "application/json",
-                    "description": "A desired Content-Type of HTTP response.",
-                    "schema": {"type": "string"},
-                },
-            ]
+            oas_fragment(
+                """
+                - name: kind
+                  in: path
+                  required: true
+                  description: An evidence kind.
+                  schema:
+                    type: string
+                - name: Api-Version
+                  in: header
+                  default: '1'
+                  description: API version to use for the request.
+                  schema:
+                    type: integer
+                - name: details
+                  in: query
+                  description: If true, information w/ details is returned.
+                  schema:
+                    type: boolean
+                - name: evidenceId
+                  in: path
+                  required: true
+                  description: A unique evidence identifier to query.
+                  schema:
+                    type: string
+                - name: related
+                  in: query
+                  description: If true, links to related evidences are returned.
+                  schema:
+                    type: boolean
+                - name: Accept
+                  in: header
+                  default: application/json
+                  description: A desired Content-Type of HTTP response.
+                  schema:
+                    type: string
+                """
+            )
         )
     )
     assert markup == textwrap.dedent(
@@ -290,7 +291,7 @@ def test_render_parameters_custom_order(fakestate):
     )
 
 
-def test_render_parameters_custom_order_partial(fakestate):
+def test_render_parameters_custom_order_partial(fakestate, oas_fragment):
     """Many parameter definitions are rendered w/ preserved order."""
 
     testrenderer = renderers.HttpdomainRenderer(
@@ -299,48 +300,44 @@ def test_render_parameters_custom_order_partial(fakestate):
 
     markup = textify(
         testrenderer.render_parameters(
-            [
-                {
-                    "name": "kind",
-                    "in": "path",
-                    "required": True,
-                    "description": "An evidence kind.",
-                    "schema": {"type": "string"},
-                },
-                {
-                    "name": "Api-Version",
-                    "in": "header",
-                    "default": "1",
-                    "description": "API version to use for the request.",
-                    "schema": {"type": "integer"},
-                },
-                {
-                    "name": "details",
-                    "in": "query",
-                    "description": "If true, information w/ details is returned.",
-                    "schema": {"type": "boolean"},
-                },
-                {
-                    "name": "evidenceId",
-                    "in": "path",
-                    "required": True,
-                    "description": "A unique evidence identifier to query.",
-                    "schema": {"type": "string"},
-                },
-                {
-                    "name": "related",
-                    "in": "query",
-                    "description": "If true, links to related evidences are returned.",
-                    "schema": {"type": "boolean"},
-                },
-                {
-                    "name": "Accept",
-                    "in": "header",
-                    "default": "application/json",
-                    "description": "A desired Content-Type of HTTP response.",
-                    "schema": {"type": "string"},
-                },
-            ]
+            oas_fragment(
+                """
+                - name: kind
+                  in: path
+                  required: true
+                  description: An evidence kind.
+                  schema:
+                    type: string
+                - name: Api-Version
+                  in: header
+                  default: '1'
+                  description: API version to use for the request.
+                  schema:
+                    type: integer
+                - name: details
+                  in: query
+                  description: If true, information w/ details is returned.
+                  schema:
+                    type: boolean
+                - name: evidenceId
+                  in: path
+                  required: true
+                  description: A unique evidence identifier to query.
+                  schema:
+                    type: string
+                - name: related
+                  in: query
+                  description: If true, links to related evidences are returned.
+                  schema:
+                    type: boolean
+                - name: Accept
+                  in: header
+                  default: application/json
+                  description: A desired Content-Type of HTTP response.
+                  schema:
+                    type: string
+                """
+            )
         )
     )
     assert markup == textwrap.dedent(
@@ -367,7 +364,7 @@ def test_render_parameters_custom_order_partial(fakestate):
     )
 
 
-def test_render_parameters_case_insensitive(fakestate):
+def test_render_parameters_case_insensitive(fakestate, oas_fragment):
     """Many parameter definitions are rendered w/ preserved order."""
 
     testrenderer = renderers.HttpdomainRenderer(
@@ -376,48 +373,44 @@ def test_render_parameters_case_insensitive(fakestate):
 
     markup = textify(
         testrenderer.render_parameters(
-            [
-                {
-                    "name": "kind",
-                    "in": "PATH",
-                    "required": True,
-                    "description": "An evidence kind.",
-                    "schema": {"type": "string"},
-                },
-                {
-                    "name": "Api-Version",
-                    "in": "header",
-                    "default": "1",
-                    "description": "API version to use for the request.",
-                    "schema": {"type": "integer"},
-                },
-                {
-                    "name": "details",
-                    "in": "query",
-                    "description": "If true, information w/ details is returned.",
-                    "schema": {"type": "boolean"},
-                },
-                {
-                    "name": "evidenceId",
-                    "in": "Path",
-                    "required": True,
-                    "description": "A unique evidence identifier to query.",
-                    "schema": {"type": "string"},
-                },
-                {
-                    "name": "related",
-                    "in": "qUery",
-                    "description": "If true, links to related evidences are returned.",
-                    "schema": {"type": "boolean"},
-                },
-                {
-                    "name": "Accept",
-                    "in": "headeR",
-                    "default": "application/json",
-                    "description": "A desired Content-Type of HTTP response.",
-                    "schema": {"type": "string"},
-                },
-            ]
+            oas_fragment(
+                """
+                - name: kind
+                  in: PATH
+                  required: true
+                  description: An evidence kind.
+                  schema:
+                    type: string
+                - name: Api-Version
+                  in: header
+                  default: '1'
+                  description: API version to use for the request.
+                  schema:
+                    type: integer
+                - name: details
+                  in: query
+                  description: If true, information w/ details is returned.
+                  schema:
+                    type: boolean
+                - name: evidenceId
+                  in: Path
+                  required: true
+                  description: A unique evidence identifier to query.
+                  schema:
+                    type: string
+                - name: related
+                  in: qUery
+                  description: If true, links to related evidences are returned.
+                  schema:
+                    type: boolean
+                - name: Accept
+                  in: headeR
+                  default: application/json
+                  description: A desired Content-Type of HTTP response.
+                  schema:
+                    type: string
+                """
+            )
         )
     )
     assert markup == textwrap.dedent(
