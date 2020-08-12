@@ -13,11 +13,18 @@ def textify(generator):
 @pytest.mark.parametrize(
     ["statuscode"], [pytest.param("200"), pytest.param("4XX"), pytest.param("default")]
 )
-def test_render_response_status_code(testrenderer, statuscode):
+def test_render_response_status_code(testrenderer, oas_fragment, statuscode):
     """Path response's definition is rendered for any status code."""
 
     markup = textify(
-        testrenderer.render_response(statuscode, {"description": "An evidence."})
+        testrenderer.render_response(
+            statuscode,
+            oas_fragment(
+                """
+                description: An evidence.
+                """
+            ),
+        )
     )
     assert markup == textwrap.dedent(
         """\
@@ -28,10 +35,19 @@ def test_render_response_status_code(testrenderer, statuscode):
     )
 
 
-def test_render_response_minimal(testrenderer):
+def test_render_response_minimal(testrenderer, oas_fragment):
     """Path response's minimal definition is rendered."""
 
-    markup = textify(testrenderer.render_response(200, {"description": "An evidence."}))
+    markup = textify(
+        testrenderer.render_response(
+            200,
+            oas_fragment(
+                """
+                description: An evidence.
+                """
+            ),
+        )
+    )
     assert markup == textwrap.dedent(
         """\
         :statuscode 200:
@@ -40,12 +56,19 @@ def test_render_response_minimal(testrenderer):
     )
 
 
-def test_render_response_description_commonmark_default(testrenderer):
+def test_render_response_description_commonmark_default(testrenderer, oas_fragment):
     """Path response's 'description' must be in commonmark."""
 
     markup = textify(
         testrenderer.render_response(
-            "200", {"description": "An __evidence__ that matches\nthe `query`."}
+            "200",
+            oas_fragment(
+                """
+                description: |
+                  An __evidence__ that matches
+                  the `query`.
+                """
+            ),
         )
     )
     assert markup == textwrap.dedent(
@@ -57,13 +80,20 @@ def test_render_response_description_commonmark_default(testrenderer):
     )
 
 
-def test_render_response_description_commonmark(fakestate):
+def test_render_response_description_commonmark(fakestate, oas_fragment):
     """Path response's 'description' can be in commonmark."""
 
     testrenderer = renderers.HttpdomainRenderer(fakestate, {"markup": "commonmark"})
     markup = textify(
         testrenderer.render_response(
-            "200", {"description": "An __evidence__ that matches\nthe `query`."}
+            "200",
+            oas_fragment(
+                """
+                description: |
+                  An __evidence__ that matches
+                  the `query`.
+                """
+            ),
         )
     )
     assert markup == textwrap.dedent(
@@ -75,7 +105,7 @@ def test_render_response_description_commonmark(fakestate):
     )
 
 
-def test_render_response_description_restructuredtext(fakestate):
+def test_render_response_description_restructuredtext(fakestate, oas_fragment):
     """Path response's 'description' can be in restructuredtext."""
 
     testrenderer = renderers.HttpdomainRenderer(
@@ -83,7 +113,14 @@ def test_render_response_description_restructuredtext(fakestate):
     )
     markup = textify(
         testrenderer.render_response(
-            "200", {"description": "An __evidence__ that matches\nthe `query`."}
+            "200",
+            oas_fragment(
+                """
+                description: |
+                  An __evidence__ that matches
+                  the `query`.
+                """
+            ),
         )
     )
     assert markup == textwrap.dedent(
@@ -103,16 +140,22 @@ def test_render_response_description_restructuredtext(fakestate):
         pytest.param("202", "Accepted", id="202"),
     ],
 )
-def test_render_response_content_2xx(testrenderer, status_code, status):
+def test_render_response_content_2xx(testrenderer, oas_fragment, status_code, status):
     """Path response's 'content' definition is rendered."""
 
     markup = textify(
         testrenderer.render_response(
             status_code,
-            {
-                "description": "An evidence.",
-                "content": {"application/json": {"example": {"foo": "bar", "baz": 42}}},
-            },
+            oas_fragment(
+                """
+                description: An evidence.
+                content:
+                  application/json:
+                    example:
+                      foo: bar
+                      baz: 42
+                """
+            ),
         )
     )
     assert markup == textwrap.dedent(
@@ -143,16 +186,22 @@ def test_render_response_content_2xx(testrenderer, status_code, status):
         pytest.param("502"),
     ],
 )
-def test_render_response_content_non_2xx(testrenderer, status_code):
+def test_render_response_content_non_2xx(testrenderer, oas_fragment, status_code):
     """Path response's 'content' definition is NOT rendered."""
 
     markup = textify(
         testrenderer.render_response(
             status_code,
-            {
-                "description": "An evidence.",
-                "content": {"application/json": {"example": {"foo": "bar", "baz": 42}}},
-            },
+            oas_fragment(
+                """
+                description: An evidence.
+                content:
+                  application/json:
+                    example:
+                      foo: bar
+                      baz: 42
+                """
+            ),
         )
     )
     assert markup == textwrap.dedent(
@@ -172,7 +221,7 @@ def test_render_response_content_non_2xx(testrenderer, status_code):
         pytest.param("422", "Unprocessable Entity", id="422"),
     ],
 )
-def test_render_response_content_custom(fakestate, status_code, status):
+def test_render_response_content_custom(fakestate, oas_fragment, status_code, status):
     """Path response's 'content' definition is rendered."""
 
     testrenderer = renderers.HttpdomainRenderer(
@@ -182,10 +231,16 @@ def test_render_response_content_custom(fakestate, status_code, status):
     markup = textify(
         testrenderer.render_response(
             status_code,
-            {
-                "description": "An evidence.",
-                "content": {"application/json": {"example": {"foo": "bar", "baz": 42}}},
-            },
+            oas_fragment(
+                """
+                description: An evidence.
+                content:
+                  application/json:
+                    example:
+                      foo: bar
+                      baz: 42
+                """
+            ),
         )
     )
     assert markup == textwrap.dedent(
@@ -206,7 +261,7 @@ def test_render_response_content_custom(fakestate, status_code, status):
     )
 
 
-def test_render_response_content_custom_mismatch(fakestate):
+def test_render_response_content_custom_mismatch(fakestate, oas_fragment):
     """Path response's 'content' definition is NOT rendered."""
 
     testrenderer = renderers.HttpdomainRenderer(
@@ -216,10 +271,16 @@ def test_render_response_content_custom_mismatch(fakestate):
     markup = textify(
         testrenderer.render_response(
             "200",
-            {
-                "description": "An evidence.",
-                "content": {"application/json": {"example": {"foo": "bar", "baz": 42}}},
-            },
+            oas_fragment(
+                """
+                description: An evidence.
+                content:
+                  application/json:
+                    example:
+                      foo: bar
+                      baz: 42
+                """
+            ),
         )
     )
     assert markup == textwrap.dedent(
@@ -230,21 +291,22 @@ def test_render_response_content_custom_mismatch(fakestate):
     )
 
 
-def test_render_response_header(testrenderer):
+def test_render_response_header(testrenderer, oas_fragment):
     """Path response's 'header' definition is rendered."""
 
     markup = textify(
         testrenderer.render_response(
             "200",
-            {
-                "description": "An evidence.",
-                "headers": {
-                    "X-Request-Id": {
-                        "description": "A unique request identifier.",
-                        "schema": {"type": "string"},
-                    }
-                },
-            },
+            oas_fragment(
+                """
+                description: An evidence.
+                headers:
+                  X-Request-Id:
+                    description: A unique request identifier.
+                    schema:
+                      type: string
+                """
+            ),
         )
     )
     assert markup == textwrap.dedent(
@@ -259,12 +321,19 @@ def test_render_response_header(testrenderer):
     )
 
 
-def test_render_response_header_minimal(testrenderer):
+def test_render_response_header_minimal(testrenderer, oas_fragment):
     """Path response's 'header' minimal definition is rendered."""
 
     markup = textify(
         testrenderer.render_response(
-            200, {"description": "An evidence.", "headers": {"X-Request-Id": {}}},
+            200,
+            oas_fragment(
+                """
+                description: An evidence.
+                headers:
+                  X-Request-Id: {}
+                """
+            ),
         )
     )
     assert markup == textwrap.dedent(
@@ -277,18 +346,20 @@ def test_render_response_header_minimal(testrenderer):
     )
 
 
-def test_render_response_header_description(testrenderer):
+def test_render_response_header_description(testrenderer, oas_fragment):
     """Path response's 'header' description is rendered."""
 
     markup = textify(
         testrenderer.render_response(
             200,
-            {
-                "description": "An evidence.",
-                "headers": {
-                    "X-Request-Id": {"description": "A unique request identifier."}
-                },
-            },
+            oas_fragment(
+                """
+                description: An evidence.
+                headers:
+                  X-Request-Id:
+                    description: A unique request identifier.
+                """
+            ),
         )
     )
     assert markup == textwrap.dedent(
@@ -302,18 +373,22 @@ def test_render_response_header_description(testrenderer):
     )
 
 
-def test_render_response_header_multiline_description(testrenderer):
+def test_render_response_header_multiline_description(testrenderer, oas_fragment):
     """Path response's 'header' multiline description is rendered."""
 
     markup = textify(
         testrenderer.render_response(
             200,
-            {
-                "description": "An evidence.",
-                "headers": {
-                    "X-Request-Id": {"description": "A unique request\nidentifier."}
-                },
-            },
+            oas_fragment(
+                """
+                description: An evidence.
+                headers:
+                  X-Request-Id:
+                    description: |
+                      A unique request
+                      identifier.
+                """
+            ),
         )
     )
     assert markup == textwrap.dedent(
@@ -328,20 +403,24 @@ def test_render_response_header_multiline_description(testrenderer):
     )
 
 
-def test_render_response_header_description_commonmark_default(testrenderer):
+def test_render_response_header_description_commonmark_default(
+    testrenderer, oas_fragment
+):
     """Path response's 'header' description must be in commonmark by default."""
 
     markup = textify(
         testrenderer.render_response(
             200,
-            {
-                "description": "An evidence.",
-                "headers": {
-                    "X-Request-Id": {
-                        "description": "A unique __request__\n`identifier`.",
-                    }
-                },
-            },
+            oas_fragment(
+                """
+                description: An evidence.
+                headers:
+                  X-Request-Id:
+                    description: |
+                      A unique __request__
+                      `identifier`.
+                """
+            ),
         )
     )
     assert markup == textwrap.dedent(
@@ -356,21 +435,23 @@ def test_render_response_header_description_commonmark_default(testrenderer):
     )
 
 
-def test_render_response_header_description_commonmark(fakestate):
+def test_render_response_header_description_commonmark(fakestate, oas_fragment):
     """Path response's 'header' description can be in commonmark."""
 
     testrenderer = renderers.HttpdomainRenderer(fakestate, {"markup": "commonmark"})
     markup = textify(
         testrenderer.render_response(
             200,
-            {
-                "description": "An evidence.",
-                "headers": {
-                    "X-Request-Id": {
-                        "description": "A unique __request__\n`identifier`.",
-                    }
-                },
-            },
+            oas_fragment(
+                """
+                description: An evidence.
+                headers:
+                  X-Request-Id:
+                    description: |
+                      A unique __request__
+                      `identifier`.
+                """
+            ),
         )
     )
     assert markup == textwrap.dedent(
@@ -385,7 +466,7 @@ def test_render_response_header_description_commonmark(fakestate):
     )
 
 
-def test_render_response_header_description_restructuredtext(fakestate):
+def test_render_response_header_description_restructuredtext(fakestate, oas_fragment):
     """Path response's 'header' description can be in restructuredtext."""
 
     testrenderer = renderers.HttpdomainRenderer(
@@ -394,14 +475,16 @@ def test_render_response_header_description_restructuredtext(fakestate):
     markup = textify(
         testrenderer.render_response(
             200,
-            {
-                "description": "An evidence.",
-                "headers": {
-                    "X-Request-Id": {
-                        "description": "A unique __request__\n`identifier`.",
-                    }
-                },
-            },
+            oas_fragment(
+                """
+                description: An evidence.
+                headers:
+                  X-Request-Id:
+                    description: |
+                      A unique __request__
+                      `identifier`.
+                """
+            ),
         )
     )
     assert markup == textwrap.dedent(
@@ -416,12 +499,19 @@ def test_render_response_header_description_restructuredtext(fakestate):
     )
 
 
-def test_render_response_header_content_type(testrenderer):
+def test_render_response_header_content_type(testrenderer, oas_fragment):
     """Path response's 'Content-Type' header is ignored."""
 
     markup = textify(
         testrenderer.render_response(
-            200, {"description": "An evidence.", "headers": {"Content-Type": {}}},
+            200,
+            oas_fragment(
+                """
+                description: An evidence.
+                headers:
+                  Content-Type: {}
+                """
+            ),
         )
     )
 
@@ -436,16 +526,20 @@ def test_render_response_header_content_type(testrenderer):
     )
 
 
-def test_render_response_header_required(testrenderer):
+def test_render_response_header_required(testrenderer, oas_fragment):
     """Path response's header 'required' marker is rendered."""
 
     markup = textify(
         testrenderer.render_response(
             200,
-            {
-                "description": "An evidence.",
-                "headers": {"X-Request-Id": {"required": True}},
-            },
+            oas_fragment(
+                """
+                description: An evidence.
+                headers:
+                  X-Request-Id:
+                    required: true
+                """
+            ),
         )
     )
 
@@ -460,16 +554,20 @@ def test_render_response_header_required(testrenderer):
     )
 
 
-def test_render_response_header_required_false(testrenderer):
+def test_render_response_header_required_false(testrenderer, oas_fragment):
     """Path response's header 'required' marker is not rendered."""
 
     markup = textify(
         testrenderer.render_response(
             200,
-            {
-                "description": "An evidence.",
-                "headers": {"X-Request-Id": {"required": False}},
-            },
+            oas_fragment(
+                """
+                description: An evidence.
+                headers:
+                  X-Request-Id:
+                    required: false
+                """
+            ),
         )
     )
 
@@ -483,16 +581,20 @@ def test_render_response_header_required_false(testrenderer):
     )
 
 
-def test_render_response_header_deprecated(testrenderer):
+def test_render_response_header_deprecated(testrenderer, oas_fragment):
     """Path response's header 'deprecated' marker is rendered."""
 
     markup = textify(
         testrenderer.render_response(
             200,
-            {
-                "description": "An evidence.",
-                "headers": {"X-Request-Id": {"deprecated": True}},
-            },
+            oas_fragment(
+                """
+                description: An evidence.
+                headers:
+                  X-Request-Id:
+                    deprecated: true
+                """
+            ),
         )
     )
 
@@ -507,16 +609,20 @@ def test_render_response_header_deprecated(testrenderer):
     )
 
 
-def test_render_response_header_deprecated_false(testrenderer):
+def test_render_response_header_deprecated_false(testrenderer, oas_fragment):
     """Path response's header 'deprecated' marker is not rendered."""
 
     markup = textify(
         testrenderer.render_response(
             200,
-            {
-                "description": "An evidence.",
-                "headers": {"X-Request-Id": {"deprecated": False}},
-            },
+            oas_fragment(
+                """
+                description: An evidence.
+                headers:
+                  X-Request-Id:
+                    deprecated: false
+                """
+            ),
         )
     )
 
@@ -530,16 +636,21 @@ def test_render_response_header_deprecated_false(testrenderer):
     )
 
 
-def test_render_response_header_required_deprecated(testrenderer):
+def test_render_response_header_required_deprecated(testrenderer, oas_fragment):
     """Path response's header markers are rendered."""
 
     markup = textify(
         testrenderer.render_response(
             200,
-            {
-                "description": "An evidence.",
-                "headers": {"X-Request-Id": {"required": True, "deprecated": True}},
-            },
+            oas_fragment(
+                """
+                description: An evidence.
+                headers:
+                  X-Request-Id:
+                    required: true
+                    deprecated: true
+                """
+            ),
         )
     )
 
@@ -554,16 +665,21 @@ def test_render_response_header_required_deprecated(testrenderer):
     )
 
 
-def test_render_response_header_type(testrenderer):
+def test_render_response_header_type(testrenderer, oas_fragment):
     """Path response's header type is rendered."""
 
     markup = textify(
         testrenderer.render_response(
             200,
-            {
-                "description": "An evidence.",
-                "headers": {"X-Request-Id": {"schema": {"type": "string"}}},
-            },
+            oas_fragment(
+                """
+                description: An evidence.
+                headers:
+                  X-Request-Id:
+                    schema:
+                      type: string
+                """
+            ),
         )
     )
 
@@ -578,18 +694,22 @@ def test_render_response_header_type(testrenderer):
     )
 
 
-def test_render_response_header_type_with_format(testrenderer):
+def test_render_response_header_type_with_format(testrenderer, oas_fragment):
     """Path response's header type with format is rendered."""
 
     markup = textify(
         testrenderer.render_response(
             200,
-            {
-                "description": "An evidence.",
-                "headers": {
-                    "X-Request-Id": {"schema": {"type": "string", "format": "uuid4"}}
-                },
-            },
+            oas_fragment(
+                """
+                description: An evidence.
+                headers:
+                  X-Request-Id:
+                    schema:
+                      type: string
+                      format: uuid4
+                """
+            ),
         )
     )
 
@@ -604,20 +724,23 @@ def test_render_response_header_type_with_format(testrenderer):
     )
 
 
-def test_render_response_header_type_from_content(testrenderer):
+def test_render_response_header_type_from_content(testrenderer, oas_fragment):
     """Path response's header type from content is rendered."""
 
     markup = textify(
         testrenderer.render_response(
             200,
-            {
-                "description": "An evidence.",
-                "headers": {
-                    "X-Request-Id": {
-                        "content": {"text/plain": {"schema": {"type": "string"}}}
-                    }
-                },
-            },
+            oas_fragment(
+                """
+                description: An evidence.
+                headers:
+                  X-Request-Id:
+                    content:
+                      text/plain:
+                        schema:
+                          type: string
+                """
+            ),
         )
     )
 

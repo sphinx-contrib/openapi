@@ -16,95 +16,105 @@ def textify(generator):
     ["media_type"],
     [
         pytest.param(
-            {
-                "application/json": {
-                    "examples": {"test": {"value": {"foo": "bar", "baz": 42}}}
-                }
-            },
+            """
+            application/json:
+              examples:
+                test:
+                  value:
+                    foo: bar
+                    baz: 42
+            """,
             id="examples",
         ),
         pytest.param(
-            {"application/json": {"example": {"foo": "bar", "baz": 42}}}, id="example",
+            """
+            application/json:
+              example:
+                foo: bar
+                baz: 42
+            """,
+            id="example",
         ),
         pytest.param(
-            {"application/json": {"schema": {"example": {"foo": "bar", "baz": 42}}}},
+            """
+            application/json:
+              schema:
+                example:
+                  foo: bar
+                  baz: 42
+            """,
             id="schema/example",
         ),
         pytest.param(
-            {
-                "application/json": {
-                    "examples": {
-                        "test": {
-                            "value": textwrap.dedent(
-                                """\
-                                {
-                                  "foo": "bar",
-                                  "baz": 42
-                                }
-                                """
-                            )
-                        }
+            """
+            application/json:
+              examples:
+                test:
+                  value: |
+                    {
+                      "foo": "bar",
+                      "baz": 42
                     }
-                }
-            },
+            """,
             id="examples::str",
         ),
         pytest.param(
-            {
-                "application/json": {
-                    "example": textwrap.dedent(
-                        """\
-                        {
-                          "foo": "bar",
-                          "baz": 42
-                        }
-                        """
-                    )
+            """
+            application/json:
+              example: |
+                {
+                  "foo": "bar",
+                  "baz": 42
                 }
-            },
+            """,
             id="example::str",
         ),
         pytest.param(
-            {
-                "application/json": {
-                    "schema": {
-                        "example": textwrap.dedent(
-                            """\
-                            {
-                              "foo": "bar",
-                              "baz": 42
-                            }
-                            """
-                        )
-                    }
-                }
-            },
+            """
+            application/json:
+              schema:
+                example: |
+                  {
+                    "foo": "bar",
+                    "baz": 42
+                  }
+            """,
             id="schema/example::str",
         ),
         pytest.param(
-            {
-                "application/json": {
-                    "schema": {"example": {"foobar": "bazinga"}},
-                    "example": {"foo": "bar", "baz": 42},
-                }
-            },
+            """
+            application/json:
+              schema:
+                example:
+                  foobar: bazinga
+              example:
+                foo: bar
+                baz: 42
+            """,
             id="example-beats-schema/example",
         ),
         pytest.param(
-            {
-                "application/json": {
-                    "schema": {"example": {"foobar": "bazinga"}},
-                    "examples": {"test": {"value": {"foo": "bar", "baz": 42}}},
-                }
-            },
+            """
+            application/json:
+              schema:
+                example:
+                  foobar: bazinga
+              examples:
+                test:
+                  value:
+                    foo: bar
+                    baz: 42
+            """,
             id="examples-beats-schema/example",
         ),
     ],
 )
-def test_render_response_content_example(testrenderer, media_type):
+def test_render_response_content_example(testrenderer, oas_fragment, media_type):
     """Path response's example is rendered."""
 
-    markup = textify(testrenderer.render_response_content(media_type, "200"))
+    markup = textify(
+        testrenderer.render_response_content(oas_fragment(media_type), "200")
+    )
     assert markup == textwrap.dedent(
         """\
         .. sourcecode:: http
@@ -120,19 +130,24 @@ def test_render_response_content_example(testrenderer, media_type):
     )
 
 
-def test_render_response_content_example_1st_from_examples(testrenderer):
+def test_render_response_content_example_1st_from_examples(testrenderer, oas_fragment):
     """Path response's first example is rendered."""
 
     markup = textify(
         testrenderer.render_response_content(
-            {
-                "application/json": {
-                    "examples": {
-                        "foo": {"value": {"foo": "bar", "baz": 42}},
-                        "bar": {"value": {"foobar": "bazinga"}},
-                    }
-                }
-            },
+            oas_fragment(
+                """
+                application/json:
+                  examples:
+                    foo:
+                      value:
+                        foo: bar
+                        baz: 42
+                    bar:
+                      value:
+                        foobar: bazinga
+                """
+            ),
             "200",
         )
     )
@@ -151,15 +166,24 @@ def test_render_response_content_example_1st_from_examples(testrenderer):
     )
 
 
-def test_render_response_content_example_1st_from_media_type(testrenderer):
+def test_render_response_content_example_1st_from_media_type(
+    testrenderer, oas_fragment
+):
     """Path response's example from first media type is rendered."""
 
     markup = textify(
         testrenderer.render_response_content(
-            {
-                "text/plain": {"example": 'foo = "bar"\nbaz = 42'},
-                "application/json": {"schema": {"type": "object"}},
-            },
+            oas_fragment(
+                """
+                text/plain:
+                  example: |
+                    foo = "bar"
+                    baz = 42
+                application/json:
+                  schema:
+                    type: object
+                """
+            ),
             "200",
         )
     )
@@ -181,7 +205,9 @@ def test_render_response_content_example_1st_from_media_type(testrenderer):
     ["example_preference_key"],
     [pytest.param("response-example-preference"), pytest.param("example-preference")],
 )
-def test_render_response_content_example_preference(fakestate, example_preference_key):
+def test_render_response_content_example_preference(
+    fakestate, example_preference_key, oas_fragment
+):
     """Path response's example from preferred media type is rendered."""
 
     testrenderer = renderers.HttpdomainRenderer(
@@ -190,10 +216,18 @@ def test_render_response_content_example_preference(fakestate, example_preferenc
 
     markup = textify(
         testrenderer.render_response_content(
-            {
-                "application/json": {"example": {"foo": "bar", "baz": 42}},
-                "text/plain": {"example": 'foo = "bar"\nbaz = 42'},
-            },
+            oas_fragment(
+                """
+                application/json:
+                  example:
+                    foo: bar
+                    baz: 42
+                text/plain:
+                  example: |
+                    foo = "bar"
+                    baz = 42
+                """
+            ),
             "200",
         )
     )
@@ -216,7 +250,7 @@ def test_render_response_content_example_preference(fakestate, example_preferenc
     [pytest.param("response-example-preference"), pytest.param("example-preference")],
 )
 def test_render_response_content_example_preference_complex(
-    fakestate, example_preference_key
+    fakestate, example_preference_key, oas_fragment
 ):
     """Path response's example from preferred media type is rendered."""
 
@@ -226,11 +260,21 @@ def test_render_response_content_example_preference_complex(
 
     markup = textify(
         testrenderer.render_response_content(
-            {
-                "text/csv": {"example": "foo,baz\nbar,42"},
-                "text/plain": {"example": 'foo = "bar"\nbaz = 42'},
-                "application/json": {"schema": {"type": "object"}},
-            },
+            oas_fragment(
+                """
+                text/csv:
+                  example: |
+                    foo,baz
+                    bar,42
+                text/plain:
+                  example: |
+                    foo = "bar"
+                    baz = 42
+                application/json:
+                  schema:
+                    type: object
+                """
+            ),
             "200",
         )
     )
@@ -248,7 +292,7 @@ def test_render_response_content_example_preference_complex(
     )
 
 
-def test_render_response_content_example_preference_priority(fakestate):
+def test_render_response_content_example_preference_priority(fakestate, oas_fragment):
     """Path response's example from preferred media type is rendered."""
 
     testrenderer = renderers.HttpdomainRenderer(
@@ -261,10 +305,18 @@ def test_render_response_content_example_preference_priority(fakestate):
 
     markup = textify(
         testrenderer.render_response_content(
-            {
-                "application/json": {"example": {"foo": "bar", "baz": 42}},
-                "text/plain": {"example": 'foo = "bar"\nbaz = 42'},
-            },
+            oas_fragment(
+                """
+                application/json:
+                  example:
+                    foo: bar
+                    baz: 42
+                text/plain:
+                  example: |
+                    foo = "bar"
+                    baz = 42
+                """
+            ),
             "200",
         )
     )
@@ -283,7 +335,7 @@ def test_render_response_content_example_preference_priority(fakestate):
 
 
 @responses.activate
-def test_render_response_content_example_external(testrenderer):
+def test_render_response_content_example_external(testrenderer, oas_fragment):
     """Path response's example can be retrieved from external location."""
 
     responses.add(
@@ -295,15 +347,14 @@ def test_render_response_content_example_external(testrenderer):
 
     markup = textify(
         testrenderer.render_response_content(
-            {
-                "application/json": {
-                    "examples": {
-                        "test": {
-                            "externalValue": "https://example.com/json/examples/test.json"
-                        }
-                    }
-                }
-            },
+            oas_fragment(
+                """
+                application/json:
+                  examples:
+                    test:
+                      externalValue: https://example.com/json/examples/test.json
+                """
+            ),
             "200",
         )
     )
@@ -321,7 +372,7 @@ def test_render_response_content_example_external(testrenderer):
 
 @responses.activate
 def test_render_response_content_example_external_errored_next_example(
-    testrenderer, caplog
+    testrenderer, caplog, oas_fragment
 ):
     """Path response's example fallbacks on next when external cannot be retrieved."""
 
@@ -331,16 +382,16 @@ def test_render_response_content_example_external_errored_next_example(
 
     markup = textify(
         testrenderer.render_response_content(
-            {
-                "application/json": {
-                    "examples": {
-                        "test": {
-                            "externalValue": "https://example.com/json/examples/test.json"
-                        },
-                        "fallback": {"value": '{"spam": 42}'},
-                    }
-                }
-            },
+            oas_fragment(
+                """
+                application/json:
+                  examples:
+                    test:
+                      externalValue: https://example.com/json/examples/test.json
+                    fallback:
+                      value: '{"spam": 42}'
+                """
+            ),
             "200",
         )
     )
@@ -358,7 +409,7 @@ def test_render_response_content_example_external_errored_next_example(
 
 @responses.activate
 def test_render_response_content_example_external_errored_next_media_type(
-    testrenderer, caplog
+    testrenderer, oas_fragment, caplog
 ):
     """Path response's example fallbacks on next when external cannot be retrieved."""
 
@@ -368,16 +419,16 @@ def test_render_response_content_example_external_errored_next_media_type(
 
     markup = textify(
         testrenderer.render_response_content(
-            {
-                "application/json": {
-                    "examples": {
-                        "test": {
-                            "externalValue": "https://example.com/json/examples/test.json"
-                        },
-                    }
-                },
-                "text/csv": {"example": "spam,42"},
-            },
+            oas_fragment(
+                """
+                application/json:
+                  examples:
+                    test:
+                      externalValue: https://example.com/json/examples/test.json
+                text/csv:
+                  example: spam,42
+                """
+            ),
             "200",
         )
     )
@@ -393,21 +444,19 @@ def test_render_response_content_example_external_errored_next_media_type(
     )
 
 
-def test_render_response_content_example_content_type(testrenderer):
+def test_render_response_content_example_content_type(testrenderer, oas_fragment):
     """Path response's example can render something other than application/json."""
 
     markup = textify(
         testrenderer.render_response_content(
-            {
-                "text/csv": {
-                    "example": textwrap.dedent(
-                        """\
-                        foo,baz
-                        bar,42
-                        """
-                    )
-                }
-            },
+            oas_fragment(
+                """
+                text/csv:
+                  example: |
+                    foo,baz
+                    bar,42
+                """
+            ),
             "200",
         )
     )
@@ -424,12 +473,19 @@ def test_render_response_content_example_content_type(testrenderer):
     )
 
 
-def test_render_response_content_example_noop(testrenderer):
+def test_render_response_content_example_noop(testrenderer, oas_fragment):
     """Path response's example is not rendered if there's nothing to render."""
 
     markup = textify(
         testrenderer.render_response_content(
-            {"application/json": {"schema": {"type": "object"}}}, "200"
+            oas_fragment(
+                """
+                application/json:
+                  schema:
+                    type: object
+                """
+            ),
+            "200",
         )
     )
 
@@ -444,21 +500,21 @@ def test_render_response_content_example_noop(testrenderer):
         pytest.param("422", "Unprocessable Entity", id="422"),
     ],
 )
-def test_render_response_content_status_code(testrenderer, status_code, status_text):
+def test_render_response_content_status_code(
+    testrenderer, oas_fragment, status_code, status_text
+):
     """Path response's example is rendered with proper status code."""
 
     markup = textify(
         testrenderer.render_response_content(
-            {
-                "text/csv": {
-                    "example": textwrap.dedent(
-                        """\
-                        foo,baz
-                        bar,42
-                        """
-                    )
-                }
-            },
+            oas_fragment(
+                """
+                text/csv:
+                  example: |
+                    foo,baz
+                    bar,42
+                """
+            ),
             status_code,
         )
     )
@@ -484,22 +540,20 @@ def test_render_response_content_status_code(testrenderer, status_code, status_t
     ],
 )
 def test_render_response_content_status_code_range(
-    testrenderer, status_range, status_code, status_text
+    testrenderer, oas_fragment, status_range, status_code, status_text
 ):
     """Path response's example is rendered with proper status range."""
 
     markup = textify(
         testrenderer.render_response_content(
-            {
-                "text/csv": {
-                    "example": textwrap.dedent(
-                        """\
-                        foo,baz
-                        bar,42
-                        """
-                    )
-                }
-            },
+            oas_fragment(
+                """
+                text/csv:
+                  example: |
+                    foo,baz
+                    bar,42
+                """
+            ),
             status_range,
         )
     )
@@ -525,22 +579,20 @@ def test_render_response_content_status_code_range(
     ],
 )
 def test_render_response_content_status_code_int(
-    testrenderer, status_code, status_text
+    testrenderer, oas_fragment, status_code, status_text
 ):
     """Path response's example is rendered with proper status code."""
 
     markup = textify(
         testrenderer.render_response_content(
-            {
-                "text/csv": {
-                    "example": textwrap.dedent(
-                        """\
-                        foo,baz
-                        bar,42
-                        """
-                    )
-                }
-            },
+            oas_fragment(
+                """
+                text/csv:
+                  example: |
+                    foo,baz
+                    bar,42
+                """
+            ),
             status_code,
         )
     )
@@ -557,21 +609,19 @@ def test_render_response_content_status_code_int(
     )
 
 
-def test_render_response_content_status_code_default(testrenderer):
+def test_render_response_content_status_code_default(testrenderer, oas_fragment):
     """Path response's example is rendered when default is passed."""
 
     markup = textify(
         testrenderer.render_response_content(
-            {
-                "text/csv": {
-                    "example": textwrap.dedent(
-                        """\
-                        foo,baz
-                        bar,42
-                        """
-                    )
-                }
-            },
+            oas_fragment(
+                """
+                text/csv:
+                  example: |
+                    foo,baz
+                    bar,42
+                """
+            ),
             "default",
         )
     )

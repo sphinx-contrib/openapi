@@ -9,43 +9,41 @@ def textify(generator):
     return "\n".join(generator)
 
 
-def test_render_paths(testrenderer):
+def test_render_paths(testrenderer, oas_fragment):
     """Usual paths definition is rendered."""
 
     markup = textify(
         testrenderer.render_paths(
-            {
-                "/evidences/{evidenceId}": {
-                    "summary": "Ignored",
-                    "description": "Ignored",
-                    "servers": {"url": "https://example.com"},
-                    "parameters": [
-                        {
-                            "name": "evidenceId",
-                            "in": "path",
-                            "required": True,
-                            "description": "A unique evidence identifier to query.",
-                            "schema": {"type": "string"},
-                        },
-                    ],
-                    "get": {
-                        "summary": "Retrieve an evidence by ID.",
-                        "description": "More verbose description...",
-                        "parameters": [
-                            {
-                                "name": "details",
-                                "in": "query",
-                                "description": "If true, information w/ details is returned.",
-                                "schema": {"type": "boolean"},
-                            },
-                        ],
-                        "responses": {
-                            "200": {"description": "An evidence."},
-                            "404": {"description": "An evidence not found."},
-                        },
-                    },
-                }
-            },
+            oas_fragment(
+                """
+                /evidences/{evidenceId}:
+                  summary: Ignored
+                  description: Ignored
+                  servers:
+                    url: https://example.com
+                  parameters:
+                    - name: evidenceId
+                      in: path
+                      required: true
+                      description: A unique evidence identifier to query.
+                      schema:
+                        type: string
+                  get:
+                    summary: Retrieve an evidence by ID.
+                    description: More verbose description...
+                    parameters:
+                      - name: details
+                        in: query
+                        description: If true, information w/ details is returned.
+                        schema:
+                          type: boolean
+                    responses:
+                      '200':
+                        description: An evidence.
+                      '404':
+                        description: An evidence not found.
+                """
+            )
         )
     )
     assert markup == textwrap.dedent(
@@ -70,18 +68,20 @@ def test_render_paths(testrenderer):
     )
 
 
-def test_render_paths_minimal(testrenderer):
+def test_render_paths_minimal(testrenderer, oas_fragment):
     """Minimal paths definition is rendered."""
 
     markup = textify(
         testrenderer.render_paths(
-            {
-                "/evidences": {
-                    "get": {
-                        "responses": {"200": {"description": "A list of evidences."}},
-                    },
-                }
-            },
+            oas_fragment(
+                """
+                /evidences:
+                  get:
+                    responses:
+                      '200':
+                        description: A list of evidences.
+                """
+            )
         )
     )
     assert markup == textwrap.dedent(
@@ -94,44 +94,42 @@ def test_render_paths_minimal(testrenderer):
     )
 
 
-def test_render_paths_multiple(testrenderer):
+def test_render_paths_multiple(testrenderer, oas_fragment):
     """Paths definition with multiple paths is rendered."""
 
     markup = textify(
         testrenderer.render_paths(
-            {
-                "/evidences/{evidenceId}": {
-                    "get": {
-                        "summary": "Retrieve an evidence by ID.",
-                        "description": "More verbose description...",
-                        "parameters": [
-                            {
-                                "name": "evidenceId",
-                                "in": "path",
-                                "required": True,
-                                "description": "A unique evidence identifier to query.",
-                                "schema": {"type": "string"},
-                            },
-                            {
-                                "name": "details",
-                                "in": "query",
-                                "description": "If true, information w/ details is returned.",
-                                "schema": {"type": "boolean"},
-                            },
-                        ],
-                        "responses": {
-                            "200": {"description": "An evidence."},
-                            "404": {"description": "An evidence not found."},
-                        },
-                    },
-                },
-                "/evidences": {
-                    "post": {
-                        "summary": "Create an evidence.",
-                        "responses": {"201": {"description": "An evidence created."}},
-                    }
-                },
-            },
+            oas_fragment(
+                """
+                /evidences/{evidenceId}:
+                  get:
+                    summary: Retrieve an evidence by ID.
+                    description: More verbose description...
+                    parameters:
+                      - name: evidenceId
+                        in: path
+                        required: true
+                        description: A unique evidence identifier to query.
+                        schema:
+                          type: string
+                      - name: details
+                        in: query
+                        description: If true, information w/ details is returned.
+                        schema:
+                          type: boolean
+                    responses:
+                      '200':
+                        description: An evidence.
+                      '404':
+                        description: An evidence not found.
+                /evidences:
+                  post:
+                    summary: Create an evidence.
+                    responses:
+                      '201':
+                        description: An evidence created.
+                """
+            )
         )
     )
     assert markup == textwrap.dedent(
@@ -163,46 +161,43 @@ def test_render_paths_multiple(testrenderer):
     )
 
 
-def test_render_paths_parameters_common(testrenderer):
+def test_render_paths_parameters_common(testrenderer, oas_fragment):
     """Paths definition with common parameters is rendered."""
 
     markup = textify(
         testrenderer.render_paths(
-            {
-                "/evidences/{evidenceId}": {
-                    "get": {
-                        "summary": "Retrieve an evidence by ID.",
-                        "parameters": [
-                            {
-                                "name": "details",
-                                "in": "query",
-                                "description": "If true, information w/ details is returned.",
-                                "schema": {"type": "boolean"},
-                            },
-                        ],
-                        "responses": {
-                            "200": {"description": "An evidence."},
-                            "404": {"description": "An evidence not found."},
-                        },
-                    },
-                    "put": {
-                        "summary": "Update an evidence by ID.",
-                        "responses": {
-                            "200": {"description": "An evidence."},
-                            "404": {"description": "An evidence not found."},
-                        },
-                    },
-                    "parameters": [
-                        {
-                            "name": "evidenceId",
-                            "in": "path",
-                            "required": True,
-                            "description": "A unique evidence identifier to query.",
-                            "schema": {"type": "string"},
-                        },
-                    ],
-                }
-            },
+            oas_fragment(
+                """
+                /evidences/{evidenceId}:
+                  get:
+                    summary: Retrieve an evidence by ID.
+                    parameters:
+                      - name: details
+                        in: query
+                        description: If true, information w/ details is returned.
+                        schema:
+                          type: boolean
+                    responses:
+                      '200':
+                        description: An evidence.
+                      '404':
+                        description: An evidence not found.
+                  put:
+                    summary: Update an evidence by ID.
+                    responses:
+                      '200':
+                        description: An evidence.
+                      '404':
+                        description: An evidence not found.
+                  parameters:
+                    - name: evidenceId
+                      in: path
+                      required: true
+                      description: A unique evidence identifier to query.
+                      schema:
+                        type: string
+                """
+            )
         )
     )
     assert markup == textwrap.dedent(
@@ -237,39 +232,36 @@ def test_render_paths_parameters_common(testrenderer):
     )
 
 
-def test_render_paths_parameters_common_prepend(testrenderer):
+def test_render_paths_parameters_common_prepend(testrenderer, oas_fragment):
     """Paths definition with common parameters is rendered."""
 
     markup = textify(
         testrenderer.render_paths(
-            {
-                "/evidences/{evidenceId}/{evidenceSection}": {
-                    "get": {
-                        "summary": "Retrieve an evidence by ID.",
-                        "parameters": [
-                            {
-                                "name": "evidenceSection",
-                                "in": "path",
-                                "description": "Query a section with a given name.",
-                                "schema": {"type": "string"},
-                            },
-                        ],
-                        "responses": {
-                            "200": {"description": "An evidence."},
-                            "404": {"description": "An evidence not found."},
-                        },
-                    },
-                    "parameters": [
-                        {
-                            "name": "evidenceId",
-                            "in": "path",
-                            "required": True,
-                            "description": "A unique evidence identifier to query.",
-                            "schema": {"type": "string"},
-                        },
-                    ],
-                }
-            },
+            oas_fragment(
+                """
+                /evidences/{evidenceId}/{evidenceSection}:
+                  get:
+                    summary: Retrieve an evidence by ID.
+                    parameters:
+                      - name: evidenceSection
+                        in: path
+                        description: Query a section with a given name.
+                        schema:
+                          type: string
+                    responses:
+                      '200':
+                        description: An evidence.
+                      '404':
+                        description: An evidence not found.
+                  parameters:
+                    - name: evidenceId
+                      in: path
+                      required: true
+                      description: A unique evidence identifier to query.
+                      schema:
+                        type: string
+                """
+            )
         )
     )
     assert markup == textwrap.dedent(
@@ -292,36 +284,34 @@ def test_render_paths_parameters_common_prepend(testrenderer):
     )
 
 
-def test_render_paths_parameters_common_overwritten(testrenderer):
+def test_render_paths_parameters_common_overwritten(testrenderer, oas_fragment):
     """Paths definition with common parameters is rendered."""
 
     markup = textify(
         testrenderer.render_paths(
-            {
-                "/evidences/{evidenceId}": {
-                    "get": {
-                        "summary": "Retrieve an evidence by ID.",
-                        "parameters": [
-                            {
-                                "name": "evidenceId",
-                                "in": "path",
-                                "description": "Overwritten description.",
-                                "schema": {"type": "string"},
-                            },
-                        ],
-                        "responses": {"200": {"description": "An evidence."}},
-                    },
-                    "parameters": [
-                        {
-                            "name": "evidenceId",
-                            "in": "path",
-                            "required": True,
-                            "description": "A unique evidence identifier to query.",
-                            "schema": {"type": "string"},
-                        },
-                    ],
-                }
-            },
+            oas_fragment(
+                """
+                /evidences/{evidenceId}:
+                  get:
+                    summary: Retrieve an evidence by ID.
+                    parameters:
+                      - name: evidenceId
+                        in: path
+                        description: Overwritten description.
+                        schema:
+                          type: string
+                    responses:
+                      '200':
+                        description: An evidence.
+                  parameters:
+                    - name: evidenceId
+                      in: path
+                      required: true
+                      description: A unique evidence identifier to query.
+                      schema:
+                        type: string
+                """
+            )
         )
     )
     assert markup == textwrap.dedent(
@@ -339,26 +329,28 @@ def test_render_paths_parameters_common_overwritten(testrenderer):
     )
 
 
-def test_render_paths_methods_order(testrenderer):
+def test_render_paths_methods_order(testrenderer, oas_fragment):
     """Paths definition is rendered with HTTP methods ordered."""
 
     markup = textify(
         testrenderer.render_paths(
-            {
-                "/evidences": {
-                    "post": {
-                        "responses": {"201": {"description": "An evidence created."}},
-                    },
-                    "options": {
-                        "responses": {
-                            "200": {"description": "CORS preflight request."},
-                        },
-                    },
-                    "get": {
-                        "responses": {"200": {"description": "A list of evidences."}},
-                    },
-                }
-            },
+            oas_fragment(
+                """
+                /evidences:
+                  post:
+                    responses:
+                      '201':
+                        description: An evidence created.
+                  options:
+                    responses:
+                      '200':
+                        description: CORS preflight request.
+                  get:
+                    responses:
+                      '200':
+                        description: A list of evidences.
+                """
+            )
         )
     )
     assert markup == textwrap.dedent(
@@ -381,7 +373,7 @@ def test_render_paths_methods_order(testrenderer):
     )
 
 
-def test_render_paths_methods_order_custom(fakestate):
+def test_render_paths_methods_order_custom(fakestate, oas_fragment):
     """Paths definition is rendered with HTTP methods ordered."""
 
     testrenderer = renderers.HttpdomainRenderer(
@@ -390,21 +382,23 @@ def test_render_paths_methods_order_custom(fakestate):
 
     markup = textify(
         testrenderer.render_paths(
-            {
-                "/evidences": {
-                    "post": {
-                        "responses": {"201": {"description": "An evidence created."}},
-                    },
-                    "options": {
-                        "responses": {
-                            "200": {"description": "CORS preflight request."},
-                        },
-                    },
-                    "get": {
-                        "responses": {"200": {"description": "A list of evidences."}},
-                    },
-                }
-            },
+            oas_fragment(
+                """
+                /evidences:
+                  post:
+                    responses:
+                      '201':
+                        description: An evidence created.
+                  options:
+                    responses:
+                      '200':
+                        description: CORS preflight request.
+                  get:
+                    responses:
+                      '200':
+                        description: A list of evidences.
+                """
+            )
         )
     )
     assert markup == textwrap.dedent(
@@ -427,7 +421,7 @@ def test_render_paths_methods_order_custom(fakestate):
     )
 
 
-def test_render_paths_methods_order_insensitive(fakestate):
+def test_render_paths_methods_order_insensitive(fakestate, oas_fragment):
     """Paths definition is rendered with HTTP methods ordered."""
 
     testrenderer = renderers.HttpdomainRenderer(
@@ -436,16 +430,19 @@ def test_render_paths_methods_order_insensitive(fakestate):
 
     markup = textify(
         testrenderer.render_paths(
-            {
-                "/evidences": {
-                    "post": {
-                        "responses": {"201": {"description": "An evidence created."}},
-                    },
-                    "get": {
-                        "responses": {"200": {"description": "A list of evidences."}},
-                    },
-                }
-            },
+            oas_fragment(
+                """
+                /evidences:
+                  post:
+                    responses:
+                      '201':
+                        description: An evidence created.
+                  get:
+                    responses:
+                      '200':
+                        description: A list of evidences.
+                """
+            )
         )
     )
     assert markup == textwrap.dedent(
