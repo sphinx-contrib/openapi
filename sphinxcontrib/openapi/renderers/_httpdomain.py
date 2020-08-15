@@ -10,6 +10,7 @@ import m2r
 import requests
 import sphinx.util.logging as logging
 
+from sphinxcontrib.openapi import _lib2to3 as lib2to3
 from sphinxcontrib.openapi.renderers import abc
 from sphinxcontrib.openapi.schema_utils import example_from_schema
 
@@ -153,6 +154,9 @@ class HttpdomainRenderer(abc.RestructuredTextRenderer):
 
     def render_restructuredtext_markup(self, spec):
         """Spec render entry point."""
+
+        if spec.get("swagger") == "2.0":
+            spec = lib2to3.convert(spec)
         yield from self.render_paths(spec.get("paths", {}))
 
     def render_paths(self, paths):
