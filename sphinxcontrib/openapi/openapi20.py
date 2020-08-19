@@ -104,7 +104,7 @@ def convert_json_schema(schema, directive=':<json'):
 
         type_ = schema.get('type', 'any')
         required_properties = schema.get('required', ())
-        if type_ == 'object':
+        if type_ == 'object' and schema.get('properties'):
             for prop, next_schema in schema.get('properties', {}).items():
                 _convert(
                     next_schema, '{name}.{prop}'.format(**locals()),
@@ -231,6 +231,8 @@ def openapihttpdomain(spec, **options):
 
         for endpoint in paths:
             for method, properties in spec['paths'][endpoint].items():
+                if options.get('methods') and method not in options.get('methods'):
+                    continue
                 key = properties.get('tags', [''])[0]
                 groups.setdefault(key, []).append(_httpresource(
                     endpoint,
@@ -249,6 +251,8 @@ def openapihttpdomain(spec, **options):
     else:
         for endpoint in paths:
             for method, properties in spec['paths'][endpoint].items():
+                if options.get('methods') and method not in options.get('methods'):
+                    continue
                 generators.append(_httpresource(
                     endpoint,
                     method,

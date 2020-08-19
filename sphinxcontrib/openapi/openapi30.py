@@ -9,7 +9,10 @@
 """
 
 import copy
+
 import collections
+import collections.abc
+
 from datetime import datetime
 import itertools
 import json
@@ -64,9 +67,9 @@ def _dict_merge(dct, merge_dct):
         dct: dict onto which the merge is executed
         merge_dct: dct merged into dct
     """
-    for k, v in merge_dct.items():
+    for k in merge_dct.keys():
         if (k in dct and isinstance(dct[k], dict)
-                and isinstance(merge_dct[k], collections.Mapping)):
+                and isinstance(merge_dct[k], collections.abc.Mapping)):
             _dict_merge(dct[k], merge_dct[k])
         else:
             dct[k] = merge_dct[k]
@@ -105,11 +108,17 @@ def _parse_schema(schema, method):
     schema_type = schema.get('type', 'object')
 
     if schema_type == 'array':
-        # special case oneOf so that we can show examples for all possible
-        # combinations
+        # special case oneOf and anyOf so that we can show examples for all
+        # possible combinations
         if 'oneOf' in schema['items']:
             return [
-                _parse_schema(x, method) for x in schema['items']['oneOf']]
+                _parse_schema(x, method) for x in schema['items']['oneOf']
+            ]
+
+        if 'anyOf' in schema['items']:
+            return [
+                _parse_schema(x, method) for x in schema['items']['anyOf']
+            ]
 
         return [_parse_schema(schema['items'], method)]
 
@@ -170,6 +179,10 @@ def _example(media_type_objects, content_type, endpoint=None, status=None, nb_in
         examples = content.get('examples')
         example = content.get('example')
 
+        # Try to get the example from the schema
+        if example is None and 'schema' in content:
+            example = content['schema'].get('example')
+
         if examples is None:
             examples = {}
             if not example:
@@ -188,6 +201,7 @@ def _example(media_type_objects, content_type, endpoint=None, status=None, nb_in
                 }
 
         for example in examples.values():
+            # According to OpenAPI v3 specs, string examples should be left unchanged
             if not isinstance(example['value'], str):
                 example['value'] = json.dumps(
                     example['value'], indent=4, separators=(',', ': '))

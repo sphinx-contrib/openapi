@@ -31,6 +31,7 @@ setup(
         "PyYAML >= 3.12",
         "jsonschema >= 2.5.1",
         "m2r >= 0.2",
+        "picobox >= 2.2",
     ],
     project_urls={
         "Documentation": "https://sphinxcontrib-openapi.readthedocs.io/",
@@ -47,7 +48,6 @@ setup(
         "Programming Language :: Python",
         "Programming Language :: Python :: 3",
         "Programming Language :: Python :: 3 :: Only",
-        "Programming Language :: Python :: 3.5",
         "Programming Language :: Python :: 3.6",
         "Programming Language :: Python :: 3.7",
         "Programming Language :: Python :: 3.8",
@@ -57,5 +57,5 @@ setup(
         "Framework :: Sphinx :: Extension",
     ],
     namespace_packages=["sphinxcontrib"],
-    python_requires=">=3.5",
+    python_requires=">=3.6",
 )

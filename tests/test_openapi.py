@@ -382,6 +382,48 @@ class TestOpenApi2HttpDomain(object):
                   error
         ''').lstrip()
 
+    def test_method_option(self):
+        spec = collections.defaultdict(collections.OrderedDict)
+        spec['paths']['/resource_a'] = {
+            'get': {
+                'description': 'resource a',
+                'responses': {
+                    '200': {'description': 'ok'},
+                }
+            },
+            'post': {
+                'description': 'resource a',
+                'responses': {
+                    '201': {'description': 'ok'},
+                }
+            },
+            'put': {
+                'description': 'resource a',
+                'responses': {
+                    '404': {'description': 'error'},
+                }
+            }
+        }
+
+        renderer = renderers.HttpdomainOldRenderer(
+            None,
+            {
+                'methods': ['post'],
+                'paths': ['/resource_a'],
+            },
+        )
+        text = '\n'.join(renderer.render_restructuredtext_markup(spec))
+
+        assert text == textwrap.dedent('''
+            .. http:post:: /resource_a
+               :synopsis: null
+
+               resource a
+
+               :status 201:
+                  ok
+        ''').lstrip()
+
     def test_root_parameters(self):
         spec = {'paths': {}}
         spec['paths']['/resources/{name}'] = collections.OrderedDict()
@@ -679,6 +721,82 @@ class TestOpenApi3HttpDomain(object):
                   An array of resources.
                :reqheader If-None-Match:
                   Last known resource ETag.
+        ''').lstrip()
+
+    def test_rfc7807(self):
+        # Fix order to have a reliable test
+        pb_example = collections.OrderedDict()
+        pb_example["type"] = "string"
+        pb_example["title"] = "string"
+        pb_example["status"] = 1
+        pb_example["detail"] = "string"
+        pb_example["instance"] = "string"
+        renderer = renderers.HttpdomainOldRenderer(None, {'examples': True})
+        text = '\n'.join(renderer.render_restructuredtext_markup({
+            'openapi': '3.0.0',
+            'paths': {
+                '/problem': {
+                    'post': {
+                        'summary': 'Problem',
+                        'description': '~ some useful description ~',
+                        'requestBody': {
+                            'content': {
+                                'application/problem+json':  {
+                                    'example': pb_example
+                                }
+                            }
+                        },
+                        'responses': {
+                            '200': {
+                                'description': 'An array of resources.',
+                                'content': {
+                                    'application/json': {
+                                        'example': '{"foo": "bar"}'
+                                    }
+                                }
+                            },
+                        },
+                    },
+                },
+            },
+        }))
+        assert text == textwrap.dedent('''
+            .. http:post:: /problem
+               :synopsis: Problem
+
+               **Problem**
+
+               ~ some useful description ~
+
+
+               **Example request:**
+
+               .. sourcecode:: http
+
+                  POST /problem HTTP/1.1
+                  Host: example.com
+                  Content-Type: application/problem+json
+
+                  {
+                      "type": "string",
+                      "title": "string",
+                      "status": 1,
+                      "detail": "string",
+                      "instance": "string"
+                  }
+
+               :status 200:
+                  An array of resources.
+
+                  **Example response:**
+
+                  .. sourcecode:: http
+
+                     HTTP/1.1 200 OK
+                     Content-Type: application/json
+
+                     {"foo": "bar"}
+
         ''').lstrip()
 
     def test_groups(self):
@@ -1411,6 +1529,169 @@ class TestOpenApi3HttpDomain(object):
 
         ''').lstrip()
 
+    def test_string_example(self):
+        renderer = renderers.HttpdomainOldRenderer(None, {'examples': True})
+        text = '\n'.join(renderer.render_restructuredtext_markup({
+            'openapi': '3.0.0',
+            'paths': {
+                '/resources': {
+                    'get': {
+                        'summary': 'Get resources',
+                        'responses': {
+                            '200': {
+                                'description': 'Something',
+                                'content': {
+                                    'application/json': {
+                                        'schema': {
+                                            'type': 'string',
+                                            'example': '"A sample"',
+                                        }
+                                    }
+                                }
+                            },
+                        },
+                    },
+                },
+            },
+        }))
+
+        assert text == textwrap.dedent('''
+            .. http:get:: /resources
+               :synopsis: Get resources
+
+               **Get resources**
+
+
+               **Example request:**
+
+               .. sourcecode:: http
+
+                  GET /resources HTTP/1.1
+                  Host: example.com
+
+               :status 200:
+                  Something
+
+                  **Example response:**
+
+                  .. sourcecode:: http
+
+                     HTTP/1.1 200 OK
+                     Content-Type: application/json
+
+                     "A sample"
+
+        ''').lstrip()
+
+    def test_ref_example(self):
+        renderer = renderers.HttpdomainOldRenderer(None, {'examples': True})
+        text = '\n'.join(renderer.render_restructuredtext_markup({
+            'openapi': '3.0.0',
+            'paths': {
+                '/resources': {
+                    'get': {
+                        'summary': 'Get resources',
+                        'responses': {
+                            '200': {
+                                'description': 'Something',
+                                'content': {
+                                    'application/json': {
+                                        'schema': {
+                                            '$ref':
+                                                '#/components/schemas/Data',
+                                        }
+                                    }
+                                }
+                            },
+                        },
+                    },
+                },
+            },
+            'components': {
+                'schemas': {
+                    'Data': {
+                        'type': 'object',
+                        'additionalProperties': True,
+                        'example': {
+                            'prop1': "Sample 1",
+                        }
+                    }
+                }
+            }
+        }))
+
+        assert text == textwrap.dedent('''
+            .. http:get:: /resources
+               :synopsis: Get resources
+
+               **Get resources**
+
+
+               **Example request:**
+
+               .. sourcecode:: http
+
+                  GET /resources HTTP/1.1
+                  Host: example.com
+
+               :status 200:
+                  Something
+
+                  **Example response:**
+
+                  .. sourcecode:: http
+
+                     HTTP/1.1 200 OK
+                     Content-Type: application/json
+
+                     {
+                         "prop1": "Sample 1"
+                     }
+
+        ''').lstrip()
+
+    def test_method_option(self):
+        spec = collections.defaultdict(collections.OrderedDict)
+        spec['paths']['/resource_a'] = {
+            'get': {
+                'description': 'resource a',
+                'responses': {
+                    '200': {'description': 'ok'},
+                }
+            },
+            'post': {
+                'description': 'resource a',
+                'responses': {
+                    '201': {'description': 'ok'},
+                }
+            },
+            'put': {
+                'description': 'resource a',
+                'responses': {
+                    '404': {'description': 'error'},
+                }
+            }
+        }
+
+        renderer = renderers.HttpdomainOldRenderer(
+            None,
+            {
+                'methods': ['post'],
+                'paths': ['/resource_a'],
+            },
+        )
+        text = '\n'.join(renderer.render_restructuredtext_markup(spec))
+
+        assert text == textwrap.dedent('''
+            .. http:post:: /resource_a
+               :synopsis: null
+
+               resource a
+
+               :status 201:
+                  ok
+        ''').lstrip()
+
 
 class TestResolveRefs(object):
 
@@ -1451,16 +1732,27 @@ class TestResolveRefs(object):
 
     def test_relative_ref_resolving_on_fs(self):
         baseuri = 'file://%s' % os.path.abspath(__file__)
+
         data = {
             'bar': {
                 '$ref': 'testdata/foo.json#/foo/b',
+            },
+            # check also JSON to YAML references:
+            'baz': {
+                '$ref': 'testdata/foo.yaml#/foo',
             }
         }
 
+        # import pdb
+        # pdb.set_trace()
         assert utils._resolve_refs(baseuri, data) == {
             'bar': {
                 'c': True,
-            }
+            },
+            'baz': {
+                'a': 17,
+                'b': 13,
+            },
         }
 
     def test_noproperties(self):
@@ -1634,7 +1926,11 @@ class TestConvertJsonSchema(object):
                             'description': 'The car of user'
                         }
                     }
-                }
+                },
+                'meta': {
+                    'type': 'object',
+                    'description': 'free form metadata',
+                },
             }
         }
 
@@ -1646,6 +1942,7 @@ class TestConvertJsonSchema(object):
             :<json integer friends[].age:
             :<json string friends[].name: (read only)
             :<json integer id: the id of user (read only)
+            :<json object meta: free form metadata
             :<json string name: The name of user (required)'''.strip('\n'))
 
         assert result == expected
