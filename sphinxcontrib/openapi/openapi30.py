@@ -142,7 +142,8 @@ def _parse_schema(schema, method):
     return _TYPE_MAPPING[(schema_type, None)]  # unrecognized format
 
 
-def _example(media_type_objects, content_type, endpoint=None, status=None, nb_indent=0, method=None):
+def _example(media_type_objects, content_type,
+             endpoint=None, status=None, nb_indent=0, method=None):
     """
     Format examples in `Media Type Object` openapi v3 to HTTP request or
     HTTP response example.
@@ -243,7 +244,8 @@ def _example(media_type_objects, content_type, endpoint=None, status=None, nb_in
                 yield ''
 
 
-def _httpresource(endpoint, method, properties, convert, render_examples, render_request, content_type):
+def _httpresource(endpoint, method, properties, convert,
+                  render_examples, render_request, content_type):
     # https://github.com/OAI/OpenAPI-Specification/blob/3.0.2/versions/3.0.0.md#operation-object
     parameters = properties.get('parameters', [])
     responses = properties['responses']
@@ -318,7 +320,8 @@ def _httpresource(endpoint, method, properties, convert, render_examples, render
 
         # print request example
         request_content = properties.get('requestBody', {}).get('content', {})
-        for line in _example(request_content, content_type, endpoint=endpoint_examples, nb_indent=1, method=method):
+        for line in _example(request_content, content_type,
+                             endpoint=endpoint_examples, nb_indent=1, method=method):
             yield line
 
     # print response status codes
@@ -329,7 +332,8 @@ def _httpresource(endpoint, method, properties, convert, render_examples, render
 
         # print response example
         if render_examples:
-            for line in _example(response.get('content', {}), content_type, status=status, nb_indent=2):
+            for line in _example(response.get('content', {}), content_type,
+                                 status=status, nb_indent=2):
                 yield line
 
     # print request header params
