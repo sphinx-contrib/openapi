@@ -223,7 +223,7 @@ def _example(media_type_objects, content_type, endpoint=None, status=None, nb_in
             if method:
                 yield '{extra_indent}{indent}{method} {endpoint} HTTP/1.1' \
                     .format(**locals())
-                yield '{extra_indent}{indent}Host: example.com' \
+                yield '{extra_indent}{indent}Host: my.scalr.com' \
                     .format(**locals())
                 if ct_type:
                     yield '{extra_indent}{indent}Content-Type: {content_type}'\
@@ -250,7 +250,7 @@ def _httpresource(endpoint, method, properties, convert, render_examples, render
     query_param_examples = []
     indent = '   '
 
-    operation_title = _get_operation_title(properties.get('operationId'))
+    operation_title = properties.get('summary')
 
     yield operation_title
     yield '^' * len(operation_title)
@@ -258,11 +258,6 @@ def _httpresource(endpoint, method, properties, convert, render_examples, render
     yield '.. http:{0}:: {1}'.format(method, endpoint)
     yield '   :synopsis: {0}'.format(properties.get('summary', 'null'))
     yield ''
-
-    if 'summary' in properties:
-        for line in properties['summary'].splitlines():
-            yield '{indent}{line}'.format(**locals())
-        yield ''
 
     if 'description' in properties:
         for line in convert(properties['description']).splitlines():
@@ -375,12 +370,6 @@ def _httpresource(endpoint, method, properties, convert, render_examples, render
     yield ''
 
 
-def _get_operation_title(operation_id):
-    matches = re.search(r'^(get|post|delete|patch)(.*?)(Collection|Item)$', operation_id)
-
-    return operation_id if matches is None else matches[1].capitalize() + ' ' + matches[2] + ' ' + matches[3]
-
-
 def _header(title):
     yield title
     yield '=' * len(title)
@@ -440,13 +429,13 @@ def openapihttpdomain(spec, **options):
 
     # https://github.com/OAI/OpenAPI-Specification/blob/3.0.2/versions/3.0.0.md#paths-object
     if 'group' in options:
-        groups = collections.OrderedDict(
-            [(x['name'], []) for x in spec.get('tags', {})]
-            )
+        groups = {}
+        tags = {x['name']: x['description'] for x in spec.get('tags', {})}
 
         for endpoint in paths:
             for method, properties in spec['paths'][endpoint].items():
                 key = properties.get('tags', [''])[0]
+                key = tags.get(key) if key in tags.keys() else key
                 groups.setdefault(key, []).append(_httpresource(
                     endpoint,
                     method,
@@ -456,6 +445,7 @@ def openapihttpdomain(spec, **options):
                     render_request=render_request,
                     content_type=options.get('content_type')))
 
+        groups = collections.OrderedDict(sorted(groups.items()))
         for key in groups.keys():
             if key:
                 generators.append(_header(key))
