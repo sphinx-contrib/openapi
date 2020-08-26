@@ -708,7 +708,7 @@ class TestOpenApi3HttpDomain(object):
         assert text == textwrap.dedent('''
             List Resources
             ^^^^^^^^^^^^^^
-            
+
             .. http:get:: /resources/{kind}
                :synopsis: List Resources
 
@@ -764,7 +764,7 @@ class TestOpenApi3HttpDomain(object):
         assert text == textwrap.dedent('''
             Problem
             ^^^^^^^
-            
+
             .. http:post:: /problem
                :synopsis: Problem
 
@@ -902,21 +902,21 @@ class TestOpenApi3HttpDomain(object):
         assert text == textwrap.dedent('''
             default
             =======
-            
+
             Index
             ^^^^^
-            
+
             .. http:get:: /
                :synopsis: Index
-            
+
                ~ some useful description ~
-            
+
                :status 200:
                   Index
 
             pets
             ====
-            
+
             List Pets
             ^^^^^^^^^
 
@@ -927,10 +927,10 @@ class TestOpenApi3HttpDomain(object):
 
                :status 200:
                   Pets
-            
+
             Show Pet
             ^^^^^^^^
-            
+
             .. http:get:: /pets/{name}
                :synopsis: Show Pet
 
@@ -940,10 +940,10 @@ class TestOpenApi3HttpDomain(object):
                   Name of pet.
                :status 200:
                   A Pet
-                  
+
             tags
             ====
-            
+
             List Tags
             ^^^^^^^^^
 
@@ -1011,7 +1011,7 @@ class TestOpenApi3HttpDomain(object):
         assert text == textwrap.dedent('''
             List Resources
             ^^^^^^^^^^^^^^
-            
+
             .. http:get:: /resources/{kind}
                :synopsis: List Resources
 
@@ -1190,7 +1190,7 @@ class TestOpenApi3HttpDomain(object):
         assert text == textwrap.dedent('''
             List Resources
             ^^^^^^^^^^^^^^
-            
+
             .. http:get:: /resources/
                :synopsis: List Resources
 
@@ -1229,10 +1229,10 @@ class TestOpenApi3HttpDomain(object):
 
                :reqheader If-None-Match:
                   Last known resource ETag.
-            
+
             Create Resource
             ^^^^^^^^^^^^^^^
-            
+
             .. http:post:: /resources/
                :synopsis: Create Resource
 
@@ -1271,7 +1271,7 @@ class TestOpenApi3HttpDomain(object):
 
             Show Resource
             ^^^^^^^^^^^^^
-            
+
             .. http:get:: /resources/{kind}
                :synopsis: Show Resource
 
@@ -1306,7 +1306,7 @@ class TestOpenApi3HttpDomain(object):
 
             Update Resource (partial)
             ^^^^^^^^^^^^^^^^^^^^^^^^^
-            
+
             .. http:patch:: /resources/{kind}
                :synopsis: Update Resource (partial)
 
@@ -1404,7 +1404,7 @@ class TestOpenApi3HttpDomain(object):
         assert text == textwrap.dedent('''
             List Resources
             ^^^^^^^^^^^^^^
-            
+
             .. http:get:: /resources/
                :synopsis: List Resources
 
@@ -1517,7 +1517,7 @@ class TestOpenApi3HttpDomain(object):
         assert text == textwrap.dedent('''
             List Resources
             ^^^^^^^^^^^^^^
-            
+
             .. http:post:: /resources/{kind}
                :synopsis: List Resources
 
@@ -1531,10 +1531,10 @@ class TestOpenApi3HttpDomain(object):
                   Something
 
                .. admonition:: Callback: callback
-               
+
                   Response callback
                   ^^^^^^^^^^^^^^^^^
-                  
+
                   .. http:post:: ${request.query.callback}
                      :synopsis: Response callback
 
@@ -1572,7 +1572,7 @@ class TestOpenApi3HttpDomain(object):
         assert text == textwrap.dedent('''
             Get resources
             ^^^^^^^^^^^^^
-            
+
             .. http:get:: /resources
                :synopsis: Get resources
 
@@ -1638,7 +1638,7 @@ class TestOpenApi3HttpDomain(object):
         assert text == textwrap.dedent('''
             Get resources
             ^^^^^^^^^^^^^
-            
+
             .. http:get:: /resources
                :synopsis: Get resources
 
@@ -1810,7 +1810,7 @@ class TestResolveRefs(object):
         assert text == textwrap.dedent('''
             Create Resources
             ^^^^^^^^^^^^^^^^
-            
+
             .. http:post:: /resources
                :synopsis: Create Resources
 
