@@ -706,10 +706,11 @@ class TestOpenApi3HttpDomain(object):
             },
         }))
         assert text == textwrap.dedent('''
+            List Resources
+            ^^^^^^^^^^^^^^
+            
             .. http:get:: /resources/{kind}
                :synopsis: List Resources
-
-               **List Resources**
 
                ~ some useful description ~
 
@@ -761,10 +762,11 @@ class TestOpenApi3HttpDomain(object):
             },
         }))
         assert text == textwrap.dedent('''
+            Problem
+            ^^^^^^^
+            
             .. http:post:: /problem
                :synopsis: Problem
-
-               **Problem**
 
                ~ some useful description ~
 
@@ -774,7 +776,7 @@ class TestOpenApi3HttpDomain(object):
                .. sourcecode:: http
 
                   POST /problem HTTP/1.1
-                  Host: example.com
+                  Host: my.scalr.com
                   Content-Type: application/problem+json
 
                   {
@@ -898,36 +900,39 @@ class TestOpenApi3HttpDomain(object):
             ]),
         }))
         assert text == textwrap.dedent('''
-            tags
-            ====
-
-            .. http:get:: /tags
-               :synopsis: List Tags
-
-               **List Tags**
-
+            default
+            =======
+            
+            Index
+            ^^^^^
+            
+            .. http:get:: /
+               :synopsis: Index
+            
                ~ some useful description ~
-
+            
                :status 200:
-                  Tags
+                  Index
 
             pets
             ====
+            
+            List Pets
+            ^^^^^^^^^
 
             .. http:get:: /pets
                :synopsis: List Pets
-
-               **List Pets**
 
                ~ some useful description ~
 
                :status 200:
                   Pets
-
+            
+            Show Pet
+            ^^^^^^^^
+            
             .. http:get:: /pets/{name}
                :synopsis: Show Pet
-
-               **Show Pet**
 
                ~ some useful description ~
 
@@ -935,19 +940,20 @@ class TestOpenApi3HttpDomain(object):
                   Name of pet.
                :status 200:
                   A Pet
+                  
+            tags
+            ====
+            
+            List Tags
+            ^^^^^^^^^
 
-            default
-            =======
-
-            .. http:get:: /
-               :synopsis: Index
-
-               **Index**
+            .. http:get:: /tags
+               :synopsis: List Tags
 
                ~ some useful description ~
 
                :status 200:
-                  Index
+                  Tags
         ''').lstrip()
 
     def test_required_parameters(self):
@@ -1003,10 +1009,11 @@ class TestOpenApi3HttpDomain(object):
             },
         }))
         assert text == textwrap.dedent('''
+            List Resources
+            ^^^^^^^^^^^^^^
+            
             .. http:get:: /resources/{kind}
                :synopsis: List Resources
-
-               **List Resources**
 
                ~ some useful description ~
 
@@ -1181,10 +1188,11 @@ class TestOpenApi3HttpDomain(object):
         }))
 
         assert text == textwrap.dedent('''
+            List Resources
+            ^^^^^^^^^^^^^^
+            
             .. http:get:: /resources/
                :synopsis: List Resources
-
-               **List Resources**
 
                ~ some useful description ~
 
@@ -1199,7 +1207,7 @@ class TestOpenApi3HttpDomain(object):
                .. sourcecode:: http
 
                   GET /resources/?limit=1 HTTP/1.1
-                  Host: example.com
+                  Host: my.scalr.com
 
                :status 200:
                   An array of resources.
@@ -1221,11 +1229,12 @@ class TestOpenApi3HttpDomain(object):
 
                :reqheader If-None-Match:
                   Last known resource ETag.
-
+            
+            Create Resource
+            ^^^^^^^^^^^^^^^
+            
             .. http:post:: /resources/
                :synopsis: Create Resource
-
-               **Create Resource**
 
                ~ some useful description ~
 
@@ -1235,7 +1244,7 @@ class TestOpenApi3HttpDomain(object):
                .. sourcecode:: http
 
                   POST /resources/ HTTP/1.1
-                  Host: example.com
+                  Host: my.scalr.com
                   Content-Type: application/json
 
                   {
@@ -1260,10 +1269,11 @@ class TestOpenApi3HttpDomain(object):
                      }
 
 
+            Show Resource
+            ^^^^^^^^^^^^^
+            
             .. http:get:: /resources/{kind}
                :synopsis: Show Resource
-
-               **Show Resource**
 
                ~ some useful description ~
 
@@ -1275,7 +1285,7 @@ class TestOpenApi3HttpDomain(object):
                .. sourcecode:: http
 
                   GET /resources/{kind} HTTP/1.1
-                  Host: example.com
+                  Host: my.scalr.com
 
                :status 200:
                   The created resource.
@@ -1294,10 +1304,11 @@ class TestOpenApi3HttpDomain(object):
                      }
 
 
+            Update Resource (partial)
+            ^^^^^^^^^^^^^^^^^^^^^^^^^
+            
             .. http:patch:: /resources/{kind}
                :synopsis: Update Resource (partial)
-
-               **Update Resource (partial)**
 
                ~ some useful description ~
 
@@ -1309,7 +1320,7 @@ class TestOpenApi3HttpDomain(object):
                .. sourcecode:: http
 
                   PATCH /resources/{kind} HTTP/1.1
-                  Host: example.com
+                  Host: my.scalr.com
                   Content-Type: application/json
 
                   {
@@ -1391,10 +1402,11 @@ class TestOpenApi3HttpDomain(object):
         }))
 
         assert text == textwrap.dedent('''
+            List Resources
+            ^^^^^^^^^^^^^^
+            
             .. http:get:: /resources/
                :synopsis: List Resources
-
-               **List Resources**
 
                ~ some useful description ~
 
@@ -1410,7 +1422,7 @@ class TestOpenApi3HttpDomain(object):
                .. sourcecode:: http
 
                   GET /resources/?params=p1&params=p2&v1=V1&v2=V2 HTTP/1.1
-                  Host: example.com
+                  Host: my.scalr.com
 
                :status 200:
                   OK
@@ -1503,10 +1515,11 @@ class TestOpenApi3HttpDomain(object):
             },
         }))
         assert text == textwrap.dedent('''
+            List Resources
+            ^^^^^^^^^^^^^^
+            
             .. http:post:: /resources/{kind}
                :synopsis: List Resources
-
-               **List Resources**
 
                ~ some useful description ~
 
@@ -1518,11 +1531,12 @@ class TestOpenApi3HttpDomain(object):
                   Something
 
                .. admonition:: Callback: callback
-
+               
+                  Response callback
+                  ^^^^^^^^^^^^^^^^^
+                  
                   .. http:post:: ${request.query.callback}
                      :synopsis: Response callback
-
-                     **Response callback**
 
                      :status 200:
                         Success
@@ -1556,10 +1570,11 @@ class TestOpenApi3HttpDomain(object):
         }))
 
         assert text == textwrap.dedent('''
+            Get resources
+            ^^^^^^^^^^^^^
+            
             .. http:get:: /resources
                :synopsis: Get resources
-
-               **Get resources**
 
 
                **Example request:**
@@ -1567,7 +1582,7 @@ class TestOpenApi3HttpDomain(object):
                .. sourcecode:: http
 
                   GET /resources HTTP/1.1
-                  Host: example.com
+                  Host: my.scalr.com
 
                :status 200:
                   Something
@@ -1621,10 +1636,11 @@ class TestOpenApi3HttpDomain(object):
         }))
 
         assert text == textwrap.dedent('''
+            Get resources
+            ^^^^^^^^^^^^^
+            
             .. http:get:: /resources
                :synopsis: Get resources
-
-               **Get resources**
 
 
                **Example request:**
@@ -1632,7 +1648,7 @@ class TestOpenApi3HttpDomain(object):
                .. sourcecode:: http
 
                   GET /resources HTTP/1.1
-                  Host: example.com
+                  Host: my.scalr.com
 
                :status 200:
                   Something
@@ -1792,10 +1808,11 @@ class TestResolveRefs(object):
 
         }))
         assert text == textwrap.dedent('''
+            Create Resources
+            ^^^^^^^^^^^^^^^^
+            
             .. http:post:: /resources
                :synopsis: Create Resources
-
-               **Create Resources**
 
                ~ some useful description ~
 
@@ -1805,7 +1822,7 @@ class TestResolveRefs(object):
                .. sourcecode:: http
 
                   POST /resources HTTP/1.1
-                  Host: example.com
+                  Host: my.scalr.com
                   Content-Type: application/json
 
                   {}
