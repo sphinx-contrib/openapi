@@ -252,7 +252,7 @@ def _httpresource(endpoint, method, properties, convert, render_examples,
     query_param_examples = []
     indent = '   '
 
-    operation_title = properties.get('summary')
+    operation_title = properties.get('summary', '')
 
     yield operation_title
     yield '^' * len(operation_title)
