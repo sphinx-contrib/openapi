@@ -107,6 +107,26 @@ def _iterexamples(media_types, example_preference, examples_from_schemas):
         yield content_type, example
 
 
+def _get_markers_from_object(oas_object, schema):
+    """Retrieve a bunch of OAS object markers."""
+
+    markers = []
+
+    if schema.get("type"):
+        type_ = schema["type"]
+        if schema.get("format"):
+            type_ = f"{type_}:{schema['format']}"
+        markers.append(type_)
+
+    if oas_object.get("required"):
+        markers.append("required")
+
+    if oas_object.get("deprecated"):
+        markers.append("deprecated")
+
+    return markers
+
+
 class HttpdomainRenderer(abc.RestructuredTextRenderer):
     """Render OpenAPI v3 using `sphinxcontrib-httpdomain` extension."""
 
@@ -229,7 +249,6 @@ class HttpdomainRenderer(abc.RestructuredTextRenderer):
         kinds = CaseInsensitiveDict(
             {"path": "param", "query": "queryparam", "header": "reqheader"}
         )
-        markers = []
         schema = parameter.get("schema", {})
 
         if "content" in parameter:
@@ -247,18 +266,6 @@ class HttpdomainRenderer(abc.RestructuredTextRenderer):
             )
             return
 
-        if schema.get("type"):
-            type_ = schema["type"]
-            if schema.get("format"):
-                type_ = f"{type_}:{schema['format']}"
-            markers.append(type_)
-
-        if parameter.get("required"):
-            markers.append("required")
-
-        if parameter.get("deprecated"):
-            markers.append("deprecated")
-
         yield f":{kinds[parameter['in']]} {parameter['name']}:"
 
         if parameter.get("description"):
@@ -266,6 +273,7 @@ class HttpdomainRenderer(abc.RestructuredTextRenderer):
                 self._convert_markup(parameter["description"]).strip().splitlines()
             )
 
+        markers = _get_markers_from_object(parameter, schema)
         if markers:
             markers = ", ".join(markers)
             yield f":{kinds[parameter['in']]}type {parameter['name']}: {markers}"
@@ -342,7 +350,6 @@ class HttpdomainRenderer(abc.RestructuredTextRenderer):
                         .splitlines()
                     )
 
-                markers = []
                 schema = header_value.get("schema", {})
                 if "content" in header_value:
                     # According to OpenAPI v3 spec, 'content' in this case may
@@ -350,18 +357,7 @@ class HttpdomainRenderer(abc.RestructuredTextRenderer):
                     # list is not expensive and should be acceptable.
                     schema = list(header_value["content"].values())[0].get("schema", {})
 
-                if schema.get("type"):
-                    type_ = schema["type"]
-                    if schema.get("format"):
-                        type_ = f"{type_}:{schema['format']}"
-                    markers.append(type_)
-
-                if header_value.get("required"):
-                    markers.append("required")
-
-                if header_value.get("deprecated"):
-                    markers.append("deprecated")
-
+                markers = _get_markers_from_object(header_value, schema)
                 if markers:
                     markers = ", ".join(markers)
                     yield f":resheadertype {header_name}: {markers}"
