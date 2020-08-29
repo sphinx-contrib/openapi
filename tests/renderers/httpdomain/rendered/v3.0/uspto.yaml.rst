@@ -2,6 +2,23 @@
 
    **List available data sets**
 
+   :resjson total:
+   :resjsonobj total: integer
+   :resjson apis[]:
+   :resjsonobj apis[]: object
+   :resjson apis[].apiKey:
+      To be used as a dataset parameter value
+   :resjsonobj apis[].apiKey: string
+   :resjson apis[].apiVersionNumber:
+      To be used as a version parameter value
+   :resjsonobj apis[].apiVersionNumber: string
+   :resjson apis[].apiUrl:
+      The URL describing the dataset's fields
+   :resjsonobj apis[].apiUrl: string:uriref
+   :resjson apis[].apiDocumentationUrl:
+      A URL to the API console for each API
+   :resjsonobj apis[].apiDocumentationUrl: string:uriref
+
    :statuscode 200:
       Returns a list of data sets
 
@@ -40,6 +57,7 @@
    :param version:
       Version of the dataset.
    :paramtype version: string, required
+
    :statuscode 200:
       The dataset API for the given version is found and it is accessible to consume.
 
@@ -58,6 +76,7 @@
    :param dataset:
       Name of the dataset. In this case, the default value is oa_citations
    :paramtype dataset: string, required
+
 
    :statuscode 200:
       successful operation

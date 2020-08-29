@@ -11,6 +11,7 @@
    :queryparam limit:
       maximum number of results to return
    :queryparamtype limit: integer:int32
+
    :statuscode 200:
       pet response
 
@@ -21,6 +22,18 @@
 
    Creates a new pet in the store.  Duplicates are allowed
 
+   :reqjson name:
+   :reqjsonobj name: string, required
+   :reqjson tag:
+   :reqjsonobj tag: string
+
+
+   :resjson name:
+   :resjsonobj name: string
+   :resjson tag:
+   :resjsonobj tag: string
+   :resjson id:
+   :resjsonobj id: integer:int64, required
 
    :statuscode 200:
       pet response
@@ -35,6 +48,13 @@
    :param id:
       ID of pet to fetch
    :paramtype id: integer:int64, required
+   :resjson name:
+   :resjsonobj name: string
+   :resjson tag:
+   :resjsonobj tag: string
+   :resjson id:
+   :resjsonobj id: integer:int64, required
+
    :statuscode 200:
       pet response
 

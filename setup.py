@@ -32,6 +32,7 @@ setup(
         "jsonschema >= 2.5.1",
         "m2r >= 0.2",
         "picobox >= 2.2",
+        "deepmerge >= 0.1",
     ],
     project_urls={
         "Documentation": "https://sphinxcontrib-openapi.readthedocs.io/",
