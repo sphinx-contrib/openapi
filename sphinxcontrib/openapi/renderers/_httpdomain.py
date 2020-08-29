@@ -329,7 +329,7 @@ class HttpdomainRenderer(abc.RestructuredTextRenderer):
         if "content" in response and status_code in self._response_examples_for:
             yield ""
             yield from indented(
-                self.render_response_content(response["content"], status_code)
+                self.render_response_example(response["content"], status_code)
             )
 
         if "headers" in response:
@@ -362,7 +362,7 @@ class HttpdomainRenderer(abc.RestructuredTextRenderer):
                     markers = ", ".join(markers)
                     yield f":resheadertype {header_name}: {markers}"
 
-    def render_response_content(self, media_type, status_code):
+    def render_response_example(self, media_type, status_code):
         # OpenAPI 3.0 spec may contain more than one response media type, and
         # each media type may contain more than one example. Rendering all
         # invariants normally is not an option because the result will be hard
