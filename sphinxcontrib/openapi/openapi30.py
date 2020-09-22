@@ -9,7 +9,10 @@
 """
 
 import copy
+
 import collections
+import collections.abc
+
 from datetime import datetime
 import itertools
 import json
@@ -64,9 +67,9 @@ def _dict_merge(dct, merge_dct):
         dct: dict onto which the merge is executed
         merge_dct: dct merged into dct
     """
-    for k, v in merge_dct.items():
+    for k in merge_dct.keys():
         if (k in dct and isinstance(dct[k], dict)
-                and isinstance(merge_dct[k], collections.Mapping)):
+                and isinstance(merge_dct[k], collections.abc.Mapping)):
             _dict_merge(dct[k], merge_dct[k])
         else:
             dct[k] = merge_dct[k]
@@ -105,11 +108,17 @@ def _parse_schema(schema, method):
     schema_type = schema.get('type', 'object')
 
     if schema_type == 'array':
-        # special case oneOf so that we can show examples for all possible
-        # combinations
+        # special case oneOf and anyOf so that we can show examples for all
+        # possible combinations
         if 'oneOf' in schema['items']:
             return [
-                _parse_schema(x, method) for x in schema['items']['oneOf']]
+                _parse_schema(x, method) for x in schema['items']['oneOf']
+            ]
+
+        if 'anyOf' in schema['items']:
+            return [
+                _parse_schema(x, method) for x in schema['items']['anyOf']
+            ]
 
         return [_parse_schema(schema['items'], method)]
 
@@ -170,10 +179,15 @@ def _example(media_type_objects, method=None, endpoint=None, status=None,
         examples = content.get('examples')
         example = content.get('example')
 
+        # Try to get the example from the schema
+        if example is None and 'schema' in content:
+            example = content['schema'].get('example')
+
         if examples is None:
             examples = {}
             if not example:
-                if content_type != 'application/json':
+                if re.match(r"application/[a-zA-Z\+\.]*json", content_type) is \
+                        None:
                     LOG.info('skipping non-JSON example generation.')
                     continue
                 example = _parse_schema(content['schema'], method=method)
@@ -188,6 +202,7 @@ def _example(media_type_objects, method=None, endpoint=None, status=None,
                 }
 
         for example in examples.values():
+            # According to OpenAPI v3 specs, string examples should be left unchanged
             if not isinstance(example['value'], str):
                 example['value'] = json.dumps(
                     example['value'], indent=4, separators=(',', ': '))
@@ -209,7 +224,7 @@ def _example(media_type_objects, method=None, endpoint=None, status=None,
             if method:
                 yield '{extra_indent}{indent}{method} {endpoint} HTTP/1.1' \
                     .format(**locals())
-                yield '{extra_indent}{indent}Host: example.com' \
+                yield '{extra_indent}{indent}Host: my.scalr.com' \
                     .format(**locals())
                 if content_type:
                     yield '{extra_indent}{indent}Content-Type: {content_type}'\
@@ -237,14 +252,14 @@ def _httpresource(endpoint, method, properties, convert, render_examples,
     query_param_examples = []
     indent = '   '
 
+    operation_title = properties.get('summary', '')
+
+    yield operation_title
+    yield '^' * len(operation_title)
+    yield ''
     yield '.. http:{0}:: {1}'.format(method, endpoint)
     yield '   :synopsis: {0}'.format(properties.get('summary', 'null'))
     yield ''
-
-    if 'summary' in properties:
-        for line in properties['summary'].splitlines():
-            yield '{indent}**{line}**'.format(**locals())
-        yield ''
 
     if 'description' in properties:
         for line in convert(properties['description']).splitlines():
@@ -420,13 +435,13 @@ def openapihttpdomain(spec, **options):
 
     # https://github.com/OAI/OpenAPI-Specification/blob/3.0.2/versions/3.0.0.md#paths-object
     if 'group' in options:
-        groups = collections.OrderedDict(
-            [(x['name'], []) for x in spec.get('tags', {})]
-            )
+        groups = {}
+        tags = {x['name']: x.get('description', x['name']) for x in spec.get('tags', {})}
 
         for endpoint in paths:
             for method, properties in spec['paths'][endpoint].items():
                 key = properties.get('tags', [''])[0]
+                key = tags.get(key) if key in tags.keys() else key
                 groups.setdefault(key, []).append(_httpresource(
                     endpoint,
                     method,
@@ -435,6 +450,7 @@ def openapihttpdomain(spec, **options):
                     render_examples='examples' in options,
                     render_request=render_request))
 
+        groups = collections.OrderedDict(sorted(groups.items()))
         for key in groups.keys():
             if key:
                 generators.append(_header(key))
