@@ -417,6 +417,10 @@ def openapihttpdomain(spec, **options):
     if 'include' not in options and 'paths' not in options:
         paths = spec['paths']
 
+    included_tags = None
+    if 'tags' in options:
+        included_tags = options['tags']
+
     # Remove paths matching regexp
     if 'exclude' in options:
         _paths = []
@@ -452,6 +456,8 @@ def openapihttpdomain(spec, **options):
 
         groups = collections.OrderedDict(sorted(groups.items()))
         for key in groups.keys():
+            if included_tags is not None and key not in included_tags:
+                continue
             if key:
                 generators.append(_header(key))
             else:
@@ -461,6 +467,9 @@ def openapihttpdomain(spec, **options):
     else:
         for endpoint in paths:
             for method, properties in spec['paths'][endpoint].items():
+                tag = properties.get('tags', [''])[0]
+                if included_tags is not None and tag not in included_tags:
+                    continue
                 generators.append(_httpresource(
                     endpoint,
                     method,

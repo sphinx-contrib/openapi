@@ -47,6 +47,12 @@ def main():
         required=True,
         dest='output',
         help="Output file")
+    parser.add_argument(
+        "-t", "--tags",
+        action='append',
+        dest='tags',
+        help="Tags to be rendered"
+    )
 
     options = parser.parse_args()
     logging.getLogger().setLevel(options.level)

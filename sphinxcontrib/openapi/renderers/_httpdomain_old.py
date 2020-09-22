@@ -12,6 +12,8 @@ class HttpdomainOldRenderer(abc.RestructuredTextRenderer):
         # A list of endpoints to be rendered. Endpoints must be whitespace
         # delimited.
         "paths": lambda s: s.split(),
+        # A list of tags to be rendered.
+        "tags": lambda s: s.split(),
         # Regular expression patterns to includes/excludes endpoints to/from
         # rendering. Similar to paths, the patterns must be whitespace
         # delimited.
