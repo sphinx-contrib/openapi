@@ -458,6 +458,12 @@ def openapihttpdomain(spec, **options):
         for key in groups.keys():
             if included_tags is not None and key not in included_tags:
                 continue
+            if included_tags is None:
+                if key:
+                    generators.append(_header(key))
+                else:
+                    generators.append(_header('default'))
+
             generators.extend(groups[key])
     else:
         for endpoint in paths:
