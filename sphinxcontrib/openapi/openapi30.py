@@ -385,6 +385,10 @@ def _resource_definition(schema, convert, is_request=False):
     yield '{indent}{indent}<br/>'.format(**locals())
     yield ''.format(**locals())
     yield ''.format(**locals())
+    yield '{indent}.. role:: raw-html(raw)'.format(**locals())
+    yield '{indent}   :format: html'.format(**locals())
+    yield ''.format(**locals())
+    yield ''.format(**locals())
     yield '{indent}.. list-table::'.format(**locals())
     yield '{indent}{indent}:header-rows: 1'.format(**locals())
     yield '{indent}{indent}:class: resource-definition'.format(**locals())
@@ -406,10 +410,11 @@ def _render_property(key, schema, convert, is_request=False, is_required=False):
     enum = ''
     if len(schema.get('enum', [])) > 0:
         enum = ' |br| ' + convert('Enum: `' + '`, `'.join(schema.get('enum', [])) + '`')
+    _key = key
     if is_required:
-        key = key + ' |br| ' + convert('`required`')
+        _key = _key + '\ :raw-html:`<span style="color:red;" title="required">*</span>`'
 
-    yield '{indent}* - {key}'.format(**locals())
+    yield '{indent}* - {_key}'.format(**locals())
     yield '{indent}  - {type}{enum}'.format(**locals())
     yield '{indent}  - '.format(**locals())
     for line in convert(description).splitlines():
