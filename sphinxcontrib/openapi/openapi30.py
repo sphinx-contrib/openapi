@@ -298,18 +298,13 @@ def _httpresource(endpoint, method, properties, convert, render_examples,
     # print request content
     if render_request:
         request_content = properties.get('requestBody', {}).get('content', {})
-        if request_content and 'application/json' in request_content:
-            schema = request_content['application/json']['schema']
-            req_properties = json.dumps(schema['properties'], indent=2,
-                                        separators=(',', ':'))
+        if request_content and 'application/vnd.api+json' in request_content:
+            schema = request_content['application/vnd.api+json']['schema']
             yield '{indent}**Request body:**'.format(**locals())
             yield ''
-            yield '{indent}.. sourcecode:: json'.format(**locals())
             yield ''
-            for line in req_properties.splitlines():
-                # yield indent + line
-                yield '{indent}{indent}{line}'.format(**locals())
-                # yield ''
+            for line in _resource_definition(schema, convert=convert, is_request=True):
+                yield line
 
     # print request example
     if render_examples:
@@ -376,10 +371,56 @@ def _httpresource(endpoint, method, properties, convert, render_examples,
     yield ''
 
 
-def _header(title):
+def _header(title, symbol='='):
     yield title
-    yield '=' * len(title)
+    yield symbol * len(title)
     yield ''
+
+
+def _resource_definition(schema, convert, is_request=False):
+    indent = '   '
+
+    yield '{indent}.. |br| raw:: html'.format(**locals())
+    yield ''.format(**locals())
+    yield '{indent}{indent}<br/>'.format(**locals())
+    yield ''.format(**locals())
+    yield ''.format(**locals())
+    yield '{indent}.. list-table::'.format(**locals())
+    yield '{indent}{indent}:header-rows: 1'.format(**locals())
+    yield '{indent}{indent}:class: resource-definition'.format(**locals())
+    yield ''
+    yield '{indent}{indent}* - Key path'.format(**locals())
+    yield '{indent}{indent}  - Type'.format(**locals())
+    yield '{indent}{indent}  - Description'.format(**locals())
+    for property, property_schema in schema['properties'].items():
+        is_required = property in schema.get('required', [])
+        for line in _render_property(property, property_schema, convert, is_request, is_required):
+            yield line
+
+
+def _render_property(key, schema, convert, is_request=False, is_required=False):
+    indent = '      '
+    type = schema.get('type', 'object')
+    required_attributes = schema.get('required', [])
+    description = schema.get('description', '')
+    enum = ''
+    if len(schema.get('enum', [])) > 0:
+        enum = ' |br| ' + convert('Enum: `' + '`, `'.join(schema.get('enum', [])) + '`')
+    if is_required:
+        key = key + ' |br| ' + convert('`required`')
+
+    yield '{indent}* - {key}'.format(**locals())
+    yield '{indent}  - {type}{enum}'.format(**locals())
+    yield '{indent}  - '.format(**locals())
+    for line in convert(description).splitlines():
+        yield '{indent}{indent} {line}'.format(**locals())
+    if type == 'object':
+        for k, s in schema.get('properties', {}).items():
+            if (is_request and s.get('readOnly', False)) or (not is_request and s.get('writeOnly', False)):
+                continue
+            is_required = k in schema.get('required', [])
+            for line in _render_property(f'{key}.{k}', s, convert, is_request, is_required):
+                yield line
 
 
 def openapihttpdomain(spec, **options):
@@ -441,11 +482,15 @@ def openapihttpdomain(spec, **options):
     if 'group' in options:
         groups = {}
         tags = {x['name']: x.get('description', x['name']) for x in spec.get('tags', {})}
+        group_resources = {}
 
         for endpoint in paths:
             for method, properties in spec['paths'][endpoint].items():
                 key = properties.get('tags', [''])[0]
                 key = tags.get(key) if key in tags.keys() else key
+                resource = properties.get('x-resource', None)
+                if resource:
+                    group_resources.setdefault(key, set([])).add(resource)
                 groups.setdefault(key, []).append(_httpresource(
                     endpoint,
                     method,
@@ -458,12 +503,9 @@ def openapihttpdomain(spec, **options):
         for key in groups.keys():
             if included_tags is not None and key not in included_tags:
                 continue
-            if included_tags is None:
-                if key:
-                    generators.append(_header(key))
-                else:
-                    generators.append(_header('default'))
-
+            for r in group_resources.get(key):
+                generators.append(_header(f"{r} resource", '^'))
+                generators.append(_resource_definition(spec['components']['schemas'][r], convert))
             generators.extend(groups[key])
     else:
         for endpoint in paths:
