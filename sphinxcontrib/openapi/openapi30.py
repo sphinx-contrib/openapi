@@ -403,6 +403,8 @@ def _resource_definition(schema, convert, is_request=False):
 
 
 def _render_property(key, schema, convert, is_request=False, is_required=False):
+    if (is_request and schema.get('readOnly', False)) or (not is_request and schema.get('writeOnly', False)):
+        return
     indent = '      '
     type = schema.get('type', 'object')
     required_attributes = schema.get('required', [])
@@ -416,8 +418,6 @@ def _render_property(key, schema, convert, is_request=False, is_required=False):
     sub_props = schema.get('properties', {})
     if type == 'object' and len(sub_props) > 0:
         for k, s in sub_props.items():
-            if (is_request and s.get('readOnly', False)) or (not is_request and s.get('writeOnly', False)):
-                continue
             is_required = k in schema.get('required', [])
             for line in _render_property(f'{key}.{k}', s, convert, is_request, is_required):
                 yield line
@@ -514,7 +514,7 @@ def openapihttpdomain(spec, **options):
             if included_tags is not None and key not in included_tags:
                 continue
             for r in group_resources.get(key):
-                generators.append(_header(f"{r} resource", '^'))
+                generators.append(_header(f"The {r} resource", '^'))
                 generators.append(_resource_definition(spec['components']['schemas'][r], convert))
             generators.extend(groups[key])
     else:
