@@ -391,10 +391,10 @@ def _resource_definition(schema, convert, is_request=False):
     yield ''.format(**locals())
     yield '{indent}.. list-table::'.format(**locals())
     yield '{indent}{indent}:header-rows: 1'.format(**locals())
+    yield '{indent}{indent}:widths: 30 70'.format(**locals())
     yield '{indent}{indent}:class: resource-definition'.format(**locals())
     yield ''
     yield '{indent}{indent}* - Key path'.format(**locals())
-    yield '{indent}{indent}  - Type'.format(**locals())
     yield '{indent}{indent}  - Description'.format(**locals())
     for property, property_schema in schema['properties'].items():
         is_required = property in schema.get('required', [])
@@ -409,23 +409,28 @@ def _render_property(key, schema, convert, is_request=False, is_required=False):
     description = schema.get('description', '')
     enum = ''
     if len(schema.get('enum', [])) > 0:
-        enum = ' |br| ' + convert('Enum: `' + '`, `'.join(schema.get('enum', [])) + '`')
+        enum = convert('Enum: `' + '`, `'.join(schema.get('enum', [])) + '`')
     _key = key
     if is_required:
         _key = _key + '\ :raw-html:`<span style="color:red;" title="required">*</span>`'
-
-    yield '{indent}* - {_key}'.format(**locals())
-    yield '{indent}  - {type}{enum}'.format(**locals())
-    yield '{indent}  - '.format(**locals())
-    for line in convert(description).splitlines():
-        yield '{indent}{indent} {line}'.format(**locals())
-    if type == 'object':
-        for k, s in schema.get('properties', {}).items():
+    sub_props = schema.get('properties', {})
+    if type == 'object' and len(sub_props) > 0:
+        for k, s in sub_props.items():
             if (is_request and s.get('readOnly', False)) or (not is_request and s.get('writeOnly', False)):
                 continue
             is_required = k in schema.get('required', [])
             for line in _render_property(f'{key}.{k}', s, convert, is_request, is_required):
                 yield line
+    else:
+        yield '{indent}* - {_key}'.format(**locals())
+        yield ''
+        yield '{indent}     | \ :raw-html:`<span class="property-type">{type}</span>`'.format(**locals())
+        if enum:
+            yield '{indent}     | {enum}'.format(**locals())
+        yield '{indent}  - '.format(**locals())
+        for line in convert(description).splitlines():
+            yield '{indent}{indent} {line}'.format(**locals())
+
 
 
 def openapihttpdomain(spec, **options):
