@@ -298,18 +298,13 @@ def _httpresource(endpoint, method, properties, convert, render_examples,
     # print request content
     if render_request:
         request_content = properties.get('requestBody', {}).get('content', {})
-        if request_content and 'application/json' in request_content:
-            schema = request_content['application/json']['schema']
-            req_properties = json.dumps(schema['properties'], indent=2,
-                                        separators=(',', ':'))
+        if request_content and 'application/vnd.api+json' in request_content:
+            schema = request_content['application/vnd.api+json']['schema']
             yield '{indent}**Request body:**'.format(**locals())
             yield ''
-            yield '{indent}.. sourcecode:: json'.format(**locals())
             yield ''
-            for line in req_properties.splitlines():
-                # yield indent + line
-                yield '{indent}{indent}{line}'.format(**locals())
-                # yield ''
+            for line in _resource_definition(schema, convert=convert, is_request=True):
+                yield line
 
     # print request example
     if render_examples:
@@ -376,10 +371,74 @@ def _httpresource(endpoint, method, properties, convert, render_examples,
     yield ''
 
 
-def _header(title):
+def _header(title, symbol='='):
     yield title
-    yield '=' * len(title)
+    yield symbol * len(title)
     yield ''
+
+
+def _resource_definition(schema, convert, is_request=False):
+    indent = "   "
+
+    yield "{indent}.. role:: raw-html(raw)".format(**locals())
+    yield "{indent}   :format: html".format(**locals())
+    yield "".format(**locals())
+    yield "".format(**locals())
+    yield "{indent}.. list-table::".format(**locals())
+    yield "{indent}{indent}:header-rows: 1".format(**locals())
+    yield "{indent}{indent}:widths: 33 67".format(**locals())
+    yield "{indent}{indent}:class: resource-definition".format(**locals())
+    yield ""
+    yield "{indent}{indent}* - Key path".format(**locals())
+    yield "{indent}{indent}  - Description".format(**locals())
+    for line in _render_properties(schema, convert, is_request):
+        yield line
+
+
+def _render_properties(schema, convert, is_request=False, parent=None):
+    indent = "      "
+    properties = copy.deepcopy(schema.get("properties", {}))
+    reordered_properties = {}
+    for k in ["type", "id", "attributes", "relationships"]:
+        if k in properties:
+            reordered_properties[k] = properties.pop(k)
+    properties = {**reordered_properties, **properties}
+    for key, property_schema in properties.items():
+        if (is_request and property_schema.get("readOnly", False)) or (
+            not is_request and property_schema.get("writeOnly", False)
+        ):
+            continue
+        type = property_schema.get("type", "object")
+        is_required = key in schema.get("required", [])
+        description = property_schema.get("description", "")
+        enum = ""
+        if len(property_schema.get("enum", [])) > 0:
+            enum = convert(
+                "Enum: `" + "`, `".join(property_schema.get("enum", [])) + "`"
+            )
+        key = f"{parent}.{key}" if parent else key
+        _key = (
+            (
+                f"**{key}**"
+                + '\ :raw-html:`<span style="color:red;" title="required">*</span>`'
+            )
+            if is_required
+            else f"**{key}**"
+        )
+        sub_props = property_schema.get("properties", {})
+        if type == "object" and len(sub_props) > 0:
+            for line in _render_properties(
+                property_schema, convert, is_request, parent=key
+            ):
+                yield line
+        else:
+            yield "{indent}* - {_key} (*{type}*)".format(**locals())
+            yield ""
+            if enum:
+                yield "{indent}     | {enum}".format(**locals())
+            yield "{indent}  - ".format(**locals())
+            for line in convert(description).splitlines():
+                yield "{indent}{indent} {line}".format(**locals())
 
 
 def openapihttpdomain(spec, **options):
@@ -441,11 +500,15 @@ def openapihttpdomain(spec, **options):
     if 'group' in options:
         groups = {}
         tags = {x['name']: x.get('description', x['name']) for x in spec.get('tags', {})}
+        group_resources = {}
 
         for endpoint in paths:
             for method, properties in spec['paths'][endpoint].items():
                 key = properties.get('tags', [''])[0]
                 key = tags.get(key) if key in tags.keys() else key
+                resource = properties.get('x-resource', None)
+                if resource:
+                    group_resources.setdefault(key, set([])).add(resource)
                 groups.setdefault(key, []).append(_httpresource(
                     endpoint,
                     method,
@@ -458,12 +521,9 @@ def openapihttpdomain(spec, **options):
         for key in groups.keys():
             if included_tags is not None and key not in included_tags:
                 continue
-            if included_tags is None:
-                if key:
-                    generators.append(_header(key))
-                else:
-                    generators.append(_header('default'))
-
+            for r in group_resources.get(key):
+                generators.append(_header(f"The {r} resource", '^'))
+                generators.append(_resource_definition(spec['components']['schemas'][r], convert))
             generators.extend(groups[key])
     else:
         for endpoint in paths:
