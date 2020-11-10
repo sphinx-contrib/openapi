@@ -185,18 +185,20 @@ def _example(media_type_objects, method=None, endpoint=None, status=None,
 
         if examples is None:
             examples = {}
-            if not example:
-                if re.match(r"application/[a-zA-Z\+\.]*json", content_type) is \
-                        None:
-                    LOG.info('skipping non-JSON example generation.')
-                    continue
-                example = _parse_schema(content['schema'], method=method)
-
             if method is None:
+                if example is None:
+                    continue
                 examples['Example response'] = {
                     'value': example,
                 }
             else:
+                if not example:
+                    if re.match(r"application/[a-zA-Z\+\.]*json", content_type) is \
+                            None:
+                        LOG.info('skipping non-JSON example generation.')
+                        continue
+                    example = _parse_schema(content['schema'], method=method)
+
                 examples['Example request'] = {
                     'value': example,
                 }
@@ -224,7 +226,7 @@ def _example(media_type_objects, method=None, endpoint=None, status=None,
             if method:
                 yield '{extra_indent}{indent}{method} {endpoint} HTTP/1.1' \
                     .format(**locals())
-                yield '{extra_indent}{indent}Host: my.scalr.com' \
+                yield '{extra_indent}{indent}Host: my.scalr.io' \
                     .format(**locals())
                 if content_type:
                     yield '{extra_indent}{indent}Content-Type: {content_type}'\
@@ -282,6 +284,10 @@ def _httpresource(endpoint, method, properties, convert, render_examples,
             name=param['name'])
         for line in convert(param.get('description', '')).splitlines():
             yield '{indent}{indent}{line}'.format(**locals())
+        _enum = param.get('schema', {}).get('items', {}).get('enum')
+        if _enum:
+            _enum = '*(Available values:* ``' + '``, ``'.join(_enum) + '``\ *)*'
+            yield '{indent}{indent}{_enum}'.format(**locals())
         if param.get('required', False):
             yield '{indent}{indent}(Required)'.format(**locals())
             example = _parse_schema(param['schema'], method)
@@ -377,6 +383,15 @@ def _header(title, symbol='='):
     yield ''
 
 
+def _resource_description(schema, convert):
+    indent = "   "
+    if schema.get("description"):
+        for line in convert(schema.get("description")).splitlines():
+            yield "{indent}{line}".format(**locals())
+        yield ""
+        yield ""
+
+
 def _resource_definition(schema, convert, is_request=False):
     indent = "   "
 
@@ -414,7 +429,7 @@ def _render_properties(schema, convert, is_request=False, parent=None):
         enum = ""
         if len(property_schema.get("enum", [])) > 0:
             enum = convert(
-                "Enum: `" + "`, `".join(property_schema.get("enum", [])) + "`"
+                "Available values: `" + "`, `".join(property_schema.get("enum", [])) + "`"
             )
         key = f"{parent}.{key}" if parent else key
         _key = (
@@ -427,6 +442,12 @@ def _render_properties(schema, convert, is_request=False, parent=None):
         )
         sub_props = property_schema.get("properties", {})
         if type == "object" and len(sub_props) > 0:
+            if key != "data" and description:
+                yield "{indent}* - {_key} (*{type}*)".format(**locals())
+                yield ""
+                yield "{indent}  - ".format(**locals())
+                for line in convert(description).splitlines():
+                    yield "{indent}{indent} {line}".format(**locals())
             for line in _render_properties(
                 property_schema, convert, is_request, parent=key
             ):
@@ -523,6 +544,9 @@ def openapihttpdomain(spec, **options):
                 continue
             for r in group_resources.get(key):
                 generators.append(_header(f"The {r} resource", '^'))
+                generators.append(
+                    _resource_description(spec["components"]["schemas"][r], convert)
+                )
                 generators.append(_resource_definition(spec['components']['schemas'][r], convert))
             generators.extend(groups[key])
     else:

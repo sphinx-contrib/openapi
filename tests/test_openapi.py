@@ -776,7 +776,7 @@ class TestOpenApi3HttpDomain(object):
                .. sourcecode:: http
 
                   POST /problem HTTP/1.1
-                  Host: my.scalr.com
+                  Host: my.scalr.io
                   Content-Type: application/problem+json
 
                   {
@@ -1207,7 +1207,7 @@ class TestOpenApi3HttpDomain(object):
                .. sourcecode:: http
 
                   GET /resources/?limit=1 HTTP/1.1
-                  Host: my.scalr.com
+                  Host: my.scalr.io
 
                :status 200:
                   An array of resources.
@@ -1244,7 +1244,7 @@ class TestOpenApi3HttpDomain(object):
                .. sourcecode:: http
 
                   POST /resources/ HTTP/1.1
-                  Host: my.scalr.com
+                  Host: my.scalr.io
                   Content-Type: application/json
 
                   {
@@ -1285,7 +1285,7 @@ class TestOpenApi3HttpDomain(object):
                .. sourcecode:: http
 
                   GET /resources/{kind} HTTP/1.1
-                  Host: my.scalr.com
+                  Host: my.scalr.io
 
                :status 200:
                   The created resource.
@@ -1320,7 +1320,7 @@ class TestOpenApi3HttpDomain(object):
                .. sourcecode:: http
 
                   PATCH /resources/{kind} HTTP/1.1
-                  Host: my.scalr.com
+                  Host: my.scalr.io
                   Content-Type: application/json
 
                   {
@@ -1422,7 +1422,7 @@ class TestOpenApi3HttpDomain(object):
                .. sourcecode:: http
 
                   GET /resources/?params=p1&params=p2&v1=V1&v2=V2 HTTP/1.1
-                  Host: my.scalr.com
+                  Host: my.scalr.io
 
                :status 200:
                   OK
@@ -1582,7 +1582,7 @@ class TestOpenApi3HttpDomain(object):
                .. sourcecode:: http
 
                   GET /resources HTTP/1.1
-                  Host: my.scalr.com
+                  Host: my.scalr.io
 
                :status 200:
                   Something
@@ -1648,7 +1648,7 @@ class TestOpenApi3HttpDomain(object):
                .. sourcecode:: http
 
                   GET /resources HTTP/1.1
-                  Host: my.scalr.com
+                  Host: my.scalr.io
 
                :status 200:
                   Something
@@ -1822,7 +1822,7 @@ class TestResolveRefs(object):
                .. sourcecode:: http
 
                   POST /resources HTTP/1.1
-                  Host: my.scalr.com
+                  Host: my.scalr.io
                   Content-Type: application/json
 
                   {}

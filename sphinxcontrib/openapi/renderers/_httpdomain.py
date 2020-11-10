@@ -1,10 +1,12 @@
 """OpenAPI spec renderer."""
 
 import collections
+import copy
 import functools
 import http.client
 import json
 
+import deepmerge
 import docutils.parsers.rst.directives as directives
 import m2r
 import requests
@@ -107,6 +109,77 @@ def _iterexamples(media_types, example_preference, examples_from_schemas):
         yield content_type, example
 
 
+def _get_markers_from_object(oas_object, schema):
+    """Retrieve a bunch of OAS object markers."""
+
+    markers = []
+
+    schema_type = _get_schema_type(schema)
+    if schema_type:
+        if schema.get("format"):
+            schema_type = f"{schema_type}:{schema['format']}"
+        elif schema.get("enum"):
+            schema_type = f"{schema_type}:enum"
+        markers.append(schema_type)
+    elif schema.get("enum"):
+        markers.append("enum")
+
+    if oas_object.get("required"):
+        markers.append("required")
+
+    if oas_object.get("deprecated"):
+        markers.append("deprecated")
+
+    if schema.get("deprecated"):
+        markers.append("deprecated")
+
+    return markers
+
+
+def _is_json_mimetype(mimetype):
+    """Returns 'True' if a given mimetype implies JSON data."""
+
+    return any(
+        [
+            mimetype == "application/json",
+            mimetype.startswith("application/") and mimetype.endswith("+json"),
+        ]
+    )
+
+
+def _is_2xx_status(status_code):
+    """Returns 'True' if a given status code is one of successful."""
+
+    return str(status_code).startswith("2")
+
+
+def _get_schema_type(schema):
+    """Retrieve schema type either by reading 'type' or guessing."""
+
+    # There are a lot of OpenAPI specs out there that may lack 'type' property
+    # in their schemas. I fount no explanations on what is expected behaviour
+    # in this case neither in OpenAPI nor in JSON Schema specifications. Thus
+    # let's assume what everyone assumes, and try to guess schema type at least
+    # for two most popular types: 'object' and 'array'.
+    if "type" not in schema:
+        if "properties" in schema:
+            schema_type = "object"
+        elif "items" in schema:
+            schema_type = "array"
+        else:
+            schema_type = None
+    else:
+        schema_type = schema["type"]
+    return schema_type
+
+
+_merge_mappings = deepmerge.Merger(
+    [(collections.Mapping, deepmerge.strategy.dict.DictStrategies("merge"))],
+    ["override"],
+    ["override"],
+).merge
+
+
 class HttpdomainRenderer(abc.RestructuredTextRenderer):
     """Render OpenAPI v3 using `sphinxcontrib-httpdomain` extension."""
 
@@ -123,6 +196,7 @@ class HttpdomainRenderer(abc.RestructuredTextRenderer):
         "request-example-preference": None,
         "response-example-preference": None,
         "generate-examples-from-schemas": directives.flag,
+        "no-json-schema-description": directives.flag,
     }
 
     def __init__(self, state, options):
@@ -151,6 +225,7 @@ class HttpdomainRenderer(abc.RestructuredTextRenderer):
             "response-example-preference", self._example_preference
         )
         self._generate_example_from_schema = "generate-examples-from-schemas" in options
+        self._json_schema_description = "no-json-schema-description" not in options
 
     def render_restructuredtext_markup(self, spec):
         """Spec render entry point."""
@@ -229,7 +304,6 @@ class HttpdomainRenderer(abc.RestructuredTextRenderer):
         kinds = CaseInsensitiveDict(
             {"path": "param", "query": "queryparam", "header": "reqheader"}
         )
-        markers = []
         schema = parameter.get("schema", {})
 
         if "content" in parameter:
@@ -247,18 +321,6 @@ class HttpdomainRenderer(abc.RestructuredTextRenderer):
             )
             return
 
-        if schema.get("type"):
-            type_ = schema["type"]
-            if schema.get("format"):
-                type_ = f"{type_}:{schema['format']}"
-            markers.append(type_)
-
-        if parameter.get("required"):
-            markers.append("required")
-
-        if parameter.get("deprecated"):
-            markers.append("deprecated")
-
         yield f":{kinds[parameter['in']]} {parameter['name']}:"
 
         if parameter.get("description"):
@@ -266,12 +328,22 @@ class HttpdomainRenderer(abc.RestructuredTextRenderer):
                 self._convert_markup(parameter["description"]).strip().splitlines()
             )
 
+        markers = _get_markers_from_object(parameter, schema)
         if markers:
             markers = ", ".join(markers)
             yield f":{kinds[parameter['in']]}type {parameter['name']}: {markers}"
 
     def render_request_body(self, request_body, endpoint, method):
         """Render OAS operation's requestBody."""
+
+        if self._json_schema_description:
+            for content_type, content in request_body["content"].items():
+                if _is_json_mimetype(content_type) and content.get("schema"):
+                    yield from self.render_json_schema_description(
+                        content["schema"], "req"
+                    )
+                    yield ""
+                    break
 
         yield from self.render_request_body_example(request_body, endpoint, method)
         yield ""
@@ -304,6 +376,18 @@ class HttpdomainRenderer(abc.RestructuredTextRenderer):
     def render_responses(self, responses):
         """Render OAS operation's responses."""
 
+        if self._json_schema_description:
+            for status_code, response in responses.items():
+                if _is_2xx_status(status_code):
+                    for content_type, content in response.get("content", {}).items():
+                        if _is_json_mimetype(content_type) and content.get("schema"):
+                            yield from self.render_json_schema_description(
+                                content["schema"], "res"
+                            )
+                            yield ""
+                            break
+                    break
+
         for status_code, response in responses.items():
             # Due to the way how YAML spec is parsed, status code may be
             # infered as integer. In order to spare some cycles on type
@@ -321,7 +405,7 @@ class HttpdomainRenderer(abc.RestructuredTextRenderer):
         if "content" in response and status_code in self._response_examples_for:
             yield ""
             yield from indented(
-                self.render_response_content(response["content"], status_code)
+                self.render_response_example(response["content"], status_code)
             )
 
         if "headers" in response:
@@ -342,7 +426,6 @@ class HttpdomainRenderer(abc.RestructuredTextRenderer):
                         .splitlines()
                     )
 
-                markers = []
                 schema = header_value.get("schema", {})
                 if "content" in header_value:
                     # According to OpenAPI v3 spec, 'content' in this case may
@@ -350,23 +433,12 @@ class HttpdomainRenderer(abc.RestructuredTextRenderer):
                     # list is not expensive and should be acceptable.
                     schema = list(header_value["content"].values())[0].get("schema", {})
 
-                if schema.get("type"):
-                    type_ = schema["type"]
-                    if schema.get("format"):
-                        type_ = f"{type_}:{schema['format']}"
-                    markers.append(type_)
-
-                if header_value.get("required"):
-                    markers.append("required")
-
-                if header_value.get("deprecated"):
-                    markers.append("deprecated")
-
+                markers = _get_markers_from_object(header_value, schema)
                 if markers:
                     markers = ", ".join(markers)
                     yield f":resheadertype {header_name}: {markers}"
 
-    def render_response_content(self, media_type, status_code):
+    def render_response_example(self, media_type, status_code):
         # OpenAPI 3.0 spec may contain more than one response media type, and
         # each media type may contain more than one example. Rendering all
         # invariants normally is not an option because the result will be hard
@@ -413,3 +485,136 @@ class HttpdomainRenderer(abc.RestructuredTextRenderer):
             yield f"   Content-Type: {content_type}"
             yield f""
             yield from indented(example.splitlines())
+
+    def render_json_schema_description(self, schema, req_or_res):
+        """Render JSON schema's description."""
+
+        def _resolve_combining_schema(schema):
+            if "oneOf" in schema:
+                # The part with merging is a vague one since I only found a
+                # single 'oneOf' example where such merging was assumed, and no
+                # explanations in the spec itself.
+                merged_schema = schema.copy()
+                merged_schema.update(merged_schema.pop("oneOf")[0])
+                return merged_schema
+
+            elif "anyOf" in schema:
+                # The part with merging is a vague one since I only found a
+                # single 'oneOf' example where such merging was assumed, and no
+                # explanations in the spec itself.
+                merged_schema = schema.copy()
+                merged_schema.update(merged_schema.pop("anyOf")[0])
+                return merged_schema
+
+            elif "allOf" in schema:
+                # Since the item is represented by all schemas from the array,
+                # the best we can do is to render them all at once
+                # sequentially. Please note, the only way the end result will
+                # ever make sense is when all schemas from the array are of
+                # object type.
+                merged_schema = schema.copy()
+                for item in merged_schema.pop("allOf"):
+                    merged_schema = _merge_mappings(merged_schema, copy.deepcopy(item))
+                return merged_schema
+
+            elif "not" in schema:
+                # Eh.. do nothing because I have no idea what can we do.
+                return {}
+
+            return schema
+
+        def _traverse_schema(schema, name, is_required=False):
+            schema_type = _get_schema_type(schema)
+
+            if {"oneOf", "anyOf", "allOf"} & schema.keys():
+                # Since an item can represented by either or any schema from
+                # the array of schema in case of `oneOf` and `anyOf`
+                # respectively, the best we can do for them is to render the
+                # first found variant. In other words, we are going to traverse
+                # only a single schema variant and leave the rest out. This is
+                # by design and it was decided so in order to keep produced
+                # description clear and simple.
+                yield from _traverse_schema(_resolve_combining_schema(schema), name)
+
+            elif "not" in schema:
+                yield name, {}, is_required
+
+            elif schema_type == "object":
+                if name:
+                    yield name, schema, is_required
+
+                required = set(schema.get("required", []))
+
+                for key, value in schema.get("properties", {}).items():
+                    # In case of the first recursion call, when 'name' is an
+                    # empty string, we should go with 'key' only in order to
+                    # avoid leading dot at the beginning.
+                    yield from _traverse_schema(
+                        value,
+                        f"{name}.{key}" if name else key,
+                        is_required=key in required,
+                    )
+
+            elif schema_type == "array":
+                yield from _traverse_schema(schema["items"], f"{name}[]")
+
+            elif "enum" in schema:
+                yield name, schema, is_required
+
+            elif schema_type is not None:
+                yield name, schema, is_required
+
+        schema = _resolve_combining_schema(schema)
+        schema_type = _get_schema_type(schema)
+
+        # On root level, httpdomain supports only 'object' and 'array' response
+        # types. If it's something else, let's do not even try to render it.
+        if schema_type not in {"object", "array"}:
+            return
+
+        # According to httpdomain's documentation, 'reqjsonobj' is an alias for
+        # 'reqjson'. However, since the same name is passed as a type directive
+        # internally, it actually can be used to specify its type. The same
+        # goes for 'resjsonobj'.
+        directives_map = {
+            "req": {
+                "object": ("reqjson", "reqjsonobj"),
+                "array": ("reqjsonarr", "reqjsonarrtype"),
+            },
+            "res": {
+                "object": ("resjson", "resjsonobj"),
+                "array": ("resjsonarr", "resjsonarrtype"),
+            },
+        }
+
+        # These httpdomain's fields always expect either JSON Object or JSON
+        # Array. No primitive types are allowed as input.
+        directive, typedirective = directives_map[req_or_res][schema_type]
+
+        # Since we use JSON array specific httpdomain directives if a schema
+        # we're about to render is an array, there's no need to render that
+        # array in the first place.
+        if schema_type == "array":
+            schema = schema["items"]
+
+            # Even if a root element is an array, items it contain must not be
+            # of a primitive types.
+            if _get_schema_type(schema) not in {"object", "array"}:
+                return
+
+        for name, schema, is_required in _traverse_schema(schema, ""):
+            yield f":{directive} {name}:"
+
+            if schema.get("description"):
+                yield from indented(
+                    self._convert_markup(schema["description"]).strip().splitlines()
+                )
+
+            markers = _get_markers_from_object({}, schema)
+
+            if is_required:
+                markers.append("required")
+
+            if markers:
+                markers = ", ".join(markers)
+                yield f":{typedirective} {name}: {markers}"

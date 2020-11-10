@@ -113,6 +113,7 @@ def test_oas2_complete(testrenderer, oas_fragment):
            :paramtype username: string, required
            :queryparam id:
            :queryparamtype id: string
+
            :statuscode 200:
               a response description
 
@@ -161,6 +162,7 @@ def test_oas2_schema_example(testrenderer, oas_fragment):
         .. http:get:: /test
 
            an operation description
+
 
            :statuscode 200:
               a response description
@@ -215,6 +217,7 @@ def test_oas2_complete_generate_examples_from_schema(fakestate, oas_fragment):
         .. http:get:: /test
 
            an operation description
+
 
            :statuscode 200:
               a response description
@@ -339,6 +342,7 @@ def test_oas3_complete(testrenderer, oas_fragment):
            :paramtype username: string, required
            :queryparam id:
            :queryparamtype id: string
+
            :statuscode 200:
               a response description
 
@@ -387,6 +391,7 @@ def test_oas3_schema_example(testrenderer, oas_fragment):
         .. http:get:: /test
 
            an operation description
+
 
            :statuscode 200:
               a response description
@@ -441,6 +446,7 @@ def test_oas3_generate_examples_from_schema(fakestate, oas_fragment):
         .. http:get:: /test
 
            an operation description
+
 
            :statuscode 200:
               a response description

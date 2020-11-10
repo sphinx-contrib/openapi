@@ -1,4 +1,4 @@
-"""OpenAPI spec renderer: render_response_content."""
+"""OpenAPI spec renderer: render_response_example."""
 
 import textwrap
 
@@ -109,11 +109,11 @@ def textify(generator):
         ),
     ],
 )
-def test_render_response_content_example(testrenderer, oas_fragment, media_type):
+def test_render_response_example(testrenderer, oas_fragment, media_type):
     """Path response's example is rendered."""
 
     markup = textify(
-        testrenderer.render_response_content(oas_fragment(media_type), "200")
+        testrenderer.render_response_example(oas_fragment(media_type), "200")
     )
     assert markup == textwrap.dedent(
         """\
@@ -130,11 +130,11 @@ def test_render_response_content_example(testrenderer, oas_fragment, media_type)
     )
 
 
-def test_render_response_content_example_1st_from_examples(testrenderer, oas_fragment):
+def test_render_response_example_1st_from_examples(testrenderer, oas_fragment):
     """Path response's first example is rendered."""
 
     markup = textify(
-        testrenderer.render_response_content(
+        testrenderer.render_response_example(
             oas_fragment(
                 """
                 application/json:
@@ -166,13 +166,11 @@ def test_render_response_content_example_1st_from_examples(testrenderer, oas_fra
     )
 
 
-def test_render_response_content_example_1st_from_media_type(
-    testrenderer, oas_fragment
-):
+def test_render_response_example_1st_from_media_type(testrenderer, oas_fragment):
     """Path response's example from first media type is rendered."""
 
     markup = textify(
-        testrenderer.render_response_content(
+        testrenderer.render_response_example(
             oas_fragment(
                 """
                 text/plain:
@@ -205,7 +203,7 @@ def test_render_response_content_example_1st_from_media_type(
     ["example_preference_key"],
     [pytest.param("response-example-preference"), pytest.param("example-preference")],
 )
-def test_render_response_content_example_preference(
+def test_render_response_example_preference(
     fakestate, example_preference_key, oas_fragment
 ):
     """Path response's example from preferred media type is rendered."""
@@ -215,7 +213,7 @@ def test_render_response_content_example_preference(
     )
 
     markup = textify(
-        testrenderer.render_response_content(
+        testrenderer.render_response_example(
             oas_fragment(
                 """
                 application/json:
@@ -249,7 +247,7 @@ def test_render_response_content_example_preference(
     ["example_preference_key"],
     [pytest.param("response-example-preference"), pytest.param("example-preference")],
 )
-def test_render_response_content_example_preference_complex(
+def test_render_response_example_preference_complex(
     fakestate, example_preference_key, oas_fragment
 ):
     """Path response's example from preferred media type is rendered."""
@@ -259,7 +257,7 @@ def test_render_response_content_example_preference_complex(
     )
 
     markup = textify(
-        testrenderer.render_response_content(
+        testrenderer.render_response_example(
             oas_fragment(
                 """
                 text/csv:
@@ -292,7 +290,7 @@ def test_render_response_content_example_preference_complex(
     )
 
 
-def test_render_response_content_example_preference_priority(fakestate, oas_fragment):
+def test_render_response_example_preference_priority(fakestate, oas_fragment):
     """Path response's example from preferred media type is rendered."""
 
     testrenderer = renderers.HttpdomainRenderer(
@@ -304,7 +302,7 @@ def test_render_response_content_example_preference_priority(fakestate, oas_frag
     )
 
     markup = textify(
-        testrenderer.render_response_content(
+        testrenderer.render_response_example(
             oas_fragment(
                 """
                 application/json:
@@ -335,7 +333,7 @@ def test_render_response_content_example_preference_priority(fakestate, oas_frag
 
 
 @responses.activate
-def test_render_response_content_example_external(testrenderer, oas_fragment):
+def test_render_response_example_external(testrenderer, oas_fragment):
     """Path response's example can be retrieved from external location."""
 
     responses.add(
@@ -346,7 +344,7 @@ def test_render_response_content_example_external(testrenderer, oas_fragment):
     )
 
     markup = textify(
-        testrenderer.render_response_content(
+        testrenderer.render_response_example(
             oas_fragment(
                 """
                 application/json:
@@ -371,7 +369,7 @@ def test_render_response_content_example_external(testrenderer, oas_fragment):
 
 
 @responses.activate
-def test_render_response_content_example_external_errored_next_example(
+def test_render_response_example_external_errored_next_example(
     testrenderer, caplog, oas_fragment
 ):
     """Path response's example fallbacks on next when external cannot be retrieved."""
@@ -381,7 +379,7 @@ def test_render_response_content_example_external_errored_next_example(
     )
 
     markup = textify(
-        testrenderer.render_response_content(
+        testrenderer.render_response_example(
             oas_fragment(
                 """
                 application/json:
@@ -408,7 +406,7 @@ def test_render_response_content_example_external_errored_next_example(
 
 
 @responses.activate
-def test_render_response_content_example_external_errored_next_media_type(
+def test_render_response_example_external_errored_next_media_type(
     testrenderer, oas_fragment, caplog
 ):
     """Path response's example fallbacks on next when external cannot be retrieved."""
@@ -418,7 +416,7 @@ def test_render_response_content_example_external_errored_next_media_type(
     )
 
     markup = textify(
-        testrenderer.render_response_content(
+        testrenderer.render_response_example(
             oas_fragment(
                 """
                 application/json:
@@ -444,11 +442,11 @@ def test_render_response_content_example_external_errored_next_media_type(
     )
 
 
-def test_render_response_content_example_content_type(testrenderer, oas_fragment):
+def test_render_response_example_content_type(testrenderer, oas_fragment):
     """Path response's example can render something other than application/json."""
 
     markup = textify(
-        testrenderer.render_response_content(
+        testrenderer.render_response_example(
             oas_fragment(
                 """
                 text/csv:
@@ -473,11 +471,11 @@ def test_render_response_content_example_content_type(testrenderer, oas_fragment
     )
 
 
-def test_render_response_content_example_noop(testrenderer, oas_fragment):
+def test_render_response_example_noop(testrenderer, oas_fragment):
     """Path response's example is not rendered if there's nothing to render."""
 
     markup = textify(
-        testrenderer.render_response_content(
+        testrenderer.render_response_example(
             oas_fragment(
                 """
                 application/json:
@@ -500,13 +498,13 @@ def test_render_response_content_example_noop(testrenderer, oas_fragment):
         pytest.param("422", "Unprocessable Entity", id="422"),
     ],
 )
-def test_render_response_content_status_code(
+def test_render_response_status_code(
     testrenderer, oas_fragment, status_code, status_text
 ):
     """Path response's example is rendered with proper status code."""
 
     markup = textify(
-        testrenderer.render_response_content(
+        testrenderer.render_response_example(
             oas_fragment(
                 """
                 text/csv:
@@ -539,13 +537,13 @@ def test_render_response_content_status_code(
         pytest.param("4XX", "400", "Bad Request", id="4XX"),
     ],
 )
-def test_render_response_content_status_code_range(
+def test_render_response_status_code_range(
     testrenderer, oas_fragment, status_range, status_code, status_text
 ):
     """Path response's example is rendered with proper status range."""
 
     markup = textify(
-        testrenderer.render_response_content(
+        testrenderer.render_response_example(
             oas_fragment(
                 """
                 text/csv:
@@ -578,13 +576,13 @@ def test_render_response_content_status_code_range(
         pytest.param("422", "Unprocessable Entity", id="422"),
     ],
 )
-def test_render_response_content_status_code_int(
+def test_render_response_status_code_int(
     testrenderer, oas_fragment, status_code, status_text
 ):
     """Path response's example is rendered with proper status code."""
 
     markup = textify(
-        testrenderer.render_response_content(
+        testrenderer.render_response_example(
             oas_fragment(
                 """
                 text/csv:
@@ -609,11 +607,11 @@ def test_render_response_content_status_code_int(
     )
 
 
-def test_render_response_content_status_code_default(testrenderer, oas_fragment):
+def test_render_response_status_code_default(testrenderer, oas_fragment):
     """Path response's example is rendered when default is passed."""
 
     markup = textify(
-        testrenderer.render_response_content(
+        testrenderer.render_response_example(
             oas_fragment(
                 """
                 text/csv:
