@@ -284,6 +284,10 @@ def _httpresource(endpoint, method, properties, convert, render_examples,
             name=param['name'])
         for line in convert(param.get('description', '')).splitlines():
             yield '{indent}{indent}{line}'.format(**locals())
+        _enum = param.get('schema', {}).get('items', {}).get('enum')
+        if _enum:
+            _enum = '*(Available values:* ``' + '``, ``'.join(_enum) + '``\ *)*'
+            yield '{indent}{indent}{_enum}'.format(**locals())
         if param.get('required', False):
             yield '{indent}{indent}(Required)'.format(**locals())
             example = _parse_schema(param['schema'], method)
