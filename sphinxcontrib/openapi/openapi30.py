@@ -185,18 +185,20 @@ def _example(media_type_objects, method=None, endpoint=None, status=None,
 
         if examples is None:
             examples = {}
-            if not example:
-                if re.match(r"application/[a-zA-Z\+\.]*json", content_type) is \
-                        None:
-                    LOG.info('skipping non-JSON example generation.')
-                    continue
-                example = _parse_schema(content['schema'], method=method)
-
             if method is None:
+                if example is None:
+                    continue
                 examples['Example response'] = {
                     'value': example,
                 }
             else:
+                if not example:
+                    if re.match(r"application/[a-zA-Z\+\.]*json", content_type) is \
+                            None:
+                        LOG.info('skipping non-JSON example generation.')
+                        continue
+                    example = _parse_schema(content['schema'], method=method)
+
                 examples['Example request'] = {
                     'value': example,
                 }
