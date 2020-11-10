@@ -383,6 +383,15 @@ def _header(title, symbol='='):
     yield ''
 
 
+def _resource_description(schema, convert):
+    indent = "   "
+    if schema.get("description"):
+        for line in convert(schema.get("description")).splitlines():
+            yield "{indent}{line}".format(**locals())
+        yield ""
+        yield ""
+
+
 def _resource_definition(schema, convert, is_request=False):
     indent = "   "
 
@@ -420,7 +429,7 @@ def _render_properties(schema, convert, is_request=False, parent=None):
         enum = ""
         if len(property_schema.get("enum", [])) > 0:
             enum = convert(
-                "Enum: `" + "`, `".join(property_schema.get("enum", [])) + "`"
+                "Available values: `" + "`, `".join(property_schema.get("enum", [])) + "`"
             )
         key = f"{parent}.{key}" if parent else key
         _key = (
@@ -433,6 +442,12 @@ def _render_properties(schema, convert, is_request=False, parent=None):
         )
         sub_props = property_schema.get("properties", {})
         if type == "object" and len(sub_props) > 0:
+            if key != "data" and description:
+                yield "{indent}* - {_key} (*{type}*)".format(**locals())
+                yield ""
+                yield "{indent}  - ".format(**locals())
+                for line in convert(description).splitlines():
+                    yield "{indent}{indent} {line}".format(**locals())
             for line in _render_properties(
                 property_schema, convert, is_request, parent=key
             ):
@@ -529,6 +544,9 @@ def openapihttpdomain(spec, **options):
                 continue
             for r in group_resources.get(key):
                 generators.append(_header(f"The {r} resource", '^'))
+                generators.append(
+                    _resource_description(spec["components"]["schemas"][r], convert)
+                )
                 generators.append(_resource_definition(spec['components']['schemas'][r], convert))
             generators.extend(groups[key])
     else:
