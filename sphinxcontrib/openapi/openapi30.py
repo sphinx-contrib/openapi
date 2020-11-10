@@ -226,7 +226,7 @@ def _example(media_type_objects, method=None, endpoint=None, status=None,
             if method:
                 yield '{extra_indent}{indent}{method} {endpoint} HTTP/1.1' \
                     .format(**locals())
-                yield '{extra_indent}{indent}Host: my.scalr.com' \
+                yield '{extra_indent}{indent}Host: my.scalr.io' \
                     .format(**locals())
                 if content_type:
                     yield '{extra_indent}{indent}Content-Type: {content_type}'\
