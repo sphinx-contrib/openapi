@@ -10,6 +10,22 @@
    :queryparam longitude:
       Longitude component of location.
    :queryparamtype longitude: number:double, required
+   :resjsonarr product_id:
+      Unique identifier representing a specific product for a given latitude & longitude. For example, uberX in San Francisco will have a different product_id than uberX in Los Angeles.
+   :resjsonarrtype product_id: string
+   :resjsonarr description:
+      Description of product.
+   :resjsonarrtype description: string
+   :resjsonarr display_name:
+      Display name of product.
+   :resjsonarrtype display_name: string
+   :resjsonarr capacity:
+      Capacity of product. For example, 4 people.
+   :resjsonarrtype capacity: integer
+   :resjsonarr image:
+      Image URL representing the product.
+   :resjsonarrtype image: string
+
    :statuscode 200:
       An array of products
 
@@ -38,6 +54,28 @@
    :queryparam end_longitude:
       Longitude component of end location.
    :queryparamtype end_longitude: number:double, required
+   :resjsonarr product_id:
+      Unique identifier representing a specific product for a given latitude & longitude. For example, uberX in San Francisco will have a different product_id than uberX in Los Angeles
+   :resjsonarrtype product_id: string
+   :resjsonarr currency_code:
+      `ISO 4217 <http://en.wikipedia.org/wiki/ISO_4217>`_ currency code.
+   :resjsonarrtype currency_code: string
+   :resjsonarr display_name:
+      Display name of product.
+   :resjsonarrtype display_name: string
+   :resjsonarr estimate:
+      Formatted string of estimate in local currency of the start location. Estimate could be a range, a single number (flat rate) or "Metered" for TAXI.
+   :resjsonarrtype estimate: string
+   :resjsonarr low_estimate:
+      Lower bound of the estimated price.
+   :resjsonarrtype low_estimate: number
+   :resjsonarr high_estimate:
+      Upper bound of the estimated price.
+   :resjsonarrtype high_estimate: number
+   :resjsonarr surge_multiplier:
+      Expected surge multiplier. Surge is active if surge_multiplier is greater than 1. Price estimate already factors in the surge multiplier.
+   :resjsonarrtype surge_multiplier: number
+
    :statuscode 200:
       An array of price estimates by product
 
@@ -62,6 +100,22 @@
    :queryparam product_id:
       Unique identifier representing a specific product for a given latitude & longitude.
    :queryparamtype product_id: string
+   :resjsonarr product_id:
+      Unique identifier representing a specific product for a given latitude & longitude. For example, uberX in San Francisco will have a different product_id than uberX in Los Angeles.
+   :resjsonarrtype product_id: string
+   :resjsonarr description:
+      Description of product.
+   :resjsonarrtype description: string
+   :resjsonarr display_name:
+      Display name of product.
+   :resjsonarrtype display_name: string
+   :resjsonarr capacity:
+      Capacity of product. For example, 4 people.
+   :resjsonarrtype capacity: integer
+   :resjsonarr image:
+      Image URL representing the product.
+   :resjsonarrtype image: string
+
    :statuscode 200:
       An array of products
 
@@ -73,6 +127,22 @@
    **User Profile**
 
    The User Profile endpoint returns information about the Uber user that has authorized with the application.
+
+   :resjson first_name:
+      First name of the Uber user.
+   :resjsonobj first_name: string
+   :resjson last_name:
+      Last name of the Uber user.
+   :resjsonobj last_name: string
+   :resjson email:
+      Email address of the Uber user
+   :resjsonobj email: string
+   :resjson picture:
+      Image URL of the Uber user.
+   :resjsonobj picture: string
+   :resjson promo_code:
+      Promo code of the Uber user.
+   :resjsonobj promo_code: string
 
    :statuscode 200:
       Profile information for a user
@@ -96,6 +166,21 @@
    :queryparam limit:
       Number of items to retrieve. Default is 5, maximum is 100.
    :queryparamtype limit: integer:int32
+   :resjson offset:
+      Position in pagination.
+   :resjsonobj offset: integer:int32
+   :resjson limit:
+      Number of items to retrieve (100 max).
+   :resjsonobj limit: integer:int32
+   :resjson count:
+      Total number of items available.
+   :resjsonobj count: integer:int32
+   :resjson history[]:
+   :resjsonobj history[]: object
+   :resjson history[].uuid:
+      Unique identifier for the activity
+   :resjsonobj history[].uuid: string
+
    :statuscode 200:
       History information for the given user
 
