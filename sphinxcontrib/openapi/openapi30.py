@@ -290,7 +290,7 @@ def _httpresource(endpoint, method, properties, convert, render_examples,
             yield '{indent}{indent}{line}'.format(**locals())
         _enum = param.get('schema', {}).get('items', {}).get('enum')
         if _enum:
-            _enum = '*(Available values:* ``' + '``, ``'.join(_enum) + '``\ *)*'
+            _enum = '*(Available values:* ``' + '``, ``'.join(_enum) + r'``\ *)*'
             yield '{indent}{indent}{_enum}'.format(**locals())
         if param.get('required', False):
             yield '{indent}{indent}(Required)'.format(**locals())
@@ -441,7 +441,7 @@ def _render_properties(schema, convert, is_request=False, parent=None):
         _key = (
             (
                 f"**{key}**"
-                + '\ :raw-html:`<span style="color:red;" title="required">*</span>`'
+                + r'\ :raw-html:`<span style="color:red;" title="required">*</span>`'
             )
             if is_required
             else f"**{key}**"
@@ -549,12 +549,13 @@ def openapihttpdomain(spec, **options):
         for key in groups.keys():
             if included_tags is not None and key not in included_tags:
                 continue
-            for r in group_resources.get(key):
-                generators.append(_header(f"The {r} resource", '^'))
-                generators.append(
-                    _resource_description(spec["components"]["schemas"][r], convert)
-                )
-                generators.append(_resource_definition(spec['components']['schemas'][r], convert))
+            if group_resources.get(key):
+                for r in group_resources.get(key):
+                    generators.append(_header(f"The {r} resource", '^'))
+                    generators.append(
+                        _resource_description(spec["components"]["schemas"][r], convert)
+                    )
+                    generators.append(_resource_definition(spec['components']['schemas'][r], convert))
             generators.extend(groups[key])
     else:
         for endpoint in paths:
