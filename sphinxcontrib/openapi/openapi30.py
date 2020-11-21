@@ -555,7 +555,9 @@ def openapihttpdomain(spec, **options):
                     generators.append(
                         _resource_description(spec["components"]["schemas"][r], convert)
                     )
-                    generators.append(_resource_definition(spec['components']['schemas'][r], convert))
+                    generators.append(
+                        _resource_definition(spec['components']['schemas'][r], convert)
+                    )
             generators.extend(groups[key])
     else:
         for endpoint in paths:
