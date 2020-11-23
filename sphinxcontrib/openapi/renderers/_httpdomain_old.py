@@ -31,6 +31,7 @@ class HttpdomainOldRenderer(abc.RestructuredTextRenderer):
         # Markup format to render OpenAPI descriptions.
         "format": str,
         "content_type": str,
+        "profile": str,
     }
 
     def __init__(self, state, options):
