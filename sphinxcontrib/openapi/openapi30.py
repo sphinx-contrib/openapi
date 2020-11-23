@@ -173,7 +173,7 @@ def _example(media_type_objects, method=None, endpoint=None, status=None,
     # Provide request samples for GET requests
     if method == 'GET':
         media_type_objects[''] = {
-            'examples': {'Example request': {'value': ''}}}
+            'examples': {'default': {'summary': 'Example Request', 'value': ''}}}
 
     for content_type, content in media_type_objects.items():
         examples = content.get('examples')
@@ -188,8 +188,8 @@ def _example(media_type_objects, method=None, endpoint=None, status=None,
             if method is None:
                 if example is None:
                     continue
-                examples['Example response'] = {
-                    'value': example,
+                examples['default'] = {
+                    'value': example
                 }
             else:
                 if not example:
@@ -198,8 +198,7 @@ def _example(media_type_objects, method=None, endpoint=None, status=None,
                         LOG.info('skipping non-JSON example generation.')
                         continue
                     example = _parse_schema(content['schema'], method=method)
-
-                examples['Example request'] = {
+                examples['default'] = {
                     'value': example,
                 }
 
@@ -211,10 +210,14 @@ def _example(media_type_objects, method=None, endpoint=None, status=None,
 
         for example_name, example in examples.items():
             if 'summary' in example:
-                example_title = '{example_name} - {example[summary]}'.format(
-                    **locals())
+                example_title = '{example[summary]}'.format(**locals())
             else:
                 example_title = example_name
+                if example_title == 'default':
+                    if method is None:
+                        example_title = 'Example Respone'
+                    else:
+                        example_title = 'Example Request'
 
             yield ''
             yield '{extra_indent}**{example_title}:**'.format(**locals())
