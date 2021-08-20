@@ -142,7 +142,7 @@ def _parse_schema(schema, method):
     return _TYPE_MAPPING[(schema_type, None)]  # unrecognized format
 
 
-def _example(media_type_objects, method=None, endpoint=None, status=None,
+def _example(media_type_objects, method=None, endpoint=None, convert=None, status=None,
              nb_indent=0, profile=None):
     """
     Format examples in `Media Type Object` openapi v3 to HTTP request or
@@ -222,6 +222,10 @@ def _example(media_type_objects, method=None, endpoint=None, status=None,
             yield ''
             yield '{extra_indent}**{example_title}:**'.format(**locals())
             yield ''
+            if 'description' in example:
+                for line in convert(example['description']).splitlines():
+                    yield f'{extra_indent}{line}'
+                yield ''
             yield '{extra_indent}.. sourcecode:: http'.format(**locals())
             yield ''
 
@@ -332,6 +336,7 @@ def _httpresource(endpoint, method, properties, convert, render_examples,
                 request_content,
                 method,
                 endpoint=endpoint_examples,
+                convert=convert,
                 nb_indent=1,
                 profile=profile):
             yield line
@@ -345,7 +350,7 @@ def _httpresource(endpoint, method, properties, convert, render_examples,
         # print response example
         if render_examples:
             for line in _example(
-                    response.get('content', {}), status=status, nb_indent=2, profile=profile):
+                    response.get('content', {}), status=status, convert=convert, nb_indent=2, profile=profile):
                 yield line
 
     # print request header params
