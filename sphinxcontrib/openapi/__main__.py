@@ -59,8 +59,9 @@ def main():
     if options.group:
         openapi_options['group'] = True
 
-    openapi_options.setdefault('uri', 'file://%s' % options.input)
-    spec = directive._get_spec(options.input, options.encoding)
+    uri = directive._get_spec_uri(options.input)
+    openapi_options.setdefault('uri', uri.geturl())
+    spec = directive._get_spec(uri, options.encoding)
     renderer = renderers.HttpdomainOldRenderer(None, openapi_options)
 
     for line in renderer.render_restructuredtext_markup(spec):
