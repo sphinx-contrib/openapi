@@ -262,7 +262,7 @@ def _httpresource(endpoint, method, properties, convert, render_examples,
         yield ''
 
     if 'description' in properties:
-        for line in convert(properties['description']).splitlines():
+        for line in convert(properties.get('description', '')).splitlines():
             yield '{indent}{line}'.format(**locals())
         yield ''
 
@@ -330,7 +330,7 @@ def _httpresource(endpoint, method, properties, convert, render_examples,
     # print response status codes
     for status, response in responses.items():
         yield '{indent}:status {status}:'.format(**locals())
-        for line in convert(response['description']).splitlines():
+        for line in convert(response.get('description', '')).splitlines():
             yield '{indent}{indent}{line}'.format(**locals())
 
         # print response example
@@ -351,7 +351,7 @@ def _httpresource(endpoint, method, properties, convert, render_examples,
     for status, response in responses.items():
         for headername, header in response.get('headers', {}).items():
             yield indent + ':resheader {name}:'.format(name=headername)
-            for line in convert(header['description']).splitlines():
+            for line in convert(header.get('description', '')).splitlines():
                 yield '{indent}{indent}{line}'.format(**locals())
 
     for cb_name, cb_specs in properties.get('callbacks', {}).items():
