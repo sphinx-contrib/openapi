@@ -188,7 +188,8 @@ def _example(media_type_objects, method=None, endpoint=None, status=None,
             if not example:
                 if re.match(r"application/[a-zA-Z\+]*json", content_type) is \
                         None:
-                    LOG.info('skipping non-JSON example generation.')
+                    LOG.info('skipping non-JSON example generation. if it was multipart/form-data'
+                             ' the Request body is generated anyway')
                     continue
                 example = _parse_schema(content['schema'], method=method)
 
@@ -245,21 +246,18 @@ def _example(media_type_objects, method=None, endpoint=None, status=None,
 
 
 def _httpresource(endpoint, method, properties, convert, render_examples,
-                  render_request):
+                  render_request, components):
     # https://github.com/OAI/OpenAPI-Specification/blob/3.0.2/versions/3.0.0.md#operation-object
     parameters = properties.get('parameters', [])
     responses = properties['responses']
+    security = properties.get('security')
     query_param_examples = []
     indent = '   '
 
     yield '.. http:{0}:: {1}'.format(method, endpoint)
-    yield '   :synopsis: {0}'.format(properties.get('summary', 'null'))
     yield ''
-
-    if 'summary' in properties:
-        for line in properties['summary'].splitlines():
-            yield '{indent}**{line}**'.format(**locals())
-        yield ''
+    yield f'{indent}:synopsis: {" 	🔒 " if security else ""}**{properties.get("summary", "null")}**'
+    yield ''
 
     if 'description' in properties:
         for line in convert(properties['description']).splitlines():
@@ -295,10 +293,28 @@ def _httpresource(endpoint, method, properties, convert, render_examples,
             else:
                 query_param_examples.append((param['name'], example))
 
+    # print security headers
+    if security:
+        for sec in (list(s.keys())[0] for s in security):
+            if s := components.get('securitySchemes', {}).get(sec):
+                if s.get('type') == 'apiKey' and s.get('in') == 'header':
+                    yield f'{indent}:reqheader {s.get("name", "Authorization")}: {s.get("description")}'
+                if s.get('type') == 'http' and s.get('scheme') == 'bearer':
+                    yield f'{indent}:reqheader Authorization: {s.get("bearerFormat")}'
+
+    # print request header params
+    for param in filter(lambda p: p['in'] == 'header', parameters):
+        yield indent + ':reqheader {name}:'.format(**param)
+        for line in convert(param.get('description', '')).splitlines():
+            yield '{indent}{indent}{line}'.format(**locals())
+        if param.get('required', False):
+            yield '{indent}{indent}(Required)'.format(**locals())
+                
     # print request content
     if render_request:
         request_content = properties.get('requestBody', {}).get('content', {})
         if request_content and 'application/json' in request_content:
+            yield indent + ':reqheader Content-Type: application/json'
             schema = request_content['application/json']['schema']
             req_properties = json.dumps(schema['properties'], indent=2,
                                         separators=(',', ':'))
@@ -310,6 +326,29 @@ def _httpresource(endpoint, method, properties, convert, render_examples,
                 # yield indent + line
                 yield '{indent}{indent}{line}'.format(**locals())
                 # yield ''
+            for requirement in schema.get('required', []):
+                yield f'{indent}**{requirement}** is required'
+                yield ''
+        elif request_content and 'multipart/form-data' in request_content:
+            yield indent + ':reqheader Content-Type: multipart/form-data'
+            yield '{indent}**Request body:**'.format(**locals())
+            yield ''
+            yield '{indent}.. sourcecode:: http'.format(**locals())
+            yield ''
+            schema = request_content['multipart/form-data']['schema']
+            yield f'{indent * 2}{method.upper()} {endpoint} HTTP/1.1'
+            yield f'{indent * 2}Content-Type: multipart/form-data; boundary=12345'
+            yield ''
+            for name, props in schema['properties'].items():
+                _filename = ' filename="example.xyz"' if props.get("format") == "binary" else ''
+                yield f'{indent * 2}--12345'
+                yield f'{indent * 2}Content-Disposition: form-data; name="{name}"{_filename}'
+                yield f'{indent * 2}{props.get("description", "")}{props.get("default", "")}'
+                yield ''
+            for requirement in schema.get('required', []):
+                yield f'{indent}**{requirement}** is required'
+                yield ''
+
 
     # print request example
     if render_examples:
@@ -339,17 +378,16 @@ def _httpresource(endpoint, method, properties, convert, render_examples,
                     response.get('content', {}), status=status, nb_indent=2):
                 yield line
 
-    # print request header params
-    for param in filter(lambda p: p['in'] == 'header', parameters):
-        yield indent + ':reqheader {name}:'.format(**param)
-        for line in convert(param.get('description', '')).splitlines():
-            yield '{indent}{indent}{line}'.format(**locals())
-        if param.get('required', False):
-            yield '{indent}{indent}(Required)'.format(**locals())
 
+    # only for the first response, render the content-type header
+    # this should be done for each possible response, but httpdomain is limited
+    response = list(responses.values())[0]
+    yield f"{indent}:resheader Content-Type: {list(response['content'].keys())[0]}"
     # print response headers
     for status, response in responses.items():
         for headername, header in response.get('headers', {}).items():
+            if headername == 'Content-Type':
+                continue
             yield indent + ':resheader {name}:'.format(name=headername)
             for line in convert(header['description']).splitlines():
                 yield '{indent}{indent}{line}'.format(**locals())
@@ -367,7 +405,8 @@ def _httpresource(endpoint, method, properties, convert, render_examples,
                         cb_properties,
                         convert=convert,
                         render_examples=render_examples,
-                        render_request=render_request):
+                        render_request=render_request,
+                        components=components):
                     if line:
                         yield indent+indent+line
                     else:
@@ -448,7 +487,8 @@ def openapihttpdomain(spec, **options):
                     properties,
                     convert,
                     render_examples='examples' in options,
-                    render_request=render_request))
+                    render_request=render_request,
+                    components=spec.get('components', {})))
 
         for key in groups.keys():
             if key:
@@ -466,6 +506,7 @@ def openapihttpdomain(spec, **options):
                     properties,
                     convert,
                     render_examples='examples' in options,
-                    render_request=render_request))
+                    render_request=render_request,
+                    components=spec.get('components', {})))
 
     return iter(itertools.chain(*generators))
