@@ -36,11 +36,11 @@
 
    **Price Estimates**
 
-   .. role:: raw-html-m2r(raw)
+   .. role:: raw-html-md(raw)
       :format: html
 
 
-   The Price Estimates endpoint returns an estimated price range for each product offered at a given location. The price estimate is provided as a formatted string with the full price range and the localized currency symbol.\ :raw-html-m2r:`<br>`\ :raw-html-m2r:`<br>`\ The response also includes low and high estimates, and the `ISO 4217 <http://en.wikipedia.org/wiki/ISO_4217>`_ currency code for situations requiring currency conversion. When surge is active for a particular product, its surge_multiplier will be greater than 1, but the price estimate already factors in this multiplier.
+   The Price Estimates endpoint returns an estimated price range for each product offered at a given location. The price estimate is provided as a formatted string with the full price range and the localized currency symbol.\ :raw-html-md:`<br>`\ :raw-html-md:`<br>`\ The response also includes low and high estimates, and the `ISO 4217 <http://en.wikipedia.org/wiki/ISO_4217>`_ currency code for situations requiring currency conversion. When surge is active for a particular product, its surge_multiplier will be greater than 1, but the price estimate already factors in this multiplier.
 
    :queryparam start_latitude:
       Latitude component of start location.
@@ -154,11 +154,11 @@
 
    **User Activity**
 
-   .. role:: raw-html-m2r(raw)
+   .. role:: raw-html-md(raw)
       :format: html
 
 
-   The User Activity endpoint returns data about a user's lifetime activity with Uber. The response will include pickup locations and times, dropoff locations and times, the distance of past requests, and information about which products were requested.\ :raw-html-m2r:`<br>`\ :raw-html-m2r:`<br>`\ The history array in the response will have a maximum length based on the limit parameter. The response value count may exceed limit, therefore subsequent API requests may be necessary.
+   The User Activity endpoint returns data about a user's lifetime activity with Uber. The response will include pickup locations and times, dropoff locations and times, the distance of past requests, and information about which products were requested.\ :raw-html-md:`<br>`\ :raw-html-md:`<br>`\ The history array in the response will have a maximum length based on the limit parameter. The response value count may exceed limit, therefore subsequent API requests may be necessary.
 
    :queryparam offset:
       Offset the list of returned results by this amount. Default is zero.

@@ -17,7 +17,7 @@ from contextlib import closing
 import jsonschema
 import yaml
 try:
-    from m2r import convert as convert_markdown
+    from sphinx_mdinclude import convert as convert_markdown
 except ImportError:
     convert_markdown = None
 
