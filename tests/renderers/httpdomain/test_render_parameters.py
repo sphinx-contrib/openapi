@@ -1,8 +1,8 @@
 """OpenAPI spec renderer: render_parameters."""
 
 import itertools
-
 import textwrap
+
 import pytest
 
 from sphinxcontrib.openapi import renderers

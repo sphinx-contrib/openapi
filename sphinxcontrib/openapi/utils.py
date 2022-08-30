@@ -12,19 +12,19 @@ from __future__ import unicode_literals
 
 import collections
 import collections.abc
-
 from contextlib import closing
+
 import jsonschema
 import yaml
+
 try:
     from m2r2 import convert as convert_markdown
 except ImportError:
     convert_markdown = None
 
+import os.path
 from urllib.parse import urlsplit
 from urllib.request import urlopen
-
-import os.path
 
 
 class OpenApiRefResolver(jsonschema.RefResolver):

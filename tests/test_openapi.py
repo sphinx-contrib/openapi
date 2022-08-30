@@ -8,16 +8,14 @@
     :license: BSD, see LICENSE for details.
 """
 
-import os
-import textwrap
 import collections
+import os
 from pathlib import Path
+import textwrap
 
 import pytest
 
-from sphinxcontrib.openapi import renderers
-from sphinxcontrib.openapi import openapi20
-from sphinxcontrib.openapi import utils
+from sphinxcontrib.openapi import openapi20, renderers, utils
 
 
 class TestOpenApi2HttpDomain(object):

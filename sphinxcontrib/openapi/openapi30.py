@@ -8,22 +8,19 @@
     :license: BSD, see LICENSE for details.
 """
 
-import copy
-
 import collections
 import collections.abc
-
+import copy
 from datetime import datetime
+from http.client import responses as http_status_codes
 import itertools
 import json
 import re
 from urllib import parse
-from http.client import responses as http_status_codes
 
 from sphinx.util import logging
 
 from sphinxcontrib.openapi import utils
-
 
 LOG = logging.getLogger(__name__)
 

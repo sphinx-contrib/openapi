@@ -16,7 +16,6 @@ from sphinxcontrib.openapi import _lib2to3 as lib2to3
 from sphinxcontrib.openapi.renderers import abc
 from sphinxcontrib.openapi.schema_utils import example_from_schema
 
-
 CaseInsensitiveDict = requests.structures.CaseInsensitiveDict
 
 

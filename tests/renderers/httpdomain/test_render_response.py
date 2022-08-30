@@ -1,6 +1,7 @@
 """OpenAPI spec renderer: render_response."""
 
 import textwrap
+
 import pytest
 
 from sphinxcontrib.openapi import renderers

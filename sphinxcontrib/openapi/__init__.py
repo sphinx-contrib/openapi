@@ -9,8 +9,9 @@
     :license: BSD, see LICENSE for details.
 """
 
-from pkg_resources import get_distribution, DistributionNotFound
-from sphinxcontrib.openapi import renderers, directive
+from pkg_resources import DistributionNotFound, get_distribution
+
+from sphinxcontrib.openapi import directive, renderers
 
 try:
     __version__ = get_distribution(__name__).version

@@ -4,7 +4,6 @@ import pytest
 
 import sphinxcontrib.openapi._lib2to3 as lib2to3
 
-
 _MISSING = object()
 
 

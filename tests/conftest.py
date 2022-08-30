@@ -3,11 +3,10 @@ import pathlib
 import textwrap
 
 import pytest
+from sphinx.application import Sphinx
 import yaml
 
-from sphinx.application import Sphinx
 from sphinxcontrib.openapi import utils
-
 
 _testspecs_dir = pathlib.Path(os.path.dirname(__file__), "testspecs")
 _testspecs_v2_dir = _testspecs_dir.joinpath("v2.0")

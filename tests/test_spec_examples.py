@@ -1,8 +1,8 @@
 """Smoke test examples from OAI/OpenAPI-Specification repo."""
 
-import os
 import glob
 import itertools
+import os
 
 import py
 import pytest

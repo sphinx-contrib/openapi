@@ -2,8 +2,8 @@
 
 from docutils.parsers.rst import directives
 
-from . import abc
-from .. import openapi20, openapi30, utils
+from sphinxcontrib.openapi import openapi20, openapi30, utils
+from sphinxcontrib.openapi.renderers import abc
 
 
 class HttpdomainOldRenderer(abc.RestructuredTextRenderer):
