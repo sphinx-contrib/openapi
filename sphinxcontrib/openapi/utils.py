@@ -14,7 +14,7 @@ import jsonschema
 import yaml
 
 try:
-    from m2r2 import convert as convert_markdown
+    from sphinx_mdinclude import convert as convert_markdown
 except ImportError:
     convert_markdown = None
 

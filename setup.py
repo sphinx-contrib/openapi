@@ -29,7 +29,7 @@ setup(
         "sphinxcontrib-httpdomain >= 1.5.0",
         "PyYAML >= 3.12",
         "jsonschema >= 2.5.1",
-        "m2r2 >= 0.3",
+        "sphinx-mdinclude >= 0.5.2",
         "picobox >= 2.2",
         "deepmerge >= 0.1",
     ],
