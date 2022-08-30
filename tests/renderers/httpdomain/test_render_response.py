@@ -284,7 +284,7 @@ def test_render_response_content_custom_mismatch(fakestate, oas_fragment):
         )
     )
     assert markup == textwrap.dedent(
-        f"""\
+        """\
         :statuscode 200:
            An evidence.
         """.rstrip()

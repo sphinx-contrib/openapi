@@ -1011,7 +1011,7 @@ def test_render_json_schema_description_any_of(
     markup = textify(
         testrenderer.render_json_schema_description(
             oas_fragment(
-                f"""
+                """
                 type: object
                 properties:
                   some_key:

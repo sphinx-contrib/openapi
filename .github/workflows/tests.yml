@@ -1,19 +1,23 @@
 name: Tests
 
 on:
-  - push
-  - pull_request
+  push:
+    branches:
+      - master
+  pull_request:
+    branches:
+      - master
 
 jobs:
-  pre-commit:
+  pre-commit:  # try h
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v1
+      - uses: actions/checkout@v3
 
-      - name: Set up Python 3.8
-        uses: actions/setup-python@v1
+      - name: Set up Python 3.10
+        uses: actions/setup-python@v3
         with:
-          python-version: 3.8
+          python-version: '3.10.6'
 
       - name: Run pre-commit
         run: |
@@ -23,15 +27,15 @@ jobs:
   pytest:
     strategy:
       matrix:
-        os: [ubuntu-latest, macos-latest]
-        python-version: [3.6, 3.7, 3.8]
+        os: [ubuntu-latest, macos-latest, windows-latest]
+        python-version: ["3.8", "3.9", "3.10"]
 
     runs-on: ${{ matrix.os }}
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v3
 
     - name: Set up Python ${{ matrix.python-version }}
-      uses: actions/setup-python@v1
+      uses: actions/setup-python@v3
       with:
         python-version: ${{ matrix.python-version }}
 
@@ -47,12 +51,12 @@ jobs:
   docs:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
 
-      - name: Set up Python 3.8
-        uses: actions/setup-python@v1
+      - name: Set up Python 3.10
+        uses: actions/setup-python@v3
         with:
-          python-version: 3.8
+          python-version: '3.10.6'
 
       - name: Run sphinx
         run: |
