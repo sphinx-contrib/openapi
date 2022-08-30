@@ -6,7 +6,7 @@ from setuptools import find_packages, setup
 
 here = os.path.dirname(__file__)
 
-with open(os.path.join(here, "README.rst"), "r", encoding="utf-8") as f:
+with open(os.path.join(here, "README.md"), "r", encoding="utf-8") as f:
     long_description = f.read()
 
 
@@ -48,9 +48,9 @@ setup(
         "Programming Language :: Python",
         "Programming Language :: Python :: 3",
         "Programming Language :: Python :: 3 :: Only",
-        "Programming Language :: Python :: 3.6",
-        "Programming Language :: Python :: 3.7",
         "Programming Language :: Python :: 3.8",
+        "Programming Language :: Python :: 3.9",
+        "Programming Language :: Python :: 3.10",
         "Programming Language :: Python :: Implementation :: CPython",
         "Framework :: Setuptools Plugin",
         "Framework :: Sphinx",

@@ -1,44 +1,35 @@
-=====================
-sphinxcontrib-openapi
-=====================
+# sphinxcontrib-openapi
 
-**sphinxcontrib-openapi** is a `Sphinx`_ extension to generate APIs docs from
-`OpenAPI`_ (fka Swagger) spec. It depends on `sphinxcontrib-httpdomain`_ that
+
+**sphinxcontrib-openapi** is a [Sphinx](<https://www.sphinx-doc.org/en/master/>) extension to generate APIs docs from
+[OpenAPI](https://github.com/OAI/OpenAPI-Specification) (fka Swagger) spec. It depends on
+[sphinxcontrib-httpdomain](https://sphinxcontrib-httpdomain.readthedocs.io/) that
 provides an HTTP domain for describing RESTful HTTP APIs, so we don't need to
 reinvent the wheel.
 
-.. code:: bash
-
+``` bash
    $ python3 -m pip install sphinxcontrib-openapi
+```
 
-
-Usage
-=====
+## Usage
 
 Pass ``sphinxcontrib-openapi`` to ``extensions`` list in  Sphinx's ``conf.py``
 
-.. code:: python
-
+``` python
    extensions = [
       ...
       'sphinxcontrib.openapi',
    ]
+```
 
 and feel free to use the ``openapi`` directive to render OpenAPI specs
 
-.. code:: restructuredtext
-
+``` restructuredtext
    .. openapi:: path/to/openapi.yml
+```
 
-
-Links
-=====
+## Links
 
 * Documentation: https://sphinxcontrib-openapi.readthedocs.org/
 * Source: https://github.com/sphinx-contrib/openapi
 * Bugs: https://github.com/sphinx-contrib/openapi/issues
-
-
-.. _Sphinx: https://www.sphinx-doc.org/en/master/
-.. _OpenAPI: https://github.com/OAI/OpenAPI-Specification
-.. _sphinxcontrib-httpdomain: https://sphinxcontrib-httpdomain.readthedocs.io/
