@@ -1,6 +1,7 @@
 """OpenAPI spec renderer."""
 
-import collections
+from collections import defaultdict
+from collections.abc import Mapping
 import copy
 import functools
 import http.client
@@ -32,7 +33,7 @@ def indented(generator, indent=3):
 def _iterinorder(iterable, order_by, key=lambda x: x, case_sensitive=False):
     """Iterate over iterable in a given order."""
 
-    order_by = collections.defaultdict(
+    order_by = defaultdict(
         # Assume default priority is `Infinity` which means the lowest one.
         # This value is effectively used if there's no corresponding value in a
         # given 'order_by' array.
@@ -173,7 +174,7 @@ def _get_schema_type(schema):
 
 
 _merge_mappings = deepmerge.Merger(
-    [(collections.abc.Mapping, deepmerge.strategy.dict.DictStrategies("merge"))],
+    [(Mapping, deepmerge.strategy.dict.DictStrategies("merge"))],
     ["override"],
     ["override"],
 ).merge

@@ -7,8 +7,7 @@
     :copyright: (c) 2016, Ihor Kalnytskyi.
     :license: BSD, see LICENSE for details.
 """
-import collections
-import collections.abc
+from collections.abc import Mapping
 from contextlib import closing
 
 import jsonschema
@@ -74,10 +73,10 @@ def _resolve_refs(uri, spec):
     resolver = OpenApiRefResolver(uri, spec)
 
     def _do_resolve(node):
-        if isinstance(node, collections.abc.Mapping) and '$ref' in node:
+        if isinstance(node, Mapping) and '$ref' in node:
             with resolver.resolving(node['$ref']) as resolved:
                 return _do_resolve(resolved)  # might have recursive references
-        elif isinstance(node, collections.abc.Mapping):
+        elif isinstance(node, Mapping):
             for k, v in node.items():
                 node[k] = _do_resolve(v)
         elif isinstance(node, (list, tuple)):

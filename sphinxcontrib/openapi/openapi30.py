@@ -8,8 +8,8 @@
     :license: BSD, see LICENSE for details.
 """
 
-import collections
-import collections.abc
+from collections import OrderedDict
+from collections.abc import Mapping
 import copy
 from datetime import datetime
 from http.client import responses as http_status_codes
@@ -66,7 +66,7 @@ def _dict_merge(dct, merge_dct):
     """
     for k in merge_dct.keys():
         if (k in dct and isinstance(dct[k], dict)
-                and isinstance(merge_dct[k], collections.abc.Mapping)):
+                and isinstance(merge_dct[k], Mapping)):
             _dict_merge(dct[k], merge_dct[k])
         else:
             dct[k] = merge_dct[k]
@@ -131,7 +131,7 @@ def _parse_schema(schema, method):
             if result != _READONLY_PROPERTY:
                 results.append((name, result))
 
-        return collections.OrderedDict(results)
+        return OrderedDict(results)
 
     if (schema_type, schema.get('format')) in _TYPE_MAPPING:
         return _TYPE_MAPPING[(schema_type, schema.get('format'))]
@@ -432,9 +432,7 @@ def openapihttpdomain(spec, **options):
 
     # https://github.com/OAI/OpenAPI-Specification/blob/3.0.2/versions/3.0.0.md#paths-object
     if 'group' in options:
-        groups = collections.OrderedDict(
-            [(x['name'], []) for x in spec.get('tags', {})]
-            )
+        groups = OrderedDict([(x['name'], []) for x in spec.get('tags', {})])
 
         for endpoint in paths:
             for method, properties in spec['paths'][endpoint].items():

@@ -8,8 +8,7 @@
     :copyright: (c) 2016, Ihor Kalnytskyi.
     :license: BSD, see LICENSE for details.
 """
-
-import collections
+from collections import OrderedDict
 import itertools
 import re
 
@@ -225,9 +224,7 @@ def openapihttpdomain(spec, **options):
         paths = _paths
 
     if 'group' in options:
-        groups = collections.OrderedDict(
-            [(x['name'], []) for x in spec.get('tags', {})]
-            )
+        groups = OrderedDict([(x['name'], []) for x in spec.get('tags', {})])
 
         for endpoint in paths:
             for method, properties in spec['paths'][endpoint].items():
