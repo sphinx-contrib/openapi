@@ -1,0 +1,17 @@
+# Local development dependencies including docs building, website upload, ASV benchmark
+name: openapi-dev
+channels:
+  - conda-forge
+dependencies:
+  - python=3.10
+  - pip
+
+  - pytest
+  - sphinx>=4.0
+  - sphinxcontrib-httpdomain>=1.8.0
+  - PyYAML>=5.0
+  - jsonschema>=4.14.0
+  - m2r2>=0.3
+  - deepmerge>=1.0.1
+  - pip:
+      - picobox>=2.2
