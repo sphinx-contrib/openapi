@@ -1,5 +1,6 @@
 import os
 import pathlib
+import sys
 import textwrap
 
 import pytest
@@ -96,3 +97,15 @@ def get_testspec():
 @pytest.fixture(scope="function", params=_testspecs)
 def testspec(request, get_testspec):
     return request.param, get_testspec(request.param)
+
+
+def is_platform_windows() -> bool:
+    """
+    Checking if the running platform is windows.
+
+    Returns
+    -------
+    bool
+        True if the running platform is windows.
+    """
+    return sys.platform in ["win32", "cygwin"]

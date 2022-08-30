@@ -9,13 +9,13 @@
 """
 
 import collections
-import os
 from pathlib import Path
 import textwrap
 
 import pytest
 
 from sphinxcontrib.openapi import openapi20, renderers, utils
+from tests.conftest import is_platform_windows
 
 
 class TestOpenApi2HttpDomain(object):
@@ -1728,9 +1728,11 @@ class TestResolveRefs(object):
             ]
         }
 
-    @pytest.mark.skip("Fails on windows")
     def test_relative_ref_resolving_on_fs(self):
-        baseuri = str(Path('file://%s' % os.path.abspath(__file__)))
+        if is_platform_windows():
+            pytest.skip()
+
+        baseuri = str(Path('file://%s' % Path(__file__)))
 
         data = {
             'bar': {
