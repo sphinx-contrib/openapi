@@ -7,9 +7,6 @@
     :copyright: (c) 2016, Ihor Kalnytskyi.
     :license: BSD, see LICENSE for details.
 """
-
-from __future__ import unicode_literals
-
 import collections
 import collections.abc
 from contextlib import closing
