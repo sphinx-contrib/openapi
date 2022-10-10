@@ -351,7 +351,7 @@ def _httpresource(endpoint, method, properties, convert, render_examples,
     for status, response in responses.items():
         for headername, header in response.get('headers', {}).items():
             yield indent + ':resheader {name}:'.format(name=headername)
-            for line in convert(header['description']).splitlines():
+            for line in convert(header.get('description', '')).splitlines():
                 yield '{indent}{indent}{line}'.format(**locals())
 
     for cb_name, cb_specs in properties.get('callbacks', {}).items():
