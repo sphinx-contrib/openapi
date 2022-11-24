@@ -34,7 +34,7 @@ jobs:
       - name: Conda
         run:
           conda install pandas=1.5.2 -c conda-forge
-          conda list
+          conda info
 
   pytest:
     strategy:
