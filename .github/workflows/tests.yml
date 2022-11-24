@@ -33,7 +33,8 @@ jobs:
           activate-environment: ""
       - name: Conda
         run:
-          conda install pandas=1.5.2 -c conda-forge
+          mamba install pandas=1.5.2 -c conda-forge
+          mamba list
 
   pytest:
     strategy:
@@ -53,7 +54,6 @@ jobs:
     - name: Pull OpenAPI specs for tests
       run: |
         git submodule update --init --recursive
-        conda clean --all
 
     - name: Run pytest
       run: |
