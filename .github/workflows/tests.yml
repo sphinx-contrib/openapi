@@ -32,9 +32,9 @@ jobs:
           auto-activate-base: true
           activate-environment: ""
       - name: Conda
-        run:
+        run: |
           conda install pandas=1.5.2 -c conda-forge
-          conda info
+          conda list
 
   pytest:
     strategy:
