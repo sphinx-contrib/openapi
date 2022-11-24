@@ -42,6 +42,7 @@ jobs:
     - name: Pull OpenAPI specs for tests
       run: |
         git submodule update --init --recursive
+        conda clean --all
 
     - name: Run pytest
       run: |
