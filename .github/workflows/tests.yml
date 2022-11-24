@@ -24,7 +24,8 @@ jobs:
           python -m pip install tox
           python -m tox -e pre-commit
 
-  testing:
+  conda_try:
+    runs-on: ubuntu-latest
     steps:
       - uses: conda-incubator/setup-miniconda@v2
         with:
