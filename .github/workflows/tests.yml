@@ -24,6 +24,13 @@ jobs:
           python -m pip install tox
           python -m tox -e pre-commit
 
+  testing:
+    steps:
+      - uses: conda-incubator/setup-miniconda@v2
+        with:
+          auto-activate-base: true
+          activate-environment: ""
+
   pytest:
     strategy:
       matrix:
