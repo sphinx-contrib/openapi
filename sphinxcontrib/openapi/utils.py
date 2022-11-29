@@ -16,10 +16,7 @@ import collections.abc
 from contextlib import closing
 import jsonschema
 import yaml
-try:
-    from sphinx_mdinclude import convert as convert_markdown
-except ImportError:
-    convert_markdown = None
+import sphinx_mdinclude
 
 from urllib.parse import urlsplit
 from urllib.request import urlopen
@@ -113,12 +110,7 @@ def get_text_converter(options):
     """Decide on a text converter for prose."""
     if 'format' in options:
         if options['format'] == 'markdown':
-            if convert_markdown is None:
-                raise ValueError(
-                    "Markdown conversion isn't available, "
-                    "install the [markdown] extra."
-                )
-            return convert_markdown
+            return sphinx_mdinclude.convert
 
     # No conversion needed.
     return lambda s: s
