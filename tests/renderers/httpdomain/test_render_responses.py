@@ -213,7 +213,8 @@ def test_render_responses_json_schema_description_turned_off(fakestate, oas_frag
     """JSON schema description is not rendered b/c feature is off."""
 
     testrenderer = renderers.HttpdomainRenderer(
-        fakestate, {"no-json-schema-description": True},
+        fakestate,
+        {"no-json-schema-description": True},
     )
 
     markup = textify(
