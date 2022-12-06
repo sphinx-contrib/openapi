@@ -122,7 +122,9 @@ def test_render_request_body_example(testrenderer, content, oas_fragment):
 
     markup = textify(
         testrenderer.render_request_body_example(
-            oas_fragment(content), "/evidences/{evidenceId}", "POST",
+            oas_fragment(content),
+            "/evidences/{evidenceId}",
+            "POST",
         )
     )
     assert markup == textwrap.dedent(
@@ -397,7 +399,9 @@ def test_render_request_body_example_external_errored_next_example(
     """Request body's example fallbacks on next when external cannot be retrieved."""
 
     responses.add(
-        responses.GET, "https://example.com/json/examples/test.json", status=404,
+        responses.GET,
+        "https://example.com/json/examples/test.json",
+        status=404,
     )
 
     markup = textify(
@@ -431,12 +435,16 @@ def test_render_request_body_example_external_errored_next_example(
 
 @responses.activate
 def test_render_request_body_example_external_errored_next_media_type(
-    testrenderer, oas_fragment, caplog,
+    testrenderer,
+    oas_fragment,
+    caplog,
 ):
     """Request body's example fallbacks on next when external cannot be retrieved."""
 
     responses.add(
-        responses.GET, "https://example.com/json/examples/test.json", status=404,
+        responses.GET,
+        "https://example.com/json/examples/test.json",
+        status=404,
     )
 
     markup = textify(
@@ -524,7 +532,9 @@ def test_render_request_body_example_noop(testrenderer, oas_fragment):
     ["http_method"], [pytest.param("POST"), pytest.param("PUT"), pytest.param("PATCH")]
 )
 def test_render_request_body_example_http_method(
-    testrenderer, oas_fragment, http_method,
+    testrenderer,
+    oas_fragment,
+    http_method,
 ):
     """Request body's example shows proper HTTP method."""
 
@@ -562,7 +572,9 @@ def test_render_request_body_example_http_method(
     [pytest.param("/evidences/{evidenceId}"), pytest.param("/heroes/{heroId}")],
 )
 def test_render_request_body_example_http_endpoint(
-    testrenderer, oas_fragment, http_endpoint,
+    testrenderer,
+    oas_fragment,
+    http_endpoint,
 ):
     """Request body's example shows proper HTTP method."""
 

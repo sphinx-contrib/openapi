@@ -375,7 +375,9 @@ def test_render_response_example_external_errored_next_example(
     """Path response's example fallbacks on next when external cannot be retrieved."""
 
     responses.add(
-        responses.GET, "https://example.com/json/examples/test.json", status=404,
+        responses.GET,
+        "https://example.com/json/examples/test.json",
+        status=404,
     )
 
     markup = textify(
@@ -412,7 +414,9 @@ def test_render_response_example_external_errored_next_media_type(
     """Path response's example fallbacks on next when external cannot be retrieved."""
 
     responses.add(
-        responses.GET, "https://example.com/json/examples/test.json", status=404,
+        responses.GET,
+        "https://example.com/json/examples/test.json",
+        status=404,
     )
 
     markup = textify(
