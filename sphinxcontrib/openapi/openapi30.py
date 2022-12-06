@@ -2,7 +2,7 @@
     sphinxcontrib.openapi.openapi30
     -------------------------------
 
-    The OpenAPI 3.0.0 spec renderer. Based on ``sphinxcontrib-httpdomain``.
+    The OpenAPI 3.0 spec renderer. Based on ``sphinxcontrib-httpdomain``.
 
     :copyright: (c) 2016, Ihor Kalnytskyi.
     :license: BSD, see LICENSE for details.

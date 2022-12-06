@@ -3,7 +3,7 @@
 from docutils.parsers.rst import directives
 
 from . import abc
-from .. import openapi20, openapi30, utils
+from .. import openapi20, openapi30, openapi31, utils
 
 
 class HttpdomainOldRenderer(abc.RestructuredTextRenderer):
@@ -41,13 +41,15 @@ class HttpdomainOldRenderer(abc.RestructuredTextRenderer):
         # have only one (expected) schema, i.e. normalize it.
         utils.normalize_spec(spec, **self._options)
 
-        # We support both OpenAPI 2.0 (f.k.a. Swagger) and OpenAPI 3.0.0, so
-        # determine which version we are parsing here.
+        # We support OpenAPI 2.0 (f.k.a. Swagger), OpenAPI 3.0 and OpenAPI 3.1,
+        # so determine which version we are parsing here.
         spec_version = spec.get("openapi", spec.get("swagger", "2.0"))
         if spec_version.startswith("2."):
             openapihttpdomain = openapi20.openapihttpdomain
-        elif spec_version.startswith("3."):
+        elif spec_version.startswith("3.0."):
             openapihttpdomain = openapi30.openapihttpdomain
+        elif spec_version.startswith("3.1."):
+            openapihttpdomain = openapi31.openapihttpdomain
         else:
             raise ValueError("Unsupported OpenAPI version (%s)" % spec_version)
 
