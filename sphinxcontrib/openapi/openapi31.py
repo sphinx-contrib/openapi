@@ -27,7 +27,12 @@ from sphinxcontrib.openapi import utils
 
 LOG = logging.getLogger(__name__)
 
-# https://github.com/OAI/OpenAPI-Specification/blob/3.0.2/versions/3.0.0.md#data-types
+# Based on the spec:
+#
+# https://github.com/OAI/OpenAPI-Specification/blob/3.1.0/versions/3.1.0.md#dataTypes
+# https://datatracker.ietf.org/doc/html/draft-bhutton-json-schema-00#section-4.2.1
+#
+# Note that array and object are excluded since these are handled separately
 _TYPE_MAPPING = {
     ("integer", "int32"): 1,  # integer
     ("integer", "int64"): 1,  # long
@@ -40,6 +45,7 @@ _TYPE_MAPPING = {
     ("string", "date"): datetime.now().date().isoformat(),  # date
     ("string", "date-time"): datetime.now().isoformat(),  # dateTime
     ("string", "password"): "********",  # password
+    ("null", None): None,  # null
     # custom extensions to handle common formats
     ("string", "email"): "name@example.com",
     ("string", "zip-code"): "90210",
