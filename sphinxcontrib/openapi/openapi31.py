@@ -101,12 +101,23 @@ def _parse_schema(schema, method):
         return _parse_schema(schema_, method)
 
     # anyOf: Must be valid against any of the subschemas
-    # TODO(stephenfin): Handle anyOf
+    if "anyOf" in schema:
+        # we only show the one since we can't show everything, but we need to
+        # figure out which one
+        for sub_schema in schema["anyOf"]:
+            if sub_schema["type"] == "null":
+                continue
+
+            return _parse_schema(sub_schema, method)
 
     # oneOf: Must be valid against exactly one of the subschemas
     if "oneOf" in schema:
         # we only show the first one since we can't show everything
-        return _parse_schema(schema["oneOf"][0], method)
+        for sub_schema in schema["oneOf"]:
+            if sub_schema["type"] == "null":
+                continue
+
+            return _parse_schema(sub_schema, method)
 
     if "enum" in schema:
         # we only show the first one since we can't show everything
