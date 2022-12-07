@@ -33,6 +33,7 @@ setup(
         "sphinx-mdinclude >= 0.5.2",
         "picobox >= 2.2",
         "deepmerge >= 0.1",
+        "importlib-metadata; python_version < '3.8'",
     ],
     project_urls={
         "Documentation": "https://sphinxcontrib-openapi.readthedocs.io/",
@@ -54,6 +55,5 @@ setup(
         "Framework :: Sphinx",
         "Framework :: Sphinx :: Extension",
     ],
-    namespace_packages=["sphinxcontrib"],
     python_requires=">=3.7",
 )

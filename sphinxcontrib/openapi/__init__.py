@@ -9,12 +9,16 @@
     :license: BSD, see LICENSE for details.
 """
 
-from pkg_resources import get_distribution, DistributionNotFound
+try:
+    from importlib.metadata import distribution, PackageNotFoundError
+except ImportError:  # python < 3.8
+    from importlib_metadata import distribution, PackageNotFoundError
+
 from sphinxcontrib.openapi import renderers, directive
 
 try:
-    __version__ = get_distribution(__name__).version
-except DistributionNotFound:
+    __version__ = distribution(__name__).version
+except PackageNotFoundError:
     # package is not installed
     __version__ = None
 
