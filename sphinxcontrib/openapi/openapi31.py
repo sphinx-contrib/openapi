@@ -246,7 +246,7 @@ def _example(media_type_objects, method=None, endpoint=None, status=None, nb_ind
 def _httpresource(
     endpoint, method, properties, convert, render_examples, render_request
 ):
-    # https://github.com/OAI/OpenAPI-Specification/blob/3.0.2/versions/3.0.0.md#operation-object
+    # https://github.com/OAI/OpenAPI-Specification/blob/3.1.0/versions/3.1.0.md#operation-object
     parameters = properties.get("parameters", [])
     responses = properties["responses"]
     query_param_examples = []
@@ -394,6 +394,19 @@ def openapihttpdomain(spec, **options):
     # Paths list to be processed
     paths = []
 
+    # If a path-related option was provided, we need to first ensure we have
+    # paths within the spec; otherwise raise error and ask user to fix that.
+    if "paths" not in spec and (
+        "paths" in options
+        or "include" in options
+        or "exclude" in options
+        or "group" in options
+    ):
+        raise ValueError(
+            "Spec does not define any paths and the 'include', 'exclude', "
+            "'paths' and 'group' options are therefore invalid."
+        )
+
     # If 'paths' are passed we've got to ensure they exist within an OpenAPI
     # spec; otherwise raise error and ask user to fix that.
     if "paths" in options:
@@ -414,7 +427,7 @@ def openapihttpdomain(spec, **options):
 
     # If no include nor paths option, then take full path
     if "include" not in options and "paths" not in options:
-        paths = spec["paths"]
+        paths = spec.get("paths", [])
 
     # Remove paths matching regexp
     if "exclude" in options:
@@ -432,7 +445,7 @@ def openapihttpdomain(spec, **options):
 
     convert = utils.get_text_converter(options)
 
-    # https://github.com/OAI/OpenAPI-Specification/blob/3.0.2/versions/3.0.0.md#paths-object
+    # https://github.com/OAI/OpenAPI-Specification/blob/3.1.0/versions/3.1.0.md#paths-object
     if "group" in options:
         groups = collections.OrderedDict(
             [(x["name"], []) for x in spec.get("tags", {})]
