@@ -73,16 +73,19 @@ def _resolve_refs(uri, spec):
 
     resolver = OpenApiRefResolver(uri, spec)
 
-    def _do_resolve(node):
+    def _do_resolve(node, seen=[]):
         if isinstance(node, collections.abc.Mapping) and '$ref' in node:
-            with resolver.resolving(node['$ref']) as resolved:
-                return _do_resolve(resolved)  # might have recursive references
+            ref = node['$ref']
+            with resolver.resolving(ref) as resolved:
+                if ref in seen:
+                    return {type: 'object'}  # return a distinct object for recursive data type
+                return _do_resolve(resolved, seen + [ref])  # might have other references
         elif isinstance(node, collections.abc.Mapping):
             for k, v in node.items():
-                node[k] = _do_resolve(v)
+                node[k] = _do_resolve(v, seen)
         elif isinstance(node, (list, tuple)):
             for i in range(len(node)):
-                node[i] = _do_resolve(node[i])
+                node[i] = _do_resolve(node[i], seen)
         return node
 
     return _do_resolve(spec)
