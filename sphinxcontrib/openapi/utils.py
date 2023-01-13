@@ -99,7 +99,7 @@ def normalize_spec(spec, **options):
     # In order to do not place if-s around the code to handle special
     # cases, let's normalize the spec and push common parameters inside
     # endpoints definitions.
-    for endpoint in spec['paths'].values():
+    for endpoint in spec.get('paths', {}).values():
         parameters = endpoint.pop('parameters', [])
         for method in endpoint.values():
             method.setdefault('parameters', [])
