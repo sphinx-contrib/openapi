@@ -20,6 +20,7 @@ try:
 except ImportError:
     _requests = None
 
+
 # Locally cache spec to speedup processing of same spec file in multiple
 # openapi directives
 @functools.lru_cache()
@@ -31,14 +32,16 @@ def _get_spec(uri, encoding):
         with open(uri.path, 'rt', encoding=encoding) as stream:
             return yaml.safe_load(stream)
 
+
 def _get_spec_uri(arg):
     try:
         ret = urlparse(arg)
         return ret
-    except:
+    except Exception:
         path = directives.path(arg)
         ret = urlparse("file://{}".format(path))
         return ret
+
 
 def create_directive_from_renderer(renderer_cls):
     """Create rendering directive from a renderer class."""

@@ -1837,6 +1837,7 @@ def test_openapi2_url(run_sphinx):
     assert str(excinfo.value) == (
         'Rendering examples is not supported for OpenAPI v2.x specs.')
 
+
 @pytest.mark.parametrize('render_examples', [False, True])
 def test_openapi3_examples(tmpdir, run_sphinx, render_examples):
     spec = os.path.join(
@@ -1852,14 +1853,17 @@ def test_openapi3_examples(tmpdir, run_sphinx, render_examples):
     assert ('<strong>Example response:</strong>' in rendered_html) \
         == render_examples
 
+
 @pytest.mark.parametrize('render_examples', [False, True])
 def test_openapi3_url(tmpdir, run_sphinx, render_examples):
-    spec = os.path.join(
+    os.path.join(
         os.path.abspath(os.path.dirname(__file__)),
         'testspecs',
         'v3.0',
         'petstore.yaml')
-    run_sphinx('https://petstore3.swagger.io/api/v3/openapi.json', options={'examples': render_examples})
+    run_sphinx(
+        'https://petstore3.swagger.io/api/v3/openapi.json',
+        options={'examples': render_examples})
 
     rendered_html = tmpdir.join('out', 'index.html').read_text('utf-8')
 
