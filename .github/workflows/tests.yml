@@ -58,3 +58,27 @@ jobs:
         run: |
           python -m pip install tox
           python -m tox -e docs
+
+  release:
+    runs-on: ubuntu-latest
+    if: github.event_name == 'push'
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Set up Python 3.11
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+
+      - name: Prepare artifacts
+        run: |
+          python -m build
+
+      - name: Publish to PyPI
+        if: startsWith(github.ref, 'refs/tags')
+        env:
+          TWINE_USERNAME: __token__
+          TWINE_PASSWORD: ${{ secrets.PYPI_TOKEN }}
+        run: |
+          python -m pip install twine
+          twine upload dist/*
