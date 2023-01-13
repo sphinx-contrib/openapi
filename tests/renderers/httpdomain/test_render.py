@@ -22,4 +22,9 @@ def test_render(testrenderer, testspec, rendered):
     testspec_name, testspec = testspec
     rendered_markup = "\n".join(testrenderer.render_restructuredtext_markup(testspec))
 
+    # if this is our first time encountering the test, write the response
+    if not os.path.exists(rendered.joinpath(testspec_name + ".rst")):
+        with rendered.joinpath(testspec_name + ".rst").open("w") as fh:
+            fh.write(rendered_markup)
+
     assert rendered_markup == rendered.joinpath(testspec_name + ".rst").read_text()

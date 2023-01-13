@@ -1,0 +1,55 @@
+openapi: "3.0.0"
+info:
+  title: Simple API overview
+  version: 2.0.0
+paths:
+  /:
+    get:
+      operationId: listVersionsv2
+      summary: List API versions
+      responses:
+        '200':
+          description: |-
+            200 response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Object'
+        '300':
+          description: |-
+            300 response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Object'
+  /v2:
+    get:
+      operationId: getVersionDetailsv2
+      summary: Show API version details
+      responses:
+        '200':
+          description: |-
+            200 response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Object'
+        '203':
+          description: |-
+            203 response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Object'
+components:
+  schemas:
+    Object:
+      required:
+        - name
+      properties:
+        name:
+          type: string
+        children:
+          type: array
+          items:
+            $ref: '#/components/schemas/Object'
