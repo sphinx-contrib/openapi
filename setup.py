@@ -2,7 +2,7 @@
 
 import os
 
-from setuptools import setup, find_packages
+from setuptools import setup, find_namespace_packages
 
 
 here = os.path.dirname(__file__)
@@ -20,7 +20,7 @@ setup(
     keywords="sphinx openapi swagger rest api renderer docs",
     author="Ihor Kalnytskyi",
     author_email="ihor@kalnytskyi.com",
-    packages=find_packages(),
+    packages=find_namespace_packages(include=["sphinxcontrib.*"]),
     include_package_data=True,
     zip_safe=False,
     use_scm_version={"root": here},
@@ -55,5 +55,6 @@ setup(
         "Framework :: Sphinx",
         "Framework :: Sphinx :: Extension",
     ],
+    namespace_packages=["sphinxcontrib"],
     python_requires=">=3.7",
 )
