@@ -125,6 +125,20 @@ def _parse_schema(schema, method):
 
     schema_type = schema.get("type", "object")
 
+    if isinstance(schema_type, list):
+        if (
+            len(schema_type) > 2
+            or "null" not in schema_type
+            or schema_type == ("null", "null")
+        ):
+            raise Exception(
+                "Support for arrays of types with more than two types or "
+                "containing multiple non-null types is not currently "
+                "supported."
+            )
+
+        schema_type = [x for x in schema_type if x != "null"][0]
+
     if schema_type == "array":
         # special case oneOf and anyOf so that we can show examples for all
         # possible combinations
