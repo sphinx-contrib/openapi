@@ -45,7 +45,7 @@ class OpenApiRefResolver(jsonschema.RefResolver):
 
         if scheme in [u"http", u"https"] and self._requests:
             response = self._requests.get(uri)
-            result = yaml.safe_load(response)
+            result = yaml.safe_load(response.content)
         else:
             # Otherwise, pass off to urllib and assume utf-8
             with closing(urlopen(uri)) as url:
