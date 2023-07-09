@@ -7,10 +7,11 @@
     :copyright: (c) 2016, Ihor Kalnytskyi.
     :license: BSD, see LICENSE for details.
 """
-
+import json
 import os
 import textwrap
 import collections
+from unittest import mock
 
 import py
 import pytest
@@ -1746,6 +1747,44 @@ class TestResolveRefs(object):
         # import pdb
         # pdb.set_trace()
         assert utils._resolve_refs(baseuri, data) == {
+            'bar': {
+                'c': True,
+            },
+            'baz': {
+                'a': 17,
+                'b': 13,
+            },
+        }
+
+    @mock.patch('requests.get')
+    def test_relative_ref_resolving_remote(self, mock_get):
+        baseuri = os.path.abspath(__file__)
+        with open(
+                os.path.join(os.path.dirname(baseuri), 'testdata', 'foo.json'),
+                'r',
+                encoding='utf-8'
+        ) as file:
+            json_content = json.loads(file.read())
+        with open(os.path.join(os.path.dirname(baseuri), 'testdata', 'foo.yaml'), 'rb') as file:
+            yaml_content = file.read()
+
+        def get_side_effect(path):
+            nonlocal json_content
+            if path.endswith('.json'):
+                return mock.Mock(json=mock.Mock(return_value=json_content))
+            return mock.Mock(content=yaml_content, read=mock.Mock(side_effect=Exception))
+        mock_get.side_effect = get_side_effect
+
+        data = {
+            'bar': {
+                '$ref': 'testdata/foo.json#/foo/b',
+            },
+            # check also JSON to YAML references:
+            'baz': {
+                '$ref': 'testdata/foo.yaml#/foo',
+            }
+        }
+        assert utils._resolve_refs('https://some/remote/file', data) == {
             'bar': {
                 'c': True,
             },
