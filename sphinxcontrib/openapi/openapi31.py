@@ -297,20 +297,30 @@ def _httpresource(
             yield "{indent}{line}".format(**locals())
         yield ""
 
+    def _get_type_from_schema(schema):
+        if "type" in schema.keys():
+            dtype = schema["type"]
+        else:
+            dtype = set()
+            for t in schema["anyOf"]:
+                if "format" in t.keys():
+                    dtype.add(t["format"])
+                else:
+                    dtype.add(t["type"])
+        return dtype
+
     # print request's path params
     for param in filter(lambda p: p["in"] == "path", parameters):
-        yield indent + ":param {type} {name}:".format(
-            type=param["schema"]["type"], name=param["name"]
-        )
+        type_ = _get_type_from_schema(param["schema"])
+        yield indent + ":param {type} {name}:".format(type=type_, name=param["name"])
 
         for line in convert(param.get("description", "")).splitlines():
             yield "{indent}{indent}{line}".format(**locals())
 
     # print request's query params
     for param in filter(lambda p: p["in"] == "query", parameters):
-        yield indent + ":query {type} {name}:".format(
-            type=param["schema"]["type"], name=param["name"]
-        )
+        type_ = _get_type_from_schema(param["schema"])
+        yield indent + ":query {type} {name}:".format(type=type_, name=param["name"])
         for line in convert(param.get("description", "")).splitlines():
             yield "{indent}{indent}{line}".format(**locals())
         if param.get("required", False):
