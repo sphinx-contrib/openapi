@@ -10,12 +10,7 @@ from sphinxcontrib.openapi import utils
 
 
 _testspecs_dir = pathlib.Path(os.path.dirname(__file__), "testspecs")
-_testspecs_v2_dir = _testspecs_dir.joinpath("v2.0")
-_testspecs_v3_dir = _testspecs_dir.joinpath("v3.0")
-
 _testspecs = [str(path.relative_to(_testspecs_dir)) for path in _testspecs_dir.glob("*/*")]
-_testspecs_v2 = [str(path.relative_to(_testspecs_dir)) for path in _testspecs_v2_dir.glob("*/*")]
-_testspecs_v3 = [str(path.relative_to(_testspecs_dir)) for path in _testspecs_v3_dir.glob("*/*")]
 
 
 def pytest_addoption(parser):
