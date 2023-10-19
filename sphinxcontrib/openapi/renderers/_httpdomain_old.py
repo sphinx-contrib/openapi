@@ -7,7 +7,6 @@ from .. import openapi20, openapi30, openapi31, utils
 
 
 class HttpdomainOldRenderer(abc.RestructuredTextRenderer):
-
     option_spec = {
         # A list of endpoints to be rendered. Endpoints must be whitespace
         # delimited.

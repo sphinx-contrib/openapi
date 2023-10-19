@@ -88,7 +88,6 @@ def _items_wo_vendor_extensions(node):
 
 
 class Lib2to3:
-
     _target_version = "3.0.3"
     _injector = picobox.Stack()
 
