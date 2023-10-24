@@ -9,14 +9,13 @@ import json
 
 import deepmerge
 import docutils.parsers.rst.directives as directives
-import sphinx_mdinclude
 import requests
 import sphinx.util.logging as logging
+import sphinx_mdinclude
 
 from sphinxcontrib.openapi import _lib2to3 as lib2to3
 from sphinxcontrib.openapi.renderers import abc
 from sphinxcontrib.openapi.schema_utils import example_from_schema
-
 
 CaseInsensitiveDict = requests.structures.CaseInsensitiveDict
 
@@ -121,7 +120,10 @@ def _get_markers_from_object(oas_object, schema):
             schema_type = f"{schema_type}:{schema['format']}"
         elif schema.get("enum"):
             schema_type = f"{schema_type}:enum"
-        markers.append(schema_type)
+        if isinstance(schema_type, list):
+            markers = schema_type
+        else:
+            markers.append(schema_type)
     elif schema.get("enum"):
         markers.append("enum")
 
@@ -274,18 +276,18 @@ class HttpdomainRenderer(abc.RestructuredTextRenderer):
         yield f".. http:{method}:: {endpoint}"
 
         if operation.get("deprecated"):
-            yield f"   :deprecated:"
-        yield f""
+            yield "   :deprecated:"
+        yield ""
 
         if operation.get("summary"):
             yield f"   **{operation['summary']}**"
-            yield f""
+            yield ""
 
         if operation.get("description"):
             yield from indented(
                 self._convert_markup(operation["description"]).strip().splitlines()
             )
-            yield f""
+            yield ""
 
         yield from indented(self.render_parameters(operation.get("parameters", [])))
         if "requestBody" in operation:
@@ -370,11 +372,11 @@ class HttpdomainRenderer(abc.RestructuredTextRenderer):
             if not isinstance(example, str):
                 example = json.dumps(example, indent=2)
 
-            yield f".. sourcecode:: http"
-            yield f""
+            yield ".. sourcecode:: http"
+            yield ""
             yield f"   {method.upper()} {endpoint} HTTP/1.1"
             yield f"   Content-Type: {content_type}"
-            yield f""
+            yield ""
             yield from indented(example.splitlines())
 
     def render_responses(self, responses):
@@ -483,11 +485,11 @@ class HttpdomainRenderer(abc.RestructuredTextRenderer):
                 status_code = status_code.replace("XX", "00")
                 status_text = http.client.responses.get(int(status_code), "-")
 
-            yield f".. sourcecode:: http"
-            yield f""
+            yield ".. sourcecode:: http"
+            yield ""
             yield f"   HTTP/1.1 {status_code} {status_text}"
             yield f"   Content-Type: {content_type}"
-            yield f""
+            yield ""
             yield from indented(example.splitlines())
 
     def render_json_schema_description(self, schema, req_or_res):
