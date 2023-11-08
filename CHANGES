@@ -5,6 +5,11 @@
 Here you can see the list of changes between each 'sphinxcontrib-openapi'
 release.
 
+0.8.4 (unreleased)
+=================
+
+- Fix namespace ``sphinxcontrib`` to be usable with ``zc.buildout``.
+
 0.8.3 (2023-10-24)
 =================
 
