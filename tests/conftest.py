@@ -45,23 +45,26 @@ def run_sphinx(tmpdir):
     src = tmpdir.ensure('src', dir=True)
     out = tmpdir.ensure('out', dir=True)
 
-    def run(spec, options={}):
+    def run(spec, *, options={}, openapi_default_renderer=None):
         options_raw = '\n'.join([
             '   %s' % _format_option_raw(key, val)
             for key, val in options.items()])
 
-        src.join('conf.py').write_text(
-            textwrap.dedent('''
-                import os
+        conf_py = textwrap.dedent('''
+            import os
 
-                project = 'sphinxcontrib-openapi-test'
-                copyright = '2017, Ihor Kalnytskyi'
+            project = 'sphinxcontrib-openapi-test'
+            copyright = '2017, Ihor Kalnytskyi'
 
-                extensions = ['sphinxcontrib.openapi']
-                source_suffix = '.rst'
-                master_doc = 'index'
-            '''),
-            encoding='utf-8')
+            extensions = ['sphinxcontrib.openapi']
+            source_suffix = '.rst'
+            master_doc = 'index'
+        ''')
+
+        if openapi_default_renderer is not None:
+            conf_py += f"openapi_default_renderer = '{openapi_default_renderer}'\n"
+
+        src.join('conf.py').write_text(conf_py, encoding='utf-8')
 
         src.join('index.rst').write_text(
             '.. openapi:: %s\n%s' % (spec, options_raw),

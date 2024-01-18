@@ -51,7 +51,7 @@ The extension provides two configuration options.
   This must be one of the renderers defined in ``openapi_renderers``.
 
   :Type: A string corresponding to the alias of a registered renderer.
-  :Default: ``'httpdomain:old'``
+  :Default: ``'httpdomain'``
 
 
 Options
