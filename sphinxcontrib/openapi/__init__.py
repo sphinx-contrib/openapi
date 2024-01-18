@@ -27,7 +27,7 @@ _BUILTIN_RENDERERS = {
     "httpdomain": renderers.HttpdomainRenderer,
     "httpdomain:old": renderers.HttpdomainOldRenderer,
 }
-_DEFAULT_RENDERER_NAME = "httpdomain:old"
+_DEFAULT_RENDERER_NAME = "httpdomain"
 
 
 def _register_rendering_directives(app, conf):
