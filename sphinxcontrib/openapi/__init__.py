@@ -9,10 +9,7 @@
     :license: BSD, see LICENSE for details.
 """
 
-try:
-    from importlib.metadata import distribution, PackageNotFoundError
-except ImportError:  # python < 3.8
-    from importlib_metadata import distribution, PackageNotFoundError
+from importlib.metadata import distribution, PackageNotFoundError
 
 from sphinxcontrib.openapi import renderers, directive
 
