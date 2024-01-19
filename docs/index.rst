@@ -14,8 +14,8 @@ It depends on `sphinxcontrib-httpdomain`_, which provides an HTTP domain for des
    pip install sphinxcontrib-openapi
 
 
-How To Use?
-===========
+Usage
+=====
 
 Consider you have the following OpenAPI spec saved at ``specs/openapi.yml``:
 
@@ -33,10 +33,100 @@ and it will be rendered into something like:
 .. openapi:: specs/openapi.yml
 
 
+Configuration
+=============
+
+The extension provides two configuration options.
+
+``openapi_renderers``
+  A mapping of renderer aliases to the classes.
+  Two renderer classes are provided but it is possible to define your own renderer class.
+  This allows you to add support for things like additional type formats or custom extensions (``x``-prefixed attributes).
+
+  :Type: A mapping of renderer aliases to the implementation class.
+  :Default: ``{'httpdomain': sphinxcontrib.openapi.renderers.HttpdomainRenderer, 'httpdomain:old': sphinxcontrib.openapi.renderers.HttpdomainOldRenderer}``
+
+``openapi_default_renderer``
+  The renderer to use.
+  This must be one of the renderers defined in ``openapi_renderers``.
+
+  :Type: A string corresponding to the alias of a registered renderer.
+  :Default: ``'httpdomain:old'``
+
+
 Options
 =======
 
-The ``openapi`` directive supports the following options:
+The ``openapi`` directive supports different options depending on the renderer in use.
+
+Options for the ``httpdomain`` renderer
+---------------------------------------
+
+The following options take a value.
+
+``encoding``
+  Encoding to be used to read an OpenAPI spec. If not passed, Sphinx's source encoding will be used.
+
+``markup``
+  The format to use when parsing markup.
+
+  :Type: One of ``commonmark``, ``restructuredtext``
+  :Default: ``commonmark``
+
+``http-methods-order``
+  The preferred order in which to output HTTP methods.
+
+  :Type: An CSV string of HTTP methods.
+  :Default: ``None``
+
+``response-examples-for``
+  The response codes to render samples for.
+
+  :Type: A sequence of strings, with each string corresponding to a `HTTP status code <https://spec.openapis.org/oas/v3.1.0#http-status-codes>`__ that response examples should be rendered for.
+  :Default: ``["200", "201", "202", "2XX"]``
+
+``request-parameters-order``
+  The preferred order in which to output parameters.
+
+  :Type: An ordered sequence of strings, with each string corresponding to a `supported parameter type <https://spec.openapis.org/oas/v3.1.0#fixed-fields-9>`__.
+  :Default: ``None``
+
+``example-preference``
+  The preferred example format to render for requests and responses.
+
+  :Type: An ordered sequence of strings, with each string corresponding to a `supported media type <https://spec.openapis.org/oas/v3.1.0#media-types>`__.
+  :Default: ``None``
+
+``request-example-preference``
+  The preferred example format to render for requests. This takes precedence over ``example-preference``.
+
+  :Type: An ordered sequence of strings, with each string corresponding to a `supported media type <https://spec.openapis.org/oas/v3.1.0#media-types>`__.
+  :Default: ``None``
+
+``response-example-preference``
+  The preferred example format to render for responses. This takes precedence over ``example-preference``.
+
+  :Type: An ordered sequence of strings, with each string corresponding to a `supported media type <https://spec.openapis.org/oas/v3.1.0#media-types>`__.
+  :Default: ``None``
+
+The following options are boolean flags.
+
+``generate-examples-from-schemas``
+
+  Whether examples should be generated from the schema if they are not provided in the spec. If unset, examples will not be generated.
+
+  :Type: Flag.
+
+``no-json-schema-description``
+
+  Whether to disable rendering of JSON schema hints.
+
+  :Type: Flag.
+
+Options for the ``httpdomain:old`` renderer
+-------------------------------------------
+
+The following options are supported when using the ``httpdomain:old`` renderer:
 
 ``encoding``
   Encoding to be used to read an OpenAPI spec. If not passed, Sphinx's source encoding will be used.
@@ -122,7 +212,6 @@ When used together, ``exclude`` takes precedence over ``include`` and ``paths``.
             get
 
   Would render the ``head`` method, followed by the ``get`` method, followed by the rest of the methods in their declared ordered.
-
 
 .. _Sphinx: https://www.sphinx-doc.org/en/master/
 .. _OpenAPI: https://github.com/OAI/OpenAPI-Specification
