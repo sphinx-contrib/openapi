@@ -473,11 +473,15 @@ def openapihttpdomain(spec, **options):
     # Remove paths matching regexp
     if "exclude" in options:
         _paths = []
-        for e in options["exclude"]:
-            er = re.compile(e)
-            for path in paths:
-                if not er.match(path):
-                    _paths.append(path)
+        compiled_options = [re.compile(e) for e in options["exclude"]]
+        for path in paths:
+            matched = False
+            for er in compiled_options:
+                if er.match(path):
+                    matched = True
+                    break
+            if not matched:
+                _paths.append(path)
         paths = _paths
 
     render_request = False
