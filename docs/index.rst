@@ -35,6 +35,11 @@ and it will be rendered into something like:
 
 .. openapi:: specs/openapi.yml
 
+You can also use URLs where to fetch the OpenAPI spec from:
+
+.. code:: restructuredtext
+
+   .. openapi:: https://petstore.swagger.io/v2/swagger.json
 
 Options
 =======
