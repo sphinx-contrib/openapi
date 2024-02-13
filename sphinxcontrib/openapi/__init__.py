@@ -9,10 +9,7 @@
     :license: BSD, see LICENSE for details.
 """
 
-try:
-    from importlib.metadata import distribution, PackageNotFoundError
-except ImportError:  # python < 3.8
-    from importlib_metadata import distribution, PackageNotFoundError
+from importlib.metadata import distribution, PackageNotFoundError
 
 from sphinxcontrib.openapi import renderers, directive
 
@@ -27,7 +24,7 @@ _BUILTIN_RENDERERS = {
     "httpdomain": renderers.HttpdomainRenderer,
     "httpdomain:old": renderers.HttpdomainOldRenderer,
 }
-_DEFAULT_RENDERER_NAME = "httpdomain:old"
+_DEFAULT_RENDERER_NAME = "httpdomain"
 
 
 def _register_rendering_directives(app, conf):
