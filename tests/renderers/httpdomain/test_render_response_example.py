@@ -1,11 +1,18 @@
 """OpenAPI spec renderer: render_response_example."""
 
+import sys
 import textwrap
 
 import pytest
 import responses
 
 from sphinxcontrib.openapi import renderers
+
+
+if sys.version_info[:2] >= (3, 13):
+    http_422_description = "Unprocessable Content"
+else:
+    http_422_description = "Unprocessable Entity"
 
 
 def textify(generator):
@@ -499,7 +506,7 @@ def test_render_response_example_noop(testrenderer, oas_fragment):
     [
         pytest.param("201", "Created", id="201"),
         pytest.param("307", "Temporary Redirect", id="307"),
-        pytest.param("422", "Unprocessable Entity", id="422"),
+        pytest.param("422", http_422_description, id="422"),
     ],
 )
 def test_render_response_status_code(
@@ -577,7 +584,7 @@ def test_render_response_status_code_range(
     [
         pytest.param("201", "Created", id="201"),
         pytest.param("307", "Temporary Redirect", id="307"),
-        pytest.param("422", "Unprocessable Entity", id="422"),
+        pytest.param("422", http_422_description, id="422"),
     ],
 )
 def test_render_response_status_code_int(
