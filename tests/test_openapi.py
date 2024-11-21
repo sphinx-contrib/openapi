@@ -1865,7 +1865,11 @@ def test_openapi2_examples(tmpdir, run_sphinx):
     py.path.local(spec).copy(tmpdir.join('src', 'test-spec.yml'))
 
     with pytest.raises(ValueError) as excinfo:
-        run_sphinx('test-spec.yml', options={'examples': True})
+        run_sphinx(
+            'test-spec.yml',
+            options={'examples': True},
+            openapi_default_renderer='httpdomain:old',
+        )
 
     assert str(excinfo.value) == (
         'Rendering examples is not supported for OpenAPI v2.x specs.')
@@ -1880,7 +1884,11 @@ def test_openapi3_examples(tmpdir, run_sphinx, render_examples):
         'v3.0',
         'petstore.yaml')
     py.path.local(spec).copy(tmpdir.join('src', 'test-spec.yml'))
-    run_sphinx('test-spec.yml', options={'examples': render_examples})
+    run_sphinx(
+        'test-spec.yml',
+        options={'examples': render_examples},
+        openapi_default_renderer='httpdomain:old',
+    )
 
     rendered_html = tmpdir.join('out', 'index.html').read_text('utf-8')
 
