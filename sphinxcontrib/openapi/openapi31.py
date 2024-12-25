@@ -302,7 +302,7 @@ def _httpresource(
             dtype = schema["type"]
         else:
             dtype = set()
-            for t in schema["anyOf"]:
+            for t in schema.get("anyOf", schema.get("allOf")):
                 if "format" in t.keys():
                     dtype.add(t["format"])
                 else:
