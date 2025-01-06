@@ -279,7 +279,7 @@ def _httpresource(
 ):
     # https://github.com/OAI/OpenAPI-Specification/blob/3.1.0/versions/3.1.0.md#operation-object
     parameters = properties.get("parameters", [])
-    responses = properties["responses"]
+    responses = properties.get("responses", {})
     query_param_examples = []
     indent = "   "
 
