@@ -64,7 +64,11 @@ def example_from_schema(schema):
         # Combine schema examples
         example = {}
         for sub_schema in schema["allOf"]:
-            example.update(example_from_schema(sub_schema))
+            sub_example = example_from_schema(sub_schema)
+            if isinstance(sub_example, dict):
+                example.update(sub_example)
+            else:
+                return sub_example
         return example
 
     elif "enum" in schema:
