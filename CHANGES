@@ -5,6 +5,15 @@
 Here you can see the list of changes between each 'sphinxcontrib-openapi'
 release.
 
+0.9.0 (2026-02-10)
+==================
+
+- Drop support for Python 3.8 and 3.9 since they are EOL.
+- Fix issues with Python 3.13.
+- Add support for OpenAPI 3.1.1.
+- Handle non-object ``requestBody`` values.
+- Support ``allOf`` in ``parameters`` schema.
+
 0.8.4 (2024-02-13)
 ==================
 
