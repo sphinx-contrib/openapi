@@ -80,7 +80,8 @@ def run_sphinx(tmpdir):
                 extensions = ['sphinxcontrib.openapi']
                 source_suffix = '.rst'
                 master_doc = 'index'
-            """) + conf_raw,
+            """)
+            + conf_raw,
             encoding="utf-8",
         )
 
