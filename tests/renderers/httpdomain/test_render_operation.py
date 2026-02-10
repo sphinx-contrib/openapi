@@ -18,8 +18,7 @@ def test_render_operation(testrenderer, oas_fragment):
         testrenderer.render_operation(
             "/evidences/{evidenceId}",
             "get",
-            oas_fragment(
-                """
+            oas_fragment("""
                 summary: Retrieve an evidence by ID.
                 description: More verbose description...
                 parameters:
@@ -39,12 +38,10 @@ def test_render_operation(testrenderer, oas_fragment):
                     description: An evidence.
                   '404':
                     description: An evidence not found.
-                """
-            ),
+                """),
         )
     )
-    assert markup == textwrap.dedent(
-        """\
+    assert markup == textwrap.dedent("""\
         .. http:get:: /evidences/{evidenceId}
 
            **Retrieve an evidence by ID.**
@@ -61,8 +58,7 @@ def test_render_operation(testrenderer, oas_fragment):
               An evidence.
            :statuscode 404:
               An evidence not found.
-        """.rstrip()
-    )
+        """.rstrip())
 
 
 def test_render_operation_minimal(testrenderer, oas_fragment):
@@ -72,23 +68,19 @@ def test_render_operation_minimal(testrenderer, oas_fragment):
         testrenderer.render_operation(
             "/evidences",
             "post",
-            oas_fragment(
-                """
+            oas_fragment("""
                 responses:
                   '201':
                     description: An evidence created.
-                """
-            ),
+                """),
         )
     )
-    assert markup == textwrap.dedent(
-        """\
+    assert markup == textwrap.dedent("""\
         .. http:post:: /evidences
 
            :statuscode 201:
               An evidence created.
-        """.rstrip()
-    )
+        """.rstrip())
 
 
 def test_render_operation_summary(testrenderer, oas_fragment):
@@ -98,26 +90,22 @@ def test_render_operation_summary(testrenderer, oas_fragment):
         testrenderer.render_operation(
             "/evidences",
             "post",
-            oas_fragment(
-                """
+            oas_fragment("""
                 summary: Create an evidence.
                 responses:
                   '201':
                     description: An evidence created.
-                """
-            ),
+                """),
         )
     )
-    assert markup == textwrap.dedent(
-        """\
+    assert markup == textwrap.dedent("""\
         .. http:post:: /evidences
 
            **Create an evidence.**
 
            :statuscode 201:
               An evidence created.
-        """.rstrip()
-    )
+        """.rstrip())
 
 
 def test_render_operation_description(testrenderer, oas_fragment):
@@ -127,26 +115,22 @@ def test_render_operation_description(testrenderer, oas_fragment):
         testrenderer.render_operation(
             "/evidences",
             "post",
-            oas_fragment(
-                """
+            oas_fragment("""
                 description: Create an evidence.
                 responses:
                   '201':
                     description: An evidence created.
-                """
-            ),
+                """),
         )
     )
-    assert markup == textwrap.dedent(
-        """\
+    assert markup == textwrap.dedent("""\
         .. http:post:: /evidences
 
            Create an evidence.
 
            :statuscode 201:
               An evidence created.
-        """.rstrip()
-    )
+        """.rstrip())
 
 
 def test_render_operation_description_multiline(testrenderer, oas_fragment):
@@ -156,20 +140,17 @@ def test_render_operation_description_multiline(testrenderer, oas_fragment):
         testrenderer.render_operation(
             "/evidences",
             "post",
-            oas_fragment(
-                """
+            oas_fragment("""
                 description: |
                   Create
                   an evidence.
                 responses:
                   '201':
                     description: An evidence created.
-                """
-            ),
+                """),
         )
     )
-    assert markup == textwrap.dedent(
-        """\
+    assert markup == textwrap.dedent("""\
         .. http:post:: /evidences
 
            Create
@@ -177,8 +158,7 @@ def test_render_operation_description_multiline(testrenderer, oas_fragment):
 
            :statuscode 201:
               An evidence created.
-        """.rstrip()
-    )
+        """.rstrip())
 
 
 def test_render_operation_description_commonmark_default(testrenderer, oas_fragment):
@@ -188,26 +168,22 @@ def test_render_operation_description_commonmark_default(testrenderer, oas_fragm
         testrenderer.render_operation(
             "/evidences",
             "post",
-            oas_fragment(
-                """
+            oas_fragment("""
                 description: __Create__ an `evidence`.
                 responses:
                   '201':
                     description: An evidence created.
-                """
-            ),
+                """),
         )
     )
-    assert markup == textwrap.dedent(
-        """\
+    assert markup == textwrap.dedent("""\
         .. http:post:: /evidences
 
            **Create** an ``evidence``.
 
            :statuscode 201:
               An evidence created.
-        """.rstrip()
-    )
+        """.rstrip())
 
 
 def test_render_operation_description_commonmark(fakestate, oas_fragment):
@@ -218,26 +194,22 @@ def test_render_operation_description_commonmark(fakestate, oas_fragment):
         testrenderer.render_operation(
             "/evidences",
             "post",
-            oas_fragment(
-                """
+            oas_fragment("""
                 description: __Create__ an `evidence`.
                 responses:
                   '201':
                     description: An evidence created.
-                """
-            ),
+                """),
         )
     )
-    assert markup == textwrap.dedent(
-        """\
+    assert markup == textwrap.dedent("""\
         .. http:post:: /evidences
 
            **Create** an ``evidence``.
 
            :statuscode 201:
               An evidence created.
-        """.rstrip()
-    )
+        """.rstrip())
 
 
 def test_render_operation_description_commonmark_restructuredtext(
@@ -252,26 +224,22 @@ def test_render_operation_description_commonmark_restructuredtext(
         testrenderer.render_operation(
             "/evidences",
             "post",
-            oas_fragment(
-                """
+            oas_fragment("""
                 description: __Create__ an `evidence`.
                 responses:
                   '201':
                     description: An evidence created.
-                """
-            ),
+                """),
         )
     )
-    assert markup == textwrap.dedent(
-        """\
+    assert markup == textwrap.dedent("""\
         .. http:post:: /evidences
 
            __Create__ an `evidence`.
 
            :statuscode 201:
               An evidence created.
-        """.rstrip()
-    )
+        """.rstrip())
 
 
 def test_render_operation_deprecated(testrenderer, oas_fragment):
@@ -281,25 +249,21 @@ def test_render_operation_deprecated(testrenderer, oas_fragment):
         testrenderer.render_operation(
             "/evidences",
             "post",
-            oas_fragment(
-                """
+            oas_fragment("""
                 responses:
                   '201':
                     description: An evidence created.
                 deprecated: true
-                """
-            ),
+                """),
         )
     )
-    assert markup == textwrap.dedent(
-        """\
+    assert markup == textwrap.dedent("""\
         .. http:post:: /evidences
            :deprecated:
 
            :statuscode 201:
               An evidence created.
-        """.rstrip()
-    )
+        """.rstrip())
 
 
 def test_render_operation_w_requestbody(testrenderer, oas_fragment):
@@ -309,8 +273,7 @@ def test_render_operation_w_requestbody(testrenderer, oas_fragment):
         testrenderer.render_operation(
             "/evidences",
             "post",
-            oas_fragment(
-                """
+            oas_fragment("""
                 requestBody:
                   content:
                     application/json:
@@ -320,12 +283,10 @@ def test_render_operation_w_requestbody(testrenderer, oas_fragment):
                 responses:
                   '201':
                     description: An evidence created.
-                """
-            ),
+                """),
         )
     )
-    assert markup == textwrap.dedent(
-        """\
+    assert markup == textwrap.dedent("""\
         .. http:post:: /evidences
 
            .. sourcecode:: http
@@ -340,8 +301,7 @@ def test_render_operation_w_requestbody(testrenderer, oas_fragment):
 
            :statuscode 201:
               An evidence created.
-        """.rstrip()
-    )
+        """.rstrip())
 
 
 @pytest.mark.parametrize(
@@ -354,8 +314,7 @@ def test_render_operation_caseinsensitive_method(testrenderer, method, oas_fragm
         testrenderer.render_operation(
             "/evidences",
             method,
-            oas_fragment(
-                """
+            oas_fragment("""
                 requestBody:
                   content:
                     application/json:
@@ -365,12 +324,10 @@ def test_render_operation_caseinsensitive_method(testrenderer, method, oas_fragm
                 responses:
                   '201':
                     description: An evidence created.
-                """
-            ),
+                """),
         )
     )
-    assert markup == textwrap.dedent(
-        f"""\
+    assert markup == textwrap.dedent(f"""\
         .. http:{method}:: /evidences
 
            .. sourcecode:: http
@@ -385,5 +342,4 @@ def test_render_operation_caseinsensitive_method(testrenderer, method, oas_fragm
 
            :statuscode 201:
               An evidence created.
-        """.rstrip()
-    )
+        """.rstrip())

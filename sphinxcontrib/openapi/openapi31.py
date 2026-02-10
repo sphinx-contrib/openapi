@@ -1,11 +1,11 @@
 """
-    sphinxcontrib.openapi.openapi31
-    -------------------------------
+sphinxcontrib.openapi.openapi31
+-------------------------------
 
-    The OpenAPI 3.1 spec renderer. Based on ``sphinxcontrib-httpdomain``.
+The OpenAPI 3.1 spec renderer. Based on ``sphinxcontrib-httpdomain``.
 
-    :copyright: (c) 2016, Ihor Kalnytskyi.
-    :license: BSD, see LICENSE for details.
+:copyright: (c) 2016, Ihor Kalnytskyi.
+:license: BSD, see LICENSE for details.
 """
 
 import copy
@@ -23,7 +23,6 @@ from http.client import responses as http_status_codes
 from sphinx.util import logging
 
 from sphinxcontrib.openapi import utils
-
 
 LOG = logging.getLogger(__name__)
 

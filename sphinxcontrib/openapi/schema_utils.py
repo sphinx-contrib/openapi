@@ -2,7 +2,6 @@
 
 from io import StringIO
 
-
 _DEFAULT_EXAMPLES = {
     "string": "string",
     "integer": 1,

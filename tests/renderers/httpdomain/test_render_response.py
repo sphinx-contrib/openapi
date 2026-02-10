@@ -6,7 +6,6 @@ import pytest
 
 from sphinxcontrib.openapi import renderers
 
-
 if sys.version_info[:2] >= (3, 13):
     http_422_description = "Unprocessable Content"
 else:
@@ -26,20 +25,15 @@ def test_render_response_status_code(testrenderer, oas_fragment, statuscode):
     markup = textify(
         testrenderer.render_response(
             statuscode,
-            oas_fragment(
-                """
+            oas_fragment("""
                 description: An evidence.
-                """
-            ),
+                """),
         )
     )
-    assert markup == textwrap.dedent(
-        """\
+    assert markup == textwrap.dedent("""\
         :statuscode %s:
            An evidence.
-        """.rstrip()
-        % statuscode
-    )
+        """.rstrip() % statuscode)
 
 
 def test_render_response_minimal(testrenderer, oas_fragment):
@@ -48,19 +42,15 @@ def test_render_response_minimal(testrenderer, oas_fragment):
     markup = textify(
         testrenderer.render_response(
             200,
-            oas_fragment(
-                """
+            oas_fragment("""
                 description: An evidence.
-                """
-            ),
+                """),
         )
     )
-    assert markup == textwrap.dedent(
-        """\
+    assert markup == textwrap.dedent("""\
         :statuscode 200:
            An evidence.
-        """.rstrip()
-    )
+        """.rstrip())
 
 
 def test_render_response_description_commonmark_default(testrenderer, oas_fragment):
@@ -69,22 +59,18 @@ def test_render_response_description_commonmark_default(testrenderer, oas_fragme
     markup = textify(
         testrenderer.render_response(
             "200",
-            oas_fragment(
-                """
+            oas_fragment("""
                 description: |
                   An __evidence__ that matches
                   the `query`.
-                """
-            ),
+                """),
         )
     )
-    assert markup == textwrap.dedent(
-        """\
+    assert markup == textwrap.dedent("""\
         :statuscode 200:
            An **evidence** that matches
            the ``query``.
-        """.rstrip()
-    )
+        """.rstrip())
 
 
 def test_render_response_description_commonmark(fakestate, oas_fragment):
@@ -94,22 +80,18 @@ def test_render_response_description_commonmark(fakestate, oas_fragment):
     markup = textify(
         testrenderer.render_response(
             "200",
-            oas_fragment(
-                """
+            oas_fragment("""
                 description: |
                   An __evidence__ that matches
                   the `query`.
-                """
-            ),
+                """),
         )
     )
-    assert markup == textwrap.dedent(
-        """\
+    assert markup == textwrap.dedent("""\
         :statuscode 200:
            An **evidence** that matches
            the ``query``.
-        """.rstrip()
-    )
+        """.rstrip())
 
 
 def test_render_response_description_restructuredtext(fakestate, oas_fragment):
@@ -121,22 +103,18 @@ def test_render_response_description_restructuredtext(fakestate, oas_fragment):
     markup = textify(
         testrenderer.render_response(
             "200",
-            oas_fragment(
-                """
+            oas_fragment("""
                 description: |
                   An __evidence__ that matches
                   the `query`.
-                """
-            ),
+                """),
         )
     )
-    assert markup == textwrap.dedent(
-        """\
+    assert markup == textwrap.dedent("""\
         :statuscode 200:
            An __evidence__ that matches
            the `query`.
-        """.rstrip()
-    )
+        """.rstrip())
 
 
 @pytest.mark.parametrize(
@@ -153,20 +131,17 @@ def test_render_response_content_2xx(testrenderer, oas_fragment, status_code, st
     markup = textify(
         testrenderer.render_response(
             status_code,
-            oas_fragment(
-                """
+            oas_fragment("""
                 description: An evidence.
                 content:
                   application/json:
                     example:
                       foo: bar
                       baz: 42
-                """
-            ),
+                """),
         )
     )
-    assert markup == textwrap.dedent(
-        f"""\
+    assert markup == textwrap.dedent(f"""\
         :statuscode {status_code}:
            An evidence.
 
@@ -179,8 +154,7 @@ def test_render_response_content_2xx(testrenderer, oas_fragment, status_code, st
                 "foo": "bar",
                 "baz": 42
               }}
-        """.rstrip()
-    )
+        """.rstrip())
 
 
 @pytest.mark.parametrize(
@@ -199,24 +173,20 @@ def test_render_response_content_non_2xx(testrenderer, oas_fragment, status_code
     markup = textify(
         testrenderer.render_response(
             status_code,
-            oas_fragment(
-                """
+            oas_fragment("""
                 description: An evidence.
                 content:
                   application/json:
                     example:
                       foo: bar
                       baz: 42
-                """
-            ),
+                """),
         )
     )
-    assert markup == textwrap.dedent(
-        f"""\
+    assert markup == textwrap.dedent(f"""\
         :statuscode {status_code}:
            An evidence.
-        """.rstrip()
-    )
+        """.rstrip())
 
 
 @pytest.mark.parametrize(
@@ -238,20 +208,17 @@ def test_render_response_content_custom(fakestate, oas_fragment, status_code, st
     markup = textify(
         testrenderer.render_response(
             status_code,
-            oas_fragment(
-                """
+            oas_fragment("""
                 description: An evidence.
                 content:
                   application/json:
                     example:
                       foo: bar
                       baz: 42
-                """
-            ),
+                """),
         )
     )
-    assert markup == textwrap.dedent(
-        f"""\
+    assert markup == textwrap.dedent(f"""\
         :statuscode {status_code}:
            An evidence.
 
@@ -264,8 +231,7 @@ def test_render_response_content_custom(fakestate, oas_fragment, status_code, st
                 "foo": "bar",
                 "baz": 42
               }}
-        """.rstrip()
-    )
+        """.rstrip())
 
 
 def test_render_response_content_custom_mismatch(fakestate, oas_fragment):
@@ -278,24 +244,20 @@ def test_render_response_content_custom_mismatch(fakestate, oas_fragment):
     markup = textify(
         testrenderer.render_response(
             "200",
-            oas_fragment(
-                """
+            oas_fragment("""
                 description: An evidence.
                 content:
                   application/json:
                     example:
                       foo: bar
                       baz: 42
-                """
-            ),
+                """),
         )
     )
-    assert markup == textwrap.dedent(
-        f"""\
+    assert markup == textwrap.dedent(f"""\
         :statuscode 200:
            An evidence.
-        """.rstrip()
-    )
+        """.rstrip())
 
 
 def test_render_response_header(testrenderer, oas_fragment):
@@ -304,28 +266,24 @@ def test_render_response_header(testrenderer, oas_fragment):
     markup = textify(
         testrenderer.render_response(
             "200",
-            oas_fragment(
-                """
+            oas_fragment("""
                 description: An evidence.
                 headers:
                   X-Request-Id:
                     description: A unique request identifier.
                     schema:
                       type: string
-                """
-            ),
+                """),
         )
     )
-    assert markup == textwrap.dedent(
-        """\
+    assert markup == textwrap.dedent("""\
         :statuscode 200:
            An evidence.
 
         :resheader X-Request-Id:
            A unique request identifier.
         :resheadertype X-Request-Id: string
-        """.rstrip()
-    )
+        """.rstrip())
 
 
 def test_render_response_header_minimal(testrenderer, oas_fragment):
@@ -334,23 +292,19 @@ def test_render_response_header_minimal(testrenderer, oas_fragment):
     markup = textify(
         testrenderer.render_response(
             200,
-            oas_fragment(
-                """
+            oas_fragment("""
                 description: An evidence.
                 headers:
                   X-Request-Id: {}
-                """
-            ),
+                """),
         )
     )
-    assert markup == textwrap.dedent(
-        """\
+    assert markup == textwrap.dedent("""\
         :statuscode 200:
            An evidence.
 
         :resheader X-Request-Id:
-        """.rstrip()
-    )
+        """.rstrip())
 
 
 def test_render_response_header_description(testrenderer, oas_fragment):
@@ -359,25 +313,21 @@ def test_render_response_header_description(testrenderer, oas_fragment):
     markup = textify(
         testrenderer.render_response(
             200,
-            oas_fragment(
-                """
+            oas_fragment("""
                 description: An evidence.
                 headers:
                   X-Request-Id:
                     description: A unique request identifier.
-                """
-            ),
+                """),
         )
     )
-    assert markup == textwrap.dedent(
-        """\
+    assert markup == textwrap.dedent("""\
         :statuscode 200:
            An evidence.
 
         :resheader X-Request-Id:
            A unique request identifier.
-        """.rstrip()
-    )
+        """.rstrip())
 
 
 def test_render_response_header_multiline_description(testrenderer, oas_fragment):
@@ -386,28 +336,24 @@ def test_render_response_header_multiline_description(testrenderer, oas_fragment
     markup = textify(
         testrenderer.render_response(
             200,
-            oas_fragment(
-                """
+            oas_fragment("""
                 description: An evidence.
                 headers:
                   X-Request-Id:
                     description: |
                       A unique request
                       identifier.
-                """
-            ),
+                """),
         )
     )
-    assert markup == textwrap.dedent(
-        """\
+    assert markup == textwrap.dedent("""\
         :statuscode 200:
            An evidence.
 
         :resheader X-Request-Id:
            A unique request
            identifier.
-        """.rstrip()
-    )
+        """.rstrip())
 
 
 def test_render_response_header_description_commonmark_default(
@@ -418,28 +364,24 @@ def test_render_response_header_description_commonmark_default(
     markup = textify(
         testrenderer.render_response(
             200,
-            oas_fragment(
-                """
+            oas_fragment("""
                 description: An evidence.
                 headers:
                   X-Request-Id:
                     description: |
                       A unique __request__
                       `identifier`.
-                """
-            ),
+                """),
         )
     )
-    assert markup == textwrap.dedent(
-        """\
+    assert markup == textwrap.dedent("""\
         :statuscode 200:
            An evidence.
 
         :resheader X-Request-Id:
            A unique **request**
            ``identifier``.
-        """.rstrip()
-    )
+        """.rstrip())
 
 
 def test_render_response_header_description_commonmark(fakestate, oas_fragment):
@@ -449,28 +391,24 @@ def test_render_response_header_description_commonmark(fakestate, oas_fragment):
     markup = textify(
         testrenderer.render_response(
             200,
-            oas_fragment(
-                """
+            oas_fragment("""
                 description: An evidence.
                 headers:
                   X-Request-Id:
                     description: |
                       A unique __request__
                       `identifier`.
-                """
-            ),
+                """),
         )
     )
-    assert markup == textwrap.dedent(
-        """\
+    assert markup == textwrap.dedent("""\
         :statuscode 200:
            An evidence.
 
         :resheader X-Request-Id:
            A unique **request**
            ``identifier``.
-        """.rstrip()
-    )
+        """.rstrip())
 
 
 def test_render_response_header_description_restructuredtext(fakestate, oas_fragment):
@@ -482,28 +420,24 @@ def test_render_response_header_description_restructuredtext(fakestate, oas_frag
     markup = textify(
         testrenderer.render_response(
             200,
-            oas_fragment(
-                """
+            oas_fragment("""
                 description: An evidence.
                 headers:
                   X-Request-Id:
                     description: |
                       A unique __request__
                       `identifier`.
-                """
-            ),
+                """),
         )
     )
-    assert markup == textwrap.dedent(
-        """\
+    assert markup == textwrap.dedent("""\
         :statuscode 200:
            An evidence.
 
         :resheader X-Request-Id:
            A unique __request__
            `identifier`.
-        """.rstrip()
-    )
+        """.rstrip())
 
 
 def test_render_response_header_content_type(testrenderer, oas_fragment):
@@ -512,25 +446,21 @@ def test_render_response_header_content_type(testrenderer, oas_fragment):
     markup = textify(
         testrenderer.render_response(
             200,
-            oas_fragment(
-                """
+            oas_fragment("""
                 description: An evidence.
                 headers:
                   Content-Type: {}
-                """
-            ),
+                """),
         )
     )
 
     # There's an extra newline at the end of markup if there's at least one
     # response header defined.
-    assert markup.rstrip() == textwrap.dedent(
-        """\
+    assert markup.rstrip() == textwrap.dedent("""\
         :statuscode 200:
            An evidence.
 
-        """.rstrip()
-    )
+        """.rstrip())
 
 
 def test_render_response_header_required(testrenderer, oas_fragment):
@@ -539,26 +469,22 @@ def test_render_response_header_required(testrenderer, oas_fragment):
     markup = textify(
         testrenderer.render_response(
             200,
-            oas_fragment(
-                """
+            oas_fragment("""
                 description: An evidence.
                 headers:
                   X-Request-Id:
                     required: true
-                """
-            ),
+                """),
         )
     )
 
-    assert markup == textwrap.dedent(
-        """\
+    assert markup == textwrap.dedent("""\
         :statuscode 200:
            An evidence.
 
         :resheader X-Request-Id:
         :resheadertype X-Request-Id: required
-        """.rstrip()
-    )
+        """.rstrip())
 
 
 def test_render_response_header_required_false(testrenderer, oas_fragment):
@@ -567,25 +493,21 @@ def test_render_response_header_required_false(testrenderer, oas_fragment):
     markup = textify(
         testrenderer.render_response(
             200,
-            oas_fragment(
-                """
+            oas_fragment("""
                 description: An evidence.
                 headers:
                   X-Request-Id:
                     required: false
-                """
-            ),
+                """),
         )
     )
 
-    assert markup == textwrap.dedent(
-        """\
+    assert markup == textwrap.dedent("""\
         :statuscode 200:
            An evidence.
 
         :resheader X-Request-Id:
-        """.rstrip()
-    )
+        """.rstrip())
 
 
 def test_render_response_header_deprecated(testrenderer, oas_fragment):
@@ -594,26 +516,22 @@ def test_render_response_header_deprecated(testrenderer, oas_fragment):
     markup = textify(
         testrenderer.render_response(
             200,
-            oas_fragment(
-                """
+            oas_fragment("""
                 description: An evidence.
                 headers:
                   X-Request-Id:
                     deprecated: true
-                """
-            ),
+                """),
         )
     )
 
-    assert markup == textwrap.dedent(
-        """\
+    assert markup == textwrap.dedent("""\
         :statuscode 200:
            An evidence.
 
         :resheader X-Request-Id:
         :resheadertype X-Request-Id: deprecated
-        """.rstrip()
-    )
+        """.rstrip())
 
 
 def test_render_response_header_deprecated_false(testrenderer, oas_fragment):
@@ -622,25 +540,21 @@ def test_render_response_header_deprecated_false(testrenderer, oas_fragment):
     markup = textify(
         testrenderer.render_response(
             200,
-            oas_fragment(
-                """
+            oas_fragment("""
                 description: An evidence.
                 headers:
                   X-Request-Id:
                     deprecated: false
-                """
-            ),
+                """),
         )
     )
 
-    assert markup == textwrap.dedent(
-        """\
+    assert markup == textwrap.dedent("""\
         :statuscode 200:
            An evidence.
 
         :resheader X-Request-Id:
-        """.rstrip()
-    )
+        """.rstrip())
 
 
 def test_render_response_header_required_deprecated(testrenderer, oas_fragment):
@@ -649,27 +563,23 @@ def test_render_response_header_required_deprecated(testrenderer, oas_fragment):
     markup = textify(
         testrenderer.render_response(
             200,
-            oas_fragment(
-                """
+            oas_fragment("""
                 description: An evidence.
                 headers:
                   X-Request-Id:
                     required: true
                     deprecated: true
-                """
-            ),
+                """),
         )
     )
 
-    assert markup == textwrap.dedent(
-        """\
+    assert markup == textwrap.dedent("""\
         :statuscode 200:
            An evidence.
 
         :resheader X-Request-Id:
         :resheadertype X-Request-Id: required, deprecated
-        """.rstrip()
-    )
+        """.rstrip())
 
 
 def test_render_response_header_type(testrenderer, oas_fragment):
@@ -678,27 +588,23 @@ def test_render_response_header_type(testrenderer, oas_fragment):
     markup = textify(
         testrenderer.render_response(
             200,
-            oas_fragment(
-                """
+            oas_fragment("""
                 description: An evidence.
                 headers:
                   X-Request-Id:
                     schema:
                       type: string
-                """
-            ),
+                """),
         )
     )
 
-    assert markup == textwrap.dedent(
-        """\
+    assert markup == textwrap.dedent("""\
         :statuscode 200:
            An evidence.
 
         :resheader X-Request-Id:
         :resheadertype X-Request-Id: string
-        """.rstrip()
-    )
+        """.rstrip())
 
 
 def test_render_response_header_type_with_format(testrenderer, oas_fragment):
@@ -707,28 +613,24 @@ def test_render_response_header_type_with_format(testrenderer, oas_fragment):
     markup = textify(
         testrenderer.render_response(
             200,
-            oas_fragment(
-                """
+            oas_fragment("""
                 description: An evidence.
                 headers:
                   X-Request-Id:
                     schema:
                       type: string
                       format: uuid4
-                """
-            ),
+                """),
         )
     )
 
-    assert markup == textwrap.dedent(
-        """\
+    assert markup == textwrap.dedent("""\
         :statuscode 200:
            An evidence.
 
         :resheader X-Request-Id:
         :resheadertype X-Request-Id: string:uuid4
-        """.rstrip()
-    )
+        """.rstrip())
 
 
 def test_render_response_header_type_from_content(testrenderer, oas_fragment):
@@ -737,8 +639,7 @@ def test_render_response_header_type_from_content(testrenderer, oas_fragment):
     markup = textify(
         testrenderer.render_response(
             200,
-            oas_fragment(
-                """
+            oas_fragment("""
                 description: An evidence.
                 headers:
                   X-Request-Id:
@@ -746,17 +647,14 @@ def test_render_response_header_type_from_content(testrenderer, oas_fragment):
                       text/plain:
                         schema:
                           type: string
-                """
-            ),
+                """),
         )
     )
 
-    assert markup == textwrap.dedent(
-        """\
+    assert markup == textwrap.dedent("""\
         :statuscode 200:
            An evidence.
 
         :resheader X-Request-Id:
         :resheadertype X-Request-Id: string
-        """.rstrip()
-    )
+        """.rstrip())
