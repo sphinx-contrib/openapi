@@ -1,4 +1,4 @@
-"""Smoke test examples from OAI/OpenAPI-Specification repo."""
+"""Smoke test examples from OAI/learn.openapis.org repo."""
 
 import os
 import glob
@@ -12,7 +12,6 @@ import pytest
     glob.glob(
         os.path.join(
             os.path.abspath(os.path.dirname(__file__)),
-            'OpenAPI-Specification',
             'examples',
             'v2.0',
             'json',
@@ -21,7 +20,6 @@ import pytest
     glob.glob(
         os.path.join(
             os.path.abspath(os.path.dirname(__file__)),
-            'OpenAPI-Specification',
             'examples',
             'v2.0',
             'yaml',
@@ -38,7 +36,6 @@ def test_openapi2_success(tmpdir, run_sphinx, spec):
 @pytest.mark.parametrize('spec', glob.glob(
     os.path.join(
         os.path.abspath(os.path.dirname(__file__)),
-        'OpenAPI-Specification',
         'examples',
         'v3.0',
         '*.yaml')
@@ -58,7 +55,6 @@ def test_openapi30_success(tmpdir, run_sphinx, spec, render_examples,
 @pytest.mark.parametrize('spec', glob.glob(
     os.path.join(
         os.path.abspath(os.path.dirname(__file__)),
-        'OpenAPI-Specification',
         'examples',
         'v3.1',
         '*.yaml')
