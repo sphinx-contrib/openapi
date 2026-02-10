@@ -317,7 +317,7 @@ class HttpdomainRenderer(abc.RestructuredTextRenderer):
             # According to OpenAPI v3 spec, 'content' in this case may
             # have one and only one entry. Hence casting its values to
             # list is not expensive and should be acceptable.
-            schema = list(parameter["content"].values())[0].get("schema", {})
+            schema = next(iter(parameter["content"].values())).get("schema", {})
 
         if parameter["in"] not in kinds:
             logger.warning(
@@ -438,7 +438,9 @@ class HttpdomainRenderer(abc.RestructuredTextRenderer):
                     # According to OpenAPI v3 spec, 'content' in this case may
                     # have one and only one entry. Hence casting its values to
                     # list is not expensive and should be acceptable.
-                    schema = list(header_value["content"].values())[0].get("schema", {})
+                    schema = next(iter(header_value["content"].values())).get(
+                        "schema", {}
+                    )
 
                 markers = _get_markers_from_object(header_value, schema)
                 if markers:

@@ -17,9 +17,9 @@ import yaml
 
 # Locally cache spec to speedup processing of same spec file in multiple
 # openapi directives
-@functools.lru_cache()
+@functools.lru_cache
 def _get_spec(abspath, encoding):
-    with open(abspath, "rt", encoding=encoding) as stream:
+    with open(abspath, encoding=encoding) as stream:
         return yaml.safe_load(stream)
 
 
@@ -42,7 +42,7 @@ def create_directive_from_renderer(renderer_cls):
             # URI parameter is crucial for resolving relative references. So we
             # need to set this option properly as it's used later down the
             # stack.
-            self.options.setdefault("uri", "file://%s" % abspath)
+            self.options.setdefault("uri", f"file://{abspath}")
 
             # Add a given OpenAPI spec as a dependency of the referring
             # reStructuredText document, so the document is rebuilt each time

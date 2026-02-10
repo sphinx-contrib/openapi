@@ -8,8 +8,6 @@ Common functionality shared across the various renderers.
 :license: BSD, see LICENSE for details.
 """
 
-from __future__ import unicode_literals
-
 import collections
 import collections.abc
 
@@ -42,7 +40,7 @@ class OpenApiRefResolver(jsonschema.RefResolver):
         _, extension = os.path.splitext(path)
 
         if extension not in [".yml", ".yaml"] or scheme in self.handlers:
-            return super(OpenApiRefResolver, self).resolve_remote(uri)
+            return super().resolve_remote(uri)
 
         if scheme in ["http", "https"] and self._requests:
             response = self._requests.get(uri)
@@ -83,7 +81,7 @@ def _resolve_refs(uri, spec):
                         type: "object"
                     }  # return a distinct object for recursive data type
                 return _do_resolve(
-                    resolved, seen + [ref]
+                    resolved, [*seen, ref]
                 )  # might have other references
         elif isinstance(node, collections.abc.Mapping):
             for k, v in node.items():

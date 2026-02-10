@@ -38,8 +38,8 @@ def pytest_collection_modifyitems(items):
 
 def _format_option_raw(key, val):
     if isinstance(val, bool) and val:
-        return ":%s:" % key
-    return ":%s: %s" % (key, val)
+        return f":{key}:"
+    return f":{key}: {val}"
 
 
 @pytest.fixture(scope="function")
@@ -49,7 +49,7 @@ def run_sphinx(tmpdir):
 
     def run(spec, options={}):
         options_raw = "\n".join(
-            ["   %s" % _format_option_raw(key, val) for key, val in options.items()]
+            [f"   {_format_option_raw(key, val)}" for key, val in options.items()]
         )
 
         src.join("conf.py").write_text(
@@ -67,7 +67,7 @@ def run_sphinx(tmpdir):
         )
 
         src.join("index.rst").write_text(
-            ".. openapi:: %s\n%s" % (spec, options_raw), encoding="utf-8"
+            f".. openapi:: {spec}\n{options_raw}", encoding="utf-8"
         )
 
         Sphinx(

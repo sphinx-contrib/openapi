@@ -60,7 +60,7 @@ def main():
     if options.group:
         openapi_options["group"] = True
 
-    openapi_options.setdefault("uri", "file://%s" % options.input)
+    openapi_options.setdefault("uri", f"file://{options.input}")
     spec = directive._get_spec(options.input, options.encoding)
     renderer = renderers.HttpdomainOldRenderer(None, openapi_options)
 
