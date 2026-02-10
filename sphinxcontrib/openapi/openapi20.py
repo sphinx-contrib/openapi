@@ -141,8 +141,9 @@ def convert_json_schema(schema, directive=":<json"):
                         output.append(
                             (
                                 name,
-                                "{type_} {name}:"
-                                " {schema[description]}".format(**locals()),
+                                "{type_} {name}: {schema[description]}".format(
+                                    **locals()
+                                ),
                             )
                         )
 
@@ -151,7 +152,7 @@ def convert_json_schema(schema, directive=":<json"):
                         output.append(
                             (
                                 name,
-                                "{type_} {name}:" " {constraints}".format(**locals()),
+                                "{type_} {name}: {constraints}".format(**locals()),
                             )
                         )
                     else:

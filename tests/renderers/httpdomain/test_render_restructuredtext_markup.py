@@ -12,7 +12,9 @@ def textify(generator):
 def test_oas2_minimal(testrenderer, oas_fragment):
     """Minimal OAS 2 can be rendered."""
 
-    markup = textify(testrenderer.render_restructuredtext_markup(oas_fragment("""
+    markup = textify(
+        testrenderer.render_restructuredtext_markup(
+            oas_fragment("""
                 swagger: "2.0"
                 info:
                   title: An example spec
@@ -23,7 +25,9 @@ def test_oas2_minimal(testrenderer, oas_fragment):
                       responses:
                         '200':
                           description: a response description
-                """)))
+                """)
+        )
+    )
     assert markup == textwrap.dedent("""\
         .. http:get:: /test
 
@@ -35,7 +39,9 @@ def test_oas2_minimal(testrenderer, oas_fragment):
 def test_oas2_complete(testrenderer, oas_fragment):
     """Feature rich OAS 2 can be rendered."""
 
-    markup = textify(testrenderer.render_restructuredtext_markup(oas_fragment("""
+    markup = textify(
+        testrenderer.render_restructuredtext_markup(
+            oas_fragment("""
                 swagger: "2.0"
                 info:
                   title: An example spec
@@ -79,7 +85,9 @@ def test_oas2_complete(testrenderer, oas_fragment):
                           description: a response description
                         '404':
                           description: a username not found
-                """)))
+                """)
+        )
+    )
     assert markup == textwrap.dedent("""\
         .. http:get:: /test
 
@@ -110,7 +118,9 @@ def test_oas2_complete(testrenderer, oas_fragment):
 def test_oas2_schema_example(testrenderer, oas_fragment):
     """Schema's 'example' property can be used in example snippets."""
 
-    markup = textify(testrenderer.render_restructuredtext_markup(oas_fragment("""
+    markup = textify(
+        testrenderer.render_restructuredtext_markup(
+            oas_fragment("""
                 swagger: "2.0"
                 info:
                   title: An example spec
@@ -134,7 +144,9 @@ def test_oas2_schema_example(testrenderer, oas_fragment):
                               type: integer
                             type: array
                           description: a response description
-                """)))
+                """)
+        )
+    )
     assert markup == textwrap.dedent("""\
         .. http:get:: /test
 
@@ -162,7 +174,9 @@ def test_oas2_complete_generate_examples_from_schema(fakestate, oas_fragment):
     testrenderer = renderers.HttpdomainRenderer(
         fakestate, {"generate-examples-from-schemas": True}
     )
-    markup = textify(testrenderer.render_restructuredtext_markup(oas_fragment("""
+    markup = textify(
+        testrenderer.render_restructuredtext_markup(
+            oas_fragment("""
                 swagger: "2.0"
                 info:
                   title: An example spec
@@ -181,7 +195,9 @@ def test_oas2_complete_generate_examples_from_schema(fakestate, oas_fragment):
                               type: integer
                             type: array
                           description: a response description
-                """)))
+                """)
+        )
+    )
     assert markup == textwrap.dedent("""\
         .. http:get:: /test
 
@@ -206,7 +222,9 @@ def test_oas2_complete_generate_examples_from_schema(fakestate, oas_fragment):
 def test_oas3_minimal(testrenderer, oas_fragment):
     """Minimal OAS 3 can be rendered."""
 
-    markup = textify(testrenderer.render_restructuredtext_markup(oas_fragment("""
+    markup = textify(
+        testrenderer.render_restructuredtext_markup(
+            oas_fragment("""
                 openapi: 3.0.3
                 info:
                   title: An example spec
@@ -217,7 +235,9 @@ def test_oas3_minimal(testrenderer, oas_fragment):
                       responses:
                         '200':
                           description: a response description
-                """)))
+                """)
+        )
+    )
     assert markup == textwrap.dedent("""\
         .. http:get:: /test
 
@@ -229,7 +249,9 @@ def test_oas3_minimal(testrenderer, oas_fragment):
 def test_oas3_complete(testrenderer, oas_fragment):
     """Feature rich OAS 3 can be rendered."""
 
-    markup = textify(testrenderer.render_restructuredtext_markup(oas_fragment("""
+    markup = textify(
+        testrenderer.render_restructuredtext_markup(
+            oas_fragment("""
                 openapi: 3.0.3
                 info:
                   title: An example spec
@@ -276,7 +298,9 @@ def test_oas3_complete(testrenderer, oas_fragment):
                           description: a response description
                         '404':
                           description: a username not found
-                """)))
+                """)
+        )
+    )
     assert markup == textwrap.dedent("""\
         .. http:get:: /test
 
@@ -307,7 +331,9 @@ def test_oas3_complete(testrenderer, oas_fragment):
 def test_oas3_schema_example(testrenderer, oas_fragment):
     """Schema's 'example' property can be used in example snippets."""
 
-    markup = textify(testrenderer.render_restructuredtext_markup(oas_fragment("""
+    markup = textify(
+        testrenderer.render_restructuredtext_markup(
+            oas_fragment("""
                 openapi: 3.0.3
                 info:
                   title: An example spec
@@ -331,7 +357,9 @@ def test_oas3_schema_example(testrenderer, oas_fragment):
                                   type: integer
                                 type: array
                           description: a response description
-                """)))
+                """)
+        )
+    )
     assert markup == textwrap.dedent("""\
         .. http:get:: /test
 
@@ -359,7 +387,9 @@ def test_oas3_generate_examples_from_schema(fakestate, oas_fragment):
     testrenderer = renderers.HttpdomainRenderer(
         fakestate, {"generate-examples-from-schemas": True}
     )
-    markup = textify(testrenderer.render_restructuredtext_markup(oas_fragment("""
+    markup = textify(
+        testrenderer.render_restructuredtext_markup(
+            oas_fragment("""
                 openapi: 3.0.3
                 info:
                   title: An example spec
@@ -378,7 +408,9 @@ def test_oas3_generate_examples_from_schema(fakestate, oas_fragment):
                                   type: integer
                                 type: array
                           description: a response description
-                """)))
+                """)
+        )
+    )
     assert markup == textwrap.dedent("""\
         .. http:get:: /test
 
@@ -403,7 +435,9 @@ def test_oas3_generate_examples_from_schema(fakestate, oas_fragment):
 def test_oas3_request_body(testrenderer, oas_fragment):
     """Request body example is rendered."""
 
-    markup = textify(testrenderer.render_restructuredtext_markup(oas_fragment("""
+    markup = textify(
+        testrenderer.render_restructuredtext_markup(
+            oas_fragment("""
                 openapi: 3.0.3
                 info:
                   title: An example spec
@@ -423,7 +457,9 @@ def test_oas3_request_body(testrenderer, oas_fragment):
                       responses:
                         '200':
                           description: a response description
-                """)))
+                """)
+        )
+    )
     assert markup == textwrap.dedent("""\
         .. http:get:: /test
 
@@ -447,7 +483,9 @@ def test_oas3_request_body(testrenderer, oas_fragment):
 def test_oas3_response_example_2xx(testrenderer, oas_fragment):
     """Response examples are rendered for 2XX status codes."""
 
-    markup = textify(testrenderer.render_restructuredtext_markup(oas_fragment("""
+    markup = textify(
+        testrenderer.render_restructuredtext_markup(
+            oas_fragment("""
                 openapi: 3.0.3
                 info:
                   title: An example spec
@@ -474,7 +512,9 @@ def test_oas3_response_example_2xx(testrenderer, oas_fragment):
                                   "message": "an error message"
                                 }
                           description: resource not found
-                """)))
+                """)
+        )
+    )
     assert markup == textwrap.dedent("""\
         .. http:get:: /test
 

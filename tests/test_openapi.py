@@ -23,7 +23,6 @@ from sphinxcontrib.openapi import utils
 
 
 class TestOpenApi2HttpDomain(object):
-
     def test_basic(self):
         renderer = renderers.HttpdomainOldRenderer(None, {})
         text = "\n".join(
@@ -72,7 +71,9 @@ class TestOpenApi2HttpDomain(object):
             )
         )
 
-        assert text == textwrap.dedent("""
+        assert (
+            text
+            == textwrap.dedent("""
             .. http:get:: /resources/{kind}
                :synopsis: List Resources
 
@@ -91,6 +92,7 @@ class TestOpenApi2HttpDomain(object):
                :resheader ETag:
                   Resource ETag.
         """).lstrip()
+        )
 
     def test_groups(self):
         renderer = renderers.HttpdomainOldRenderer(None, {"group": True})
@@ -203,7 +205,9 @@ class TestOpenApi2HttpDomain(object):
                 }
             )
         )
-        assert text == textwrap.dedent("""
+        assert (
+            text
+            == textwrap.dedent("""
             tags
             ====
 
@@ -255,6 +259,7 @@ class TestOpenApi2HttpDomain(object):
                :status 200:
                   Index
         """).lstrip()
+        )
 
     def test_two_resources(self):
         spec = collections.defaultdict(collections.OrderedDict)
@@ -277,7 +282,9 @@ class TestOpenApi2HttpDomain(object):
 
         renderer = renderers.HttpdomainOldRenderer(None, {})
         text = "\n".join(renderer.render_restructuredtext_markup(spec))
-        assert text == textwrap.dedent("""
+        assert (
+            text
+            == textwrap.dedent("""
             .. http:get:: /resource_a
                :synopsis: null
 
@@ -294,6 +301,7 @@ class TestOpenApi2HttpDomain(object):
                :status 404:
                   error
         """).lstrip()
+        )
 
     def test_path_option(self):
         spec = collections.defaultdict(collections.OrderedDict)
@@ -323,7 +331,9 @@ class TestOpenApi2HttpDomain(object):
             },
         )
         text = "\n".join(renderer.render_restructuredtext_markup(spec))
-        assert text == textwrap.dedent("""
+        assert (
+            text
+            == textwrap.dedent("""
             .. http:get:: /resource_a
                :synopsis: null
 
@@ -332,6 +342,7 @@ class TestOpenApi2HttpDomain(object):
                :status 200:
                   ok
         """).lstrip()
+        )
 
     def test_include_option(self):
         spec = collections.defaultdict(collections.OrderedDict)
@@ -361,7 +372,9 @@ class TestOpenApi2HttpDomain(object):
             },
         )
         text = "\n".join(renderer.render_restructuredtext_markup(spec))
-        assert text == textwrap.dedent("""
+        assert (
+            text
+            == textwrap.dedent("""
             .. http:get:: /resource_a
                :synopsis: null
 
@@ -378,6 +391,7 @@ class TestOpenApi2HttpDomain(object):
                :status 404:
                   error
         """).lstrip()
+        )
 
     def test_exclude_option(self):
         spec = collections.defaultdict(collections.OrderedDict)
@@ -407,7 +421,9 @@ class TestOpenApi2HttpDomain(object):
             },
         )
         text = "\n".join(renderer.render_restructuredtext_markup(spec))
-        assert text == textwrap.dedent("""
+        assert (
+            text
+            == textwrap.dedent("""
             .. http:post:: /resource_b
                :synopsis: null
 
@@ -416,6 +432,7 @@ class TestOpenApi2HttpDomain(object):
                :status 404:
                   error
         """).lstrip()
+        )
 
     def test_method_option(self):
         spec = collections.defaultdict(collections.OrderedDict)
@@ -449,7 +466,9 @@ class TestOpenApi2HttpDomain(object):
         )
         text = "\n".join(renderer.render_restructuredtext_markup(spec))
 
-        assert text == textwrap.dedent("""
+        assert (
+            text
+            == textwrap.dedent("""
             .. http:post:: /resource_a
                :synopsis: null
 
@@ -458,6 +477,7 @@ class TestOpenApi2HttpDomain(object):
                :status 201:
                   ok
         """).lstrip()
+        )
 
     def test_root_parameters(self):
         spec = {"paths": {}}
@@ -493,7 +513,9 @@ class TestOpenApi2HttpDomain(object):
         renderer = renderers.HttpdomainOldRenderer(None, {})
         text = "\n".join(renderer.render_restructuredtext_markup(spec))
 
-        assert text == textwrap.dedent("""
+        assert (
+            text
+            == textwrap.dedent("""
             .. http:get:: /resources/{name}
                :synopsis: Fetch a Resource
 
@@ -518,6 +540,7 @@ class TestOpenApi2HttpDomain(object):
                :status 200:
                   The modified resource.
         """).lstrip()
+        )
 
     def test_path_invalid(self):
         spec = collections.defaultdict(collections.OrderedDict)
@@ -552,7 +575,7 @@ class TestOpenApi2HttpDomain(object):
             "\n".join(renderer.render_restructuredtext_markup(spec))
 
         assert str(exc.value) == (
-            "One or more paths are not defined in the spec: " "/resource_invalid_name."
+            "One or more paths are not defined in the spec: /resource_invalid_name."
         )
 
     def test_unicode_is_allowed(self):
@@ -570,7 +593,9 @@ class TestOpenApi2HttpDomain(object):
         renderer = renderers.HttpdomainOldRenderer(None, {})
         text = "\n".join(renderer.render_restructuredtext_markup(spec))
 
-        assert text == textwrap.dedent("""
+        assert (
+            text
+            == textwrap.dedent("""
             .. http:get:: /resource_a
                :synopsis: null
 
@@ -579,6 +604,7 @@ class TestOpenApi2HttpDomain(object):
                :status 200:
                   ok
         """).lstrip()
+        )
 
     def test_json_in_out(self):
         renderer = renderers.HttpdomainOldRenderer(None, {})
@@ -682,7 +708,6 @@ class TestOpenApi2HttpDomain(object):
 
 
 class TestOpenApi3HttpDomain(object):
-
     def test_basic(self):
         renderer = renderers.HttpdomainOldRenderer(None, {})
         text = "\n".join(
@@ -737,7 +762,9 @@ class TestOpenApi3HttpDomain(object):
                 }
             )
         )
-        assert text == textwrap.dedent("""
+        assert (
+            text
+            == textwrap.dedent("""
             .. http:get:: /resources/{kind}
                :synopsis: List Resources
 
@@ -754,6 +781,7 @@ class TestOpenApi3HttpDomain(object):
                :reqheader If-None-Match:
                   Last known resource ETag.
         """).lstrip()
+        )
 
     def test_rfc7807(self):
         # Fix order to have a reliable test
@@ -796,7 +824,9 @@ class TestOpenApi3HttpDomain(object):
                 }
             )
         )
-        assert text == textwrap.dedent("""
+        assert (
+            text
+            == textwrap.dedent("""
             .. http:post:: /problem
                :synopsis: Problem
 
@@ -834,6 +864,7 @@ class TestOpenApi3HttpDomain(object):
                      {"foo": "bar"}
 
         """).lstrip()
+        )
 
     def test_groups(self):
         renderer = renderers.HttpdomainOldRenderer(None, {"group": True})
@@ -947,7 +978,9 @@ class TestOpenApi3HttpDomain(object):
                 }
             )
         )
-        assert text == textwrap.dedent("""
+        assert (
+            text
+            == textwrap.dedent("""
             tags
             ====
 
@@ -999,6 +1032,7 @@ class TestOpenApi3HttpDomain(object):
                :status 200:
                   Index
         """).lstrip()
+        )
 
     def test_required_parameters(self):
         renderer = renderers.HttpdomainOldRenderer(None, {})
@@ -1056,7 +1090,9 @@ class TestOpenApi3HttpDomain(object):
                 }
             )
         )
-        assert text == textwrap.dedent("""
+        assert (
+            text
+            == textwrap.dedent("""
             .. http:get:: /resources/{kind}
                :synopsis: List Resources
 
@@ -1075,6 +1111,7 @@ class TestOpenApi3HttpDomain(object):
                   Last known resource ETag.
                   (Required)
         """).lstrip()
+        )
 
     def test_example_generation(self):
         renderer = renderers.HttpdomainOldRenderer(None, {"examples": True})
@@ -1273,7 +1310,9 @@ class TestOpenApi3HttpDomain(object):
             )
         )
 
-        assert text == textwrap.dedent("""
+        assert (
+            text
+            == textwrap.dedent("""
             .. http:get:: /resources/
                :synopsis: List Resources
 
@@ -1427,6 +1466,7 @@ class TestOpenApi3HttpDomain(object):
                      }
 
         """).lstrip()
+        )
 
     def test_get_example_with_explode(self):
         renderer = renderers.HttpdomainOldRenderer(None, {"examples": True})
@@ -1495,7 +1535,9 @@ class TestOpenApi3HttpDomain(object):
             )
         )
 
-        assert text == textwrap.dedent("""
+        assert (
+            text
+            == textwrap.dedent("""
             .. http:get:: /resources/
                :synopsis: List Resources
 
@@ -1520,6 +1562,7 @@ class TestOpenApi3HttpDomain(object):
                :status 200:
                   OK
         """).lstrip()
+        )
 
     def test_callback(self):
         renderer = renderers.HttpdomainOldRenderer(None, {})
@@ -1605,7 +1648,9 @@ class TestOpenApi3HttpDomain(object):
                 }
             )
         )
-        assert text == textwrap.dedent("""
+        assert (
+            text
+            == textwrap.dedent("""
             .. http:post:: /resources/{kind}
                :synopsis: List Resources
 
@@ -1631,6 +1676,7 @@ class TestOpenApi3HttpDomain(object):
                         Success
 
         """).lstrip()
+        )
 
     def test_string_example(self):
         renderer = renderers.HttpdomainOldRenderer(None, {"examples": True})
@@ -1662,7 +1708,9 @@ class TestOpenApi3HttpDomain(object):
             )
         )
 
-        assert text == textwrap.dedent("""
+        assert (
+            text
+            == textwrap.dedent("""
             .. http:get:: /resources
                :synopsis: Get resources
 
@@ -1689,6 +1737,7 @@ class TestOpenApi3HttpDomain(object):
                      "A sample"
 
         """).lstrip()
+        )
 
     def test_ref_example(self):
         renderer = renderers.HttpdomainOldRenderer(None, {"examples": True})
@@ -1730,7 +1779,9 @@ class TestOpenApi3HttpDomain(object):
             )
         )
 
-        assert text == textwrap.dedent("""
+        assert (
+            text
+            == textwrap.dedent("""
             .. http:get:: /resources
                :synopsis: Get resources
 
@@ -1759,6 +1810,7 @@ class TestOpenApi3HttpDomain(object):
                      }
 
         """).lstrip()
+        )
 
     def test_method_option(self):
         spec = collections.defaultdict(collections.OrderedDict)
@@ -1792,7 +1844,9 @@ class TestOpenApi3HttpDomain(object):
         )
         text = "\n".join(renderer.render_restructuredtext_markup(spec))
 
-        assert text == textwrap.dedent("""
+        assert (
+            text
+            == textwrap.dedent("""
             .. http:post:: /resource_a
                :synopsis: null
 
@@ -1801,10 +1855,10 @@ class TestOpenApi3HttpDomain(object):
                :status 201:
                   ok
         """).lstrip()
+        )
 
 
 class TestResolveRefs(object):
-
     def test_ref_resolving(self):
         data = {
             "foo": {
@@ -1944,7 +1998,9 @@ class TestResolveRefs(object):
                 }
             )
         )
-        assert text == textwrap.dedent("""
+        assert (
+            text
+            == textwrap.dedent("""
             .. http:post:: /resources
                :synopsis: Create Resources
 
@@ -1966,6 +2022,7 @@ class TestResolveRefs(object):
                :status 200:
                   Something
         """).lstrip()
+        )
 
 
 def test_openapi2_examples(tmpdir, run_sphinx):
@@ -2075,13 +2132,15 @@ class TestConvertJsonSchema(object):
 
         result = "\n".join(openapi20.convert_json_schema(schema))
 
-        expected = textwrap.dedent("""
+        expected = textwrap.dedent(
+            """
             :<json string car.date: The car of user
             :<json string car.provider:
             :<json integer friends[].age:
             :<json string friends[].name: (read only)
             :<json integer id: the id of user (read only)
             :<json object meta: free form metadata
-            :<json string name: The name of user (required)""".strip("\n"))
+            :<json string name: The name of user (required)""".strip("\n")
+        )
 
         assert result == expected

@@ -29,25 +29,13 @@ def example_from_schema(schema):
     ...     "type": "object",
     ...     "required": ["id", "name"],
     ...     "properties": {
-    ...         "id": {
-    ...             "type": "integer",
-    ...             "format": "int64"
-    ...         },
-    ...         "name": {
-    ...             "type": "string",
-    ...             "example": "John Smith"
-    ...         },
-    ...         "tag": {
-    ...             "type": "string"
-    ...         }
-    ...     }
+    ...         "id": {"type": "integer", "format": "int64"},
+    ...         "name": {"type": "string", "example": "John Smith"},
+    ...         "tag": {"type": "string"},
+    ...     },
     ... }
     >>> example = example_from_schema(schema)
-    >>> assert example == {
-    ...     "id": 1,
-    ...     "name": "John Smith",
-    ...     "tag": "string"
-    ... }
+    >>> assert example == {"id": 1, "name": "John Smith", "tag": "string"}
     """
     # If an example was provided then we use that
     if "example" in schema:
@@ -97,7 +85,8 @@ def example_from_schema(schema):
         else:
             example_items.append(example_from_schema(items))
 
-        # Generate array containing example_items and satisfying min_length and max_length
+        # Generate array containing example_items and satisfying min_length and
+        # max_length
         return [example_items[i % len(example_items)] for i in range(gen_length)]
 
     elif schema["type"] == "string":

@@ -29,7 +29,8 @@ def convert_parameter(oas_fragment):
 
 
 def test_in_header_complete(convert_parameter, oas_fragment):
-    converted = convert_parameter(oas_fragment("""
+    converted = convert_parameter(
+        oas_fragment("""
             description: token to be passed as a header
             in: header
             items:
@@ -38,7 +39,8 @@ def test_in_header_complete(convert_parameter, oas_fragment):
             name: token
             required: true
             type: array
-            """))
+            """)
+    )
     assert converted == oas_fragment("""
         description: token to be passed as a header
         in: header
