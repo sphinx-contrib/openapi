@@ -86,7 +86,7 @@ def _parse_schema(schema, method):
     Convert a Schema Object to a Python object.
 
     Args:
-        schema: An ``OrderedDict`` representing the schema object.
+        schema: A dict representing the schema object.
     """
     if method and schema.get("readOnly", False):
         return _READONLY_PROPERTY
@@ -136,7 +136,7 @@ def _parse_schema(schema, method):
                 "supported."
             )
 
-        schema_type = [x for x in schema_type if x != "null"][0]
+        schema_type = next(x for x in schema_type if x != "null")
 
     if schema_type == "array":
         # special case oneOf and anyOf so that we can show examples for all
@@ -157,13 +157,13 @@ def _parse_schema(schema, method):
         ):
             return _READONLY_PROPERTY
 
-        results = []
+        results = {}
         for name, prop in schema.get("properties", {}).items():
             result = _parse_schema(prop, method)
             if result != _READONLY_PROPERTY:
-                results.append((name, result))
+                results[name] = result
 
-        return collections.OrderedDict(results)
+        return results
 
     if (schema_type, schema.get("format")) in _TYPE_MAPPING:
         return _TYPE_MAPPING[(schema_type, schema.get("format"))]
@@ -282,8 +282,8 @@ def _httpresource(
     query_param_examples = []
     indent = "   "
 
-    yield ".. http:{0}:: {1}".format(method, endpoint)
-    yield "   :synopsis: {0}".format(properties.get("summary", "null"))
+    yield f".. http:{method}:: {endpoint}"
+    yield "   :synopsis: {}".format(properties.get("summary", "null"))
     yield ""
 
     if "summary" in properties:
@@ -397,7 +397,7 @@ def _httpresource(
     # print response headers
     for status, response in responses.items():
         for headername, header in response.get("headers", {}).items():
-            yield indent + ":resheader {name}:".format(name=headername)
+            yield indent + f":resheader {headername}:"
             for line in convert(header.get("description", "")).splitlines():
                 yield "{indent}{indent}{line}".format(**locals())
 
@@ -460,8 +460,9 @@ def openapihttpdomain(spec, **options):
     if "paths" in options:
         if not set(options["paths"]).issubset(spec["paths"]):
             raise ValueError(
-                "One or more paths are not defined in the spec: %s."
-                % (", ".join(set(options["paths"]) - set(spec["paths"])),)
+                "One or more paths are not defined in the spec: {}.".format(
+                    ", ".join(set(options["paths"]) - set(spec["paths"]))
+                )
             )
         paths = options["paths"]
 
@@ -493,9 +494,7 @@ def openapihttpdomain(spec, **options):
 
     # https://github.com/OAI/OpenAPI-Specification/blob/3.1.0/versions/3.1.0.md#paths-object
     if "group" in options:
-        groups = collections.OrderedDict(
-            [(x["name"], []) for x in spec.get("tags", {})]
-        )
+        groups = {x["name"]: [] for x in spec.get("tags", {})}
 
         for endpoint in paths:
             for method, properties in spec["paths"][endpoint].items():

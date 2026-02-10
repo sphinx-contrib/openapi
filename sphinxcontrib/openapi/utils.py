@@ -1,14 +1,12 @@
 """
-    sphinxcontrib.openapi.utils
-    ---------------------------
+sphinxcontrib.openapi.utils
+---------------------------
 
-    Common functionality shared across the various renderers.
+Common functionality shared across the various renderers.
 
-    :copyright: (c) 2016, Ihor Kalnytskyi.
-    :license: BSD, see LICENSE for details.
+:copyright: (c) 2016, Ihor Kalnytskyi.
+:license: BSD, see LICENSE for details.
 """
-
-from __future__ import unicode_literals
 
 import collections
 import collections.abc
@@ -32,6 +30,7 @@ class OpenApiRefResolver(jsonschema.RefResolver):
 
     try:
         import requests
+
         _requests = requests
     except ImportError:
         _requests = None
@@ -41,9 +40,9 @@ class OpenApiRefResolver(jsonschema.RefResolver):
         _, extension = os.path.splitext(path)
 
         if extension not in [".yml", ".yaml"] or scheme in self.handlers:
-            return super(OpenApiRefResolver, self).resolve_remote(uri)
+            return super().resolve_remote(uri)
 
-        if scheme in [u"http", u"https"] and self._requests:
+        if scheme in ["http", "https"] and self._requests:
             response = self._requests.get(uri)
             result = yaml.safe_load(response.content)
         else:
@@ -74,12 +73,16 @@ def _resolve_refs(uri, spec):
     resolver = OpenApiRefResolver(uri, spec)
 
     def _do_resolve(node, seen=[]):
-        if isinstance(node, collections.abc.Mapping) and '$ref' in node:
-            ref = node['$ref']
+        if isinstance(node, collections.abc.Mapping) and "$ref" in node:
+            ref = node["$ref"]
             with resolver.resolving(ref) as resolved:
                 if ref in seen:
-                    return {type: 'object'}  # return a distinct object for recursive data type
-                return _do_resolve(resolved, seen + [ref])  # might have other references
+                    return {
+                        type: "object"
+                    }  # return a distinct object for recursive data type
+                return _do_resolve(
+                    resolved, [*seen, ref]
+                )  # might have other references
         elif isinstance(node, collections.abc.Mapping):
             for k, v in node.items():
                 node[k] = _do_resolve(v, seen)
@@ -96,23 +99,23 @@ def normalize_spec(spec, **options):
     # before we access the actual values trying to build an httpdomain
     # markup. Since JSON references may be relative, it's crucial to
     # pass a document URI in order to properly resolve them.
-    spec = _resolve_refs(options.get('uri', ''), spec)
+    spec = _resolve_refs(options.get("uri", ""), spec)
 
     # OpenAPI spec may contain common endpoint's parameters top-level.
     # In order to do not place if-s around the code to handle special
     # cases, let's normalize the spec and push common parameters inside
     # endpoints definitions.
-    for endpoint in spec.get('paths', {}).values():
-        parameters = endpoint.pop('parameters', [])
+    for endpoint in spec.get("paths", {}).values():
+        parameters = endpoint.pop("parameters", [])
         for method in endpoint.values():
-            method.setdefault('parameters', [])
-            method['parameters'].extend(parameters)
+            method.setdefault("parameters", [])
+            method["parameters"].extend(parameters)
 
 
 def get_text_converter(options):
     """Decide on a text converter for prose."""
-    if 'format' in options:
-        if options['format'] == 'markdown':
+    if "format" in options:
+        if options["format"] == "markdown":
             return sphinx_mdinclude.convert
 
     # No conversion needed.

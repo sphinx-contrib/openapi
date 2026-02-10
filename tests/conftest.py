@@ -10,7 +10,9 @@ from sphinxcontrib.openapi import utils
 
 
 _testspecs_dir = pathlib.Path(os.path.dirname(__file__), "testspecs")
-_testspecs = [str(path.relative_to(_testspecs_dir)) for path in _testspecs_dir.glob("*/*")]
+_testspecs = [
+    str(path.relative_to(_testspecs_dir)) for path in _testspecs_dir.glob("*/*")
+]
 
 
 def pytest_addoption(parser):
@@ -26,7 +28,8 @@ def pytest_collection_modifyitems(items):
         if any(
             [
                 item.config.getoption("--regenerate-rendered-specs") and has_mark,
-                not item.config.getoption("--regenerate-rendered-specs") and not has_mark,
+                not item.config.getoption("--regenerate-rendered-specs")
+                and not has_mark,
             ]
         ):
             items_new.append(item)
@@ -36,22 +39,22 @@ def pytest_collection_modifyitems(items):
 
 def _format_option_raw(key, val):
     if isinstance(val, bool) and val:
-        return ':%s:' % key
-    return ':%s: %s' % (key, val)
+        return f":{key}:"
+    return f":{key}: {val}"
 
 
-@pytest.fixture(scope='function')
+@pytest.fixture(scope="function")
 def run_sphinx(tmpdir):
-    src = tmpdir.ensure('src', dir=True)
-    out = tmpdir.ensure('out', dir=True)
+    src = tmpdir.ensure("src", dir=True)
+    out = tmpdir.ensure("out", dir=True)
 
     def run(spec, options={}):
-        options_raw = '\n'.join([
-            '   %s' % _format_option_raw(key, val)
-            for key, val in options.items()])
+        options_raw = "\n".join(
+            [f"   {_format_option_raw(key, val)}" for key, val in options.items()]
+        )
 
-        src.join('conf.py').write_text(
-            textwrap.dedent('''
+        src.join("conf.py").write_text(
+            textwrap.dedent("""
                 import os
 
                 project = 'sphinxcontrib-openapi-test'
@@ -60,19 +63,20 @@ def run_sphinx(tmpdir):
                 extensions = ['sphinxcontrib.openapi']
                 source_suffix = '.rst'
                 master_doc = 'index'
-            '''),
-            encoding='utf-8')
+            """),
+            encoding="utf-8",
+        )
 
-        src.join('index.rst').write_text(
-            '.. openapi:: %s\n%s' % (spec, options_raw),
-            encoding='utf-8')
+        src.join("index.rst").write_text(
+            f".. openapi:: {spec}\n{options_raw}", encoding="utf-8"
+        )
 
         Sphinx(
             srcdir=src.strpath,
             confdir=src.strpath,
             outdir=out.strpath,
-            doctreedir=out.join('.doctrees').strpath,
-            buildername='html'
+            doctreedir=out.join(".doctrees").strpath,
+            buildername="html",
         ).build()
 
     yield run
@@ -86,6 +90,7 @@ def get_testspec():
             if resolve_refs:
                 spec = utils._resolve_refs("", spec)
             return spec
+
     return get_testspec
 
 

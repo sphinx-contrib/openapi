@@ -4,7 +4,8 @@ import sphinxcontrib.openapi._lib2to3 as lib2to3
 
 
 def test_minimal(oas_fragment):
-    converted = lib2to3.convert(oas_fragment("""
+    converted = lib2to3.convert(
+        oas_fragment("""
             swagger: "2.0"
             info:
               title: An example spec
@@ -15,7 +16,8 @@ def test_minimal(oas_fragment):
                   responses:
                     '200':
                       description: a response description
-            """))
+            """)
+    )
     assert converted == oas_fragment("""
         openapi: 3.0.3
         info:
@@ -31,7 +33,8 @@ def test_minimal(oas_fragment):
 
 
 def test_complete(oas_fragment):
-    converted = lib2to3.convert(oas_fragment("""
+    converted = lib2to3.convert(
+        oas_fragment("""
             swagger: "2.0"
             info:
               title: An example spec
@@ -45,7 +48,8 @@ def test_complete(oas_fragment):
                   responses:
                     '200':
                       description: a response description
-            """))
+            """)
+    )
     assert converted == oas_fragment("""
         openapi: 3.0.3
         info:
@@ -236,7 +240,8 @@ def test_servers_schemes_from_operation(oas_fragment):
 
 
 def test_consumes(oas_fragment):
-    converted = lib2to3.convert(oas_fragment("""
+    converted = lib2to3.convert(
+        oas_fragment("""
             swagger: "2.0"
             info:
               title: An example spec
@@ -257,7 +262,8 @@ def test_consumes(oas_fragment):
                   responses:
                     '201':
                       description: a response description
-            """))
+            """)
+    )
     assert converted == oas_fragment("""
         openapi: 3.0.3
         info:
@@ -283,7 +289,8 @@ def test_consumes(oas_fragment):
 
 
 def test_consumes_operation_override(oas_fragment):
-    converted = lib2to3.convert(oas_fragment("""
+    converted = lib2to3.convert(
+        oas_fragment("""
             swagger: "2.0"
             info:
               title: An example spec
@@ -306,7 +313,8 @@ def test_consumes_operation_override(oas_fragment):
                   responses:
                     '201':
                       description: a response description
-            """))
+            """)
+    )
     assert converted == oas_fragment("""
         openapi: 3.0.3
         info:
@@ -332,7 +340,8 @@ def test_consumes_operation_override(oas_fragment):
 
 
 def test_produces(oas_fragment):
-    converted = lib2to3.convert(oas_fragment("""
+    converted = lib2to3.convert(
+        oas_fragment("""
             swagger: "2.0"
             info:
               title: An example spec
@@ -350,7 +359,8 @@ def test_produces(oas_fragment):
                           type: integer
                         type: array
                       description: a response description
-            """))
+            """)
+    )
     assert converted == oas_fragment("""
         openapi: 3.0.3
         info:
@@ -373,7 +383,8 @@ def test_produces(oas_fragment):
 
 
 def test_produces_operation_override(oas_fragment):
-    converted = lib2to3.convert(oas_fragment("""
+    converted = lib2to3.convert(
+        oas_fragment("""
             swagger: "2.0"
             info:
               title: An example spec
@@ -393,7 +404,8 @@ def test_produces_operation_override(oas_fragment):
                           type: integer
                         type: array
                       description: a response description
-            """))
+            """)
+    )
     assert converted == oas_fragment("""
         openapi: 3.0.3
         info:
@@ -416,7 +428,8 @@ def test_produces_operation_override(oas_fragment):
 
 
 def test_vendor_extensions(oas_fragment):
-    converted = lib2to3.convert(oas_fragment("""
+    converted = lib2to3.convert(
+        oas_fragment("""
             swagger: "2.0"
             info:
               title: An example spec
@@ -428,7 +441,8 @@ def test_vendor_extensions(oas_fragment):
                     '200':
                       description: a response description
             x-vendor-ext: vendor-ext
-            """))
+            """)
+    )
     assert converted == oas_fragment("""
         openapi: 3.0.3
         info:

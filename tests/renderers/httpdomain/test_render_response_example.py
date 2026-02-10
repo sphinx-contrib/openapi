@@ -121,7 +121,8 @@ def test_render_response_example(testrenderer, oas_fragment, media_type):
     markup = textify(
         testrenderer.render_response_example(oas_fragment(media_type), "200")
     )
-    assert markup == textwrap.dedent("""\
+    assert markup == textwrap.dedent(
+        """\
         .. sourcecode:: http
 
            HTTP/1.1 200 OK
@@ -131,7 +132,8 @@ def test_render_response_example(testrenderer, oas_fragment, media_type):
              "foo": "bar",
              "baz": 42
            }
-        """.rstrip())
+        """.rstrip()
+    )
 
 
 def test_render_response_example_1st_from_examples(testrenderer, oas_fragment):
@@ -153,7 +155,8 @@ def test_render_response_example_1st_from_examples(testrenderer, oas_fragment):
             "200",
         )
     )
-    assert markup == textwrap.dedent("""\
+    assert markup == textwrap.dedent(
+        """\
         .. sourcecode:: http
 
            HTTP/1.1 200 OK
@@ -163,7 +166,8 @@ def test_render_response_example_1st_from_examples(testrenderer, oas_fragment):
              "foo": "bar",
              "baz": 42
            }
-        """.rstrip())
+        """.rstrip()
+    )
 
 
 def test_render_response_example_1st_from_media_type(testrenderer, oas_fragment):
@@ -184,7 +188,8 @@ def test_render_response_example_1st_from_media_type(testrenderer, oas_fragment)
         )
     )
 
-    assert markup == textwrap.dedent("""\
+    assert markup == textwrap.dedent(
+        """\
         .. sourcecode:: http
 
            HTTP/1.1 200 OK
@@ -192,7 +197,8 @@ def test_render_response_example_1st_from_media_type(testrenderer, oas_fragment)
 
            foo = "bar"
            baz = 42
-        """.rstrip())
+        """.rstrip()
+    )
 
 
 @pytest.mark.parametrize(
@@ -224,7 +230,8 @@ def test_render_response_example_preference(
         )
     )
 
-    assert markup == textwrap.dedent("""\
+    assert markup == textwrap.dedent(
+        """\
         .. sourcecode:: http
 
            HTTP/1.1 200 OK
@@ -232,7 +239,8 @@ def test_render_response_example_preference(
 
            foo = "bar"
            baz = 42
-        """.rstrip())
+        """.rstrip()
+    )
 
 
 @pytest.mark.parametrize(
@@ -267,7 +275,8 @@ def test_render_response_example_preference_complex(
         )
     )
 
-    assert markup == textwrap.dedent("""\
+    assert markup == textwrap.dedent(
+        """\
         .. sourcecode:: http
 
            HTTP/1.1 200 OK
@@ -275,7 +284,8 @@ def test_render_response_example_preference_complex(
 
            foo = "bar"
            baz = 42
-        """.rstrip())
+        """.rstrip()
+    )
 
 
 def test_render_response_example_preference_priority(fakestate, oas_fragment):
@@ -305,7 +315,8 @@ def test_render_response_example_preference_priority(fakestate, oas_fragment):
         )
     )
 
-    assert markup == textwrap.dedent("""\
+    assert markup == textwrap.dedent(
+        """\
         .. sourcecode:: http
 
            HTTP/1.1 200 OK
@@ -313,7 +324,8 @@ def test_render_response_example_preference_priority(fakestate, oas_fragment):
 
            foo = "bar"
            baz = 42
-        """.rstrip())
+        """.rstrip()
+    )
 
 
 @responses.activate
@@ -338,14 +350,16 @@ def test_render_response_example_external(testrenderer, oas_fragment):
             "200",
         )
     )
-    assert markup == textwrap.dedent("""\
+    assert markup == textwrap.dedent(
+        """\
         .. sourcecode:: http
 
            HTTP/1.1 200 OK
            Content-Type: application/json
 
            {"foo": "bar", "baz": 42}
-        """.rstrip())
+        """.rstrip()
+    )
 
 
 @responses.activate
@@ -373,14 +387,16 @@ def test_render_response_example_external_errored_next_example(
             "200",
         )
     )
-    assert markup == textwrap.dedent("""\
+    assert markup == textwrap.dedent(
+        """\
         .. sourcecode:: http
 
            HTTP/1.1 200 OK
            Content-Type: application/json
 
            {"spam": 42}
-        """.rstrip())
+        """.rstrip()
+    )
 
 
 @responses.activate
@@ -408,14 +424,16 @@ def test_render_response_example_external_errored_next_media_type(
             "200",
         )
     )
-    assert markup == textwrap.dedent("""\
+    assert markup == textwrap.dedent(
+        """\
         .. sourcecode:: http
 
            HTTP/1.1 200 OK
            Content-Type: text/csv
 
            spam,42
-        """.rstrip())
+        """.rstrip()
+    )
 
 
 def test_render_response_example_content_type(testrenderer, oas_fragment):
@@ -432,7 +450,8 @@ def test_render_response_example_content_type(testrenderer, oas_fragment):
             "200",
         )
     )
-    assert markup == textwrap.dedent("""\
+    assert markup == textwrap.dedent(
+        """\
         .. sourcecode:: http
 
            HTTP/1.1 200 OK
@@ -440,7 +459,8 @@ def test_render_response_example_content_type(testrenderer, oas_fragment):
 
            foo,baz
            bar,42
-        """.rstrip())
+        """.rstrip()
+    )
 
 
 def test_render_response_example_noop(testrenderer, oas_fragment):
@@ -484,7 +504,8 @@ def test_render_response_status_code(
             status_code,
         )
     )
-    assert markup == textwrap.dedent(f"""\
+    assert markup == textwrap.dedent(
+        f"""\
         .. sourcecode:: http
 
            HTTP/1.1 {status_code} {status_text}
@@ -492,7 +513,8 @@ def test_render_response_status_code(
 
            foo,baz
            bar,42
-        """.rstrip())
+        """.rstrip()
+    )
 
 
 @pytest.mark.parametrize(
@@ -519,7 +541,8 @@ def test_render_response_status_code_range(
             status_range,
         )
     )
-    assert markup == textwrap.dedent(f"""\
+    assert markup == textwrap.dedent(
+        f"""\
         .. sourcecode:: http
 
            HTTP/1.1 {status_code} {status_text}
@@ -527,7 +550,8 @@ def test_render_response_status_code_range(
 
            foo,baz
            bar,42
-        """.rstrip())
+        """.rstrip()
+    )
 
 
 @pytest.mark.parametrize(
@@ -554,7 +578,8 @@ def test_render_response_status_code_int(
             status_code,
         )
     )
-    assert markup == textwrap.dedent(f"""\
+    assert markup == textwrap.dedent(
+        f"""\
         .. sourcecode:: http
 
            HTTP/1.1 {status_code} {status_text}
@@ -562,7 +587,8 @@ def test_render_response_status_code_int(
 
            foo,baz
            bar,42
-        """.rstrip())
+        """.rstrip()
+    )
 
 
 def test_render_response_status_code_default(testrenderer, oas_fragment):
@@ -579,7 +605,8 @@ def test_render_response_status_code_default(testrenderer, oas_fragment):
             "default",
         )
     )
-    assert markup == textwrap.dedent(f"""\
+    assert markup == textwrap.dedent(
+        """\
         .. sourcecode:: http
 
            HTTP/1.1 000 Reason-Phrase
@@ -587,4 +614,5 @@ def test_render_response_status_code_default(testrenderer, oas_fragment):
 
            foo,baz
            bar,42
-        """.rstrip())
+        """.rstrip()
+    )
