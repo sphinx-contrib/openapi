@@ -29,25 +29,13 @@ def example_from_schema(schema):
     ...     "type": "object",
     ...     "required": ["id", "name"],
     ...     "properties": {
-    ...         "id": {
-    ...             "type": "integer",
-    ...             "format": "int64"
-    ...         },
-    ...         "name": {
-    ...             "type": "string",
-    ...             "example": "John Smith"
-    ...         },
-    ...         "tag": {
-    ...             "type": "string"
-    ...         }
-    ...     }
+    ...         "id": {"type": "integer", "format": "int64"},
+    ...         "name": {"type": "string", "example": "John Smith"},
+    ...         "tag": {"type": "string"},
+    ...     },
     ... }
     >>> example = example_from_schema(schema)
-    >>> assert example == {
-    ...     "id": 1,
-    ...     "name": "John Smith",
-    ...     "tag": "string"
-    ... }
+    >>> assert example == {"id": 1, "name": "John Smith", "tag": "string"}
     """
     # If an example was provided then we use that
     if "example" in schema:
@@ -83,7 +71,8 @@ def example_from_schema(schema):
         items = schema["items"]
         min_length = schema.get("minItems", 0)
         max_length = schema.get("maxItems", max(min_length, 2))
-        assert min_length <= max_length
+        if min_length > max_length:
+            raise Exception("invalid minItems")
         # Try generate at least 2 example array items
         gen_length = min(2, max_length) if min_length <= 2 else min_length
 
@@ -97,7 +86,8 @@ def example_from_schema(schema):
         else:
             example_items.append(example_from_schema(items))
 
-        # Generate array containing example_items and satisfying min_length and max_length
+        # Generate array containing example_items and satisfying min_length and
+        # max_length
         return [example_items[i % len(example_items)] for i in range(gen_length)]
 
     elif schema["type"] == "string":
@@ -111,7 +101,8 @@ def example_from_schema(schema):
             if min_length <= len(example_string)
             else min_length
         )
-        assert 0 <= min_length <= max_length
+        if min_length < 0 or min_length > max_length:
+            raise Exception("invalid minLength")
         if min_length <= len(example_string) <= max_length:
             return example_string
         else:

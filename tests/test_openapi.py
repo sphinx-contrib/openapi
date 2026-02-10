@@ -22,7 +22,7 @@ from sphinxcontrib.openapi import openapi20
 from sphinxcontrib.openapi import utils
 
 
-class TestOpenApi2HttpDomain(object):
+class TestOpenApi2HttpDomain:
     def test_basic(self):
         renderer = renderers.HttpdomainOldRenderer(None, {})
         spec = {
@@ -687,7 +687,7 @@ class TestOpenApi2HttpDomain(object):
         assert text == text2
 
 
-class TestOpenApi3HttpDomain(object):
+class TestOpenApi3HttpDomain:
     def test_basic(self):
         renderer = renderers.HttpdomainOldRenderer(None, {})
         text = "\n".join(
@@ -1134,7 +1134,7 @@ class TestOpenApi3HttpDomain(object):
                                     "content": {
                                         "application/json": {
                                             "schema": {
-                                                "$ref": "#/components/schemas/Resource",  # noqa
+                                                "$ref": "#/components/schemas/Resource",
                                             },
                                         }
                                     }
@@ -1193,7 +1193,7 @@ class TestOpenApi3HttpDomain(object):
                                     "content": {
                                         "application/json": {
                                             "schema": {
-                                                "$ref": "#/components/schemas/Resource",  # noqa
+                                                "$ref": "#/components/schemas/Resource",
                                             },
                                         }
                                     }
@@ -1762,7 +1762,7 @@ class TestOpenApi3HttpDomain(object):
         )
 
 
-class TestResolveRefs(object):
+class TestResolveRefs:
     def test_ref_resolving(self):
         data = {
             "foo": {
@@ -1797,7 +1797,7 @@ class TestResolveRefs(object):
         }
 
     def test_relative_ref_resolving_on_fs(self):
-        baseuri = "file://%s" % os.path.abspath(__file__)
+        baseuri = f"file://{os.path.abspath(__file__)}"
 
         data = {
             "bar": {
@@ -1826,7 +1826,6 @@ class TestResolveRefs(object):
         baseuri = os.path.abspath(__file__)
         with open(
             os.path.join(os.path.dirname(baseuri), "testdata", "foo.json"),
-            "r",
             encoding="utf-8",
         ) as file:
             json_content = json.loads(file.read())
@@ -1876,7 +1875,7 @@ class TestResolveRefs(object):
                             "content": {
                                 "application/json": {
                                     "schema": {
-                                        "$ref": "#/components/schemas/Resource",  # noqa
+                                        "$ref": "#/components/schemas/Resource",
                                     }
                                 }
                             }
@@ -1958,7 +1957,7 @@ def test_openapi3_examples(tmpdir, run_sphinx, render_examples):
     assert ("<strong>Example response:</strong>" in rendered_html) == render_examples
 
 
-class TestConvertJsonSchema(object):
+class TestConvertJsonSchema:
     schema = {
         "type": "object",
         "required": ["name", "surprise"],

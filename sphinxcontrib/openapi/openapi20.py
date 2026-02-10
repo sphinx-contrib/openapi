@@ -20,8 +20,8 @@ def _httpresource(endpoint, method, properties, convert):
     responses = properties["responses"]
     indent = "   "
 
-    yield ".. http:{0}:: {1}".format(method, endpoint)
-    yield "   :synopsis: {0}".format(properties.get("summary", "null"))
+    yield f".. http:{method}:: {endpoint}"
+    yield "   :synopsis: {}".format(properties.get("summary", "null"))
     yield ""
 
     if "summary" in properties:
@@ -68,7 +68,7 @@ def _httpresource(endpoint, method, properties, convert):
     # print response headers
     for status, response in responses.items():
         for headername, header in response.get("headers", {}).items():
-            yield indent + ":resheader {name}:".format(name=headername)
+            yield indent + f":resheader {headername}:"
             for line in convert(header.get("description", "")).splitlines():
                 yield "{indent}{indent}{line}".format(**locals())
 
@@ -157,7 +157,7 @@ def convert_json_schema(schema, directive=":<json"):
     _convert(schema)
 
     for _, render in sorted(output):
-        yield "{} {}".format(directive, render)
+        yield f"{directive} {render}"
 
 
 def is_2xx_response(status):
@@ -200,8 +200,9 @@ def openapihttpdomain(spec, **options):
     if "paths" in options:
         if not set(options["paths"]).issubset(spec["paths"]):
             raise ValueError(
-                "One or more paths are not defined in the spec: %s."
-                % (", ".join(set(options["paths"]) - set(spec["paths"])),)
+                "One or more paths are not defined in the spec: {}.".format(
+                    ", ".join(set(options["paths"]) - set(spec["paths"]))
+                )
             )
         paths = options["paths"]
 

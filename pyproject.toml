@@ -56,4 +56,5 @@ include = ["sphinxcontrib.*"]
 docstring-code-format = true
 
 [tool.ruff.lint]
-select = ["E4", "E5", "E7", "E9", "F", "W"]
+select = ["E4", "E5", "E7", "E9", "F", "RUF", "UP", "W"]
+ignore = ["RUF012"]

@@ -1,12 +1,12 @@
 """
-    sphinxcontrib.openapi
-    ---------------------
+sphinxcontrib.openapi
+---------------------
 
-    The OpenAPI spec renderer for Sphinx. It's a new way to document your
-    RESTful API. Based on ``sphinxcontrib-httpdomain``.
+The OpenAPI spec renderer for Sphinx. It's a new way to document your
+RESTful API. Based on ``sphinxcontrib-httpdomain``.
 
-    :copyright: (c) 2016, Ihor Kalnytskyi.
-    :license: BSD, see LICENSE for details.
+:copyright: (c) 2016, Ihor Kalnytskyi.
+:license: BSD, see LICENSE for details.
 """
 
 from importlib.metadata import distribution, PackageNotFoundError
@@ -34,14 +34,14 @@ def _register_rendering_directives(app, conf):
 
     for renderer_name, renderer_cls in renderers_map.items():
         app.add_directive(
-            "openapi:%s" % renderer_name,
+            f"openapi:{renderer_name}",
             directive.create_directive_from_renderer(renderer_cls),
         )
 
     if conf.openapi_default_renderer not in renderers_map:
         raise ValueError(
             "invalid 'openapi_default_renderer' value: "
-            "no such renderer: '%s'" % conf.openapi_default_renderer
+            f"no such renderer: '{conf.openapi_default_renderer}'"
         )
 
     app.add_directive(
@@ -59,22 +59,22 @@ def setup(app):
     from sphinxcontrib import httpdomain
 
     for idx, fieldtype in enumerate(httpdomain.HTTPResource.doc_field_types):
-        if fieldtype.name == 'requestheader':
+        if fieldtype.name == "requestheader":
             httpdomain.HTTPResource.doc_field_types[idx] = httpdomain.TypedField(
                 fieldtype.name,
                 label=fieldtype.label,
                 names=fieldtype.names,
-                typerolename='header',
-                typenames=('reqheadertype', ),
+                typerolename="header",
+                typenames=("reqheadertype",),
             )
 
-        if fieldtype.name == 'responseheader':
+        if fieldtype.name == "responseheader":
             httpdomain.HTTPResource.doc_field_types[idx] = httpdomain.TypedField(
                 fieldtype.name,
                 label=fieldtype.label,
                 names=fieldtype.names,
-                typerolename='header',
-                typenames=('resheadertype', ),
+                typerolename="header",
+                typenames=("resheadertype",),
             )
 
     app.setup_extension("sphinxcontrib.httpdomain")
