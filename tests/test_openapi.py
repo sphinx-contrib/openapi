@@ -1,12 +1,13 @@
 """
-    tests.test_openapi
-    ------------------
+tests.test_openapi
+------------------
 
-    Tests some stuff of ``sphinxcontrib.openapi`` module.
+Tests some stuff of ``sphinxcontrib.openapi`` module.
 
-    :copyright: (c) 2016, Ihor Kalnytskyi.
-    :license: BSD, see LICENSE for details.
+:copyright: (c) 2016, Ihor Kalnytskyi.
+:license: BSD, see LICENSE for details.
 """
+
 import json
 import os
 import textwrap
@@ -22,42 +23,41 @@ from sphinxcontrib.openapi import utils
 
 
 class TestOpenApi2HttpDomain(object):
-
     def test_basic(self):
         renderer = renderers.HttpdomainOldRenderer(None, {})
-        text = '\n'.join(renderer.render_restructuredtext_markup({
-            'paths': {
-                '/resources/{kind}': {
-                    'get': {
-                        'summary': 'List Resources',
-                        'description': '~ some useful description ~',
-                        'parameters': [
+        spec = {
+            "paths": {
+                "/resources/{kind}": {
+                    "get": {
+                        "summary": "List Resources",
+                        "description": "~ some useful description ~",
+                        "parameters": [
                             {
-                                'name': 'kind',
-                                'in': 'path',
-                                'type': 'string',
-                                'description': 'Kind of resource to list.',
+                                "name": "kind",
+                                "in": "path",
+                                "type": "string",
+                                "description": "Kind of resource to list.",
                             },
                             {
-                                'name': 'limit',
-                                'in': 'query',
-                                'type': 'integer',
-                                'description': 'Show up to `limit` entries.',
+                                "name": "limit",
+                                "in": "query",
+                                "type": "integer",
+                                "description": "Show up to `limit` entries.",
                             },
                             {
-                                'name': 'If-None-Match',
-                                'in': 'header',
-                                'type': 'string',
-                                'description': 'Last known resource ETag.'
+                                "name": "If-None-Match",
+                                "in": "header",
+                                "type": "string",
+                                "description": "Last known resource ETag.",
                             },
                         ],
-                        'responses': {
-                            '200': {
-                                'description': 'An array of resources.',
-                                'headers': {
-                                    'ETag': {
-                                        'description': 'Resource ETag.',
-                                        'type': 'string'
+                        "responses": {
+                            "200": {
+                                "description": "An array of resources.",
+                                "headers": {
+                                    "ETag": {
+                                        "description": "Resource ETag.",
+                                        "type": "string",
                                     },
                                 },
                             },
@@ -65,9 +65,13 @@ class TestOpenApi2HttpDomain(object):
                     },
                 },
             },
-        }))
+        }
 
-        assert text == textwrap.dedent('''
+        text = "\n".join(renderer.render_restructuredtext_markup(spec))
+
+        assert (
+            text
+            == textwrap.dedent("""
             .. http:get:: /resources/{kind}
                :synopsis: List Resources
 
@@ -85,106 +89,105 @@ class TestOpenApi2HttpDomain(object):
                   Last known resource ETag.
                :resheader ETag:
                   Resource ETag.
-        ''').lstrip()
+        """).lstrip()
+        )
 
     def test_groups(self):
-        renderer = renderers.HttpdomainOldRenderer(None, {'group': True})
-        text = '\n'.join(renderer.render_restructuredtext_markup({
-            'tags': [
-                {'name': 'tags'},
-                {'name': 'pets'},
+        renderer = renderers.HttpdomainOldRenderer(None, {"group": True})
+        spec = {
+            "tags": [
+                {"name": "tags"},
+                {"name": "pets"},
             ],
-            'paths': collections.OrderedDict([
-                ('/', {
-                    'get': {
-                        'summary': 'Index',
-                        'description': '~ some useful description ~',
-                        'responses': {
-                            '200': {
-                                'description': 'Index',
-                                'content': {
-                                    'application/json': {
-                                        'pets': 'https://example.com/api/pets',
-                                        'tags': 'https://example.com/api/tags',
+            "paths": {
+                "/": {
+                    "get": {
+                        "summary": "Index",
+                        "description": "~ some useful description ~",
+                        "responses": {
+                            "200": {
+                                "description": "Index",
+                                "content": {
+                                    "application/json": {
+                                        "pets": "https://example.com/api/pets",
+                                        "tags": "https://example.com/api/tags",
                                     }
-                                }
+                                },
                             },
                         },
                     },
-                }),
-                ('/pets', {
-                    'get': {
-                        'summary': 'List Pets',
-                        'description': '~ some useful description ~',
-                        'responses': {
-                            '200': {
-                                'description': 'Pets',
-                                'content': {
-                                    'application/json': [
-                                        {
-                                            'example': '{"foo": "bar"}'
-                                        },
+                },
+                "/pets": {
+                    "get": {
+                        "summary": "List Pets",
+                        "description": "~ some useful description ~",
+                        "responses": {
+                            "200": {
+                                "description": "Pets",
+                                "content": {
+                                    "application/json": [
+                                        {"example": '{"foo": "bar"}'},
                                     ],
                                 },
                             },
                         },
-                        'tags': [
-                            'pets',
+                        "tags": [
+                            "pets",
                         ],
                     },
-                }),
-                ('/pets/{name}', {
-                    'get': {
-                        'summary': 'Show Pet',
-                        'description': '~ some useful description ~',
-                        'parameters': [
+                },
+                "/pets/{name}": {
+                    "get": {
+                        "summary": "Show Pet",
+                        "description": "~ some useful description ~",
+                        "parameters": [
                             {
-                                'name': 'name',
-                                'in': 'path',
-                                'type': 'string',
-                                'description': 'Name of pet.',
+                                "name": "name",
+                                "in": "path",
+                                "type": "string",
+                                "description": "Name of pet.",
                             },
                         ],
-                        'responses': {
-                            '200': {
-                                'description': 'A Pet',
-                                'content': {
-                                    'application/json': {
-                                        'example': '{"foo": "bar"}'
-                                    }
-                                }
+                        "responses": {
+                            "200": {
+                                "description": "A Pet",
+                                "content": {
+                                    "application/json": {"example": '{"foo": "bar"}'}
+                                },
                             },
                         },
-                        'tags': [
-                            'pets',
+                        "tags": [
+                            "pets",
                         ],
                     },
-                }),
-                ('/tags', {
-                    'get': {
-                        'summary': 'List Tags',
-                        'description': '~ some useful description ~',
-                        'responses': {
-                            '200': {
-                                'description': 'Tags',
-                                'content': {
-                                    'application/json': [
-                                        {
-                                            'example': '{"foo": "bar"}'
-                                        },
+                },
+                "/tags": {
+                    "get": {
+                        "summary": "List Tags",
+                        "description": "~ some useful description ~",
+                        "responses": {
+                            "200": {
+                                "description": "Tags",
+                                "content": {
+                                    "application/json": [
+                                        {"example": '{"foo": "bar"}'},
                                     ],
-                                }
+                                },
                             },
                         },
-                        'tags': [
-                            'tags',
-                            'pets',
+                        "tags": [
+                            "tags",
+                            "pets",
                         ],
                     },
-                }),
-            ]),
-        }))
-        assert text == textwrap.dedent('''
+                },
+            },
+        }
+
+        text = "\n".join(renderer.render_restructuredtext_markup(spec))
+        assert (
+            text
+            == textwrap.dedent("""
             tags
             ====
 
@@ -235,30 +238,33 @@ class TestOpenApi2HttpDomain(object):
 
                :status 200:
                   Index
-        ''').lstrip()
+        """).lstrip()
+        )
 
     def test_two_resources(self):
-        spec = collections.defaultdict(collections.OrderedDict)
-        spec['paths']['/resource_a'] = {
-            'get': {
-                'description': 'resource a',
-                'responses': {
-                    '200': {'description': 'ok'},
-                }
+        spec = collections.defaultdict(dict)
+        spec["paths"]["/resource_a"] = {
+            "get": {
+                "description": "resource a",
+                "responses": {
+                    "200": {"description": "ok"},
+                },
             }
         }
-        spec['paths']['/resource_b'] = {
-            'post': {
-                'description': 'resource b',
-                'responses': {
-                    '404': {'description': 'error'},
-                }
+        spec["paths"]["/resource_b"] = {
+            "post": {
+                "description": "resource b",
+                "responses": {
+                    "404": {"description": "error"},
+                },
             }
         }
 
         renderer = renderers.HttpdomainOldRenderer(None, {})
-        text = '\n'.join(renderer.render_restructuredtext_markup(spec))
-        assert text == textwrap.dedent('''
+        text = "\n".join(renderer.render_restructuredtext_markup(spec))
+        assert (
+            text
+            == textwrap.dedent("""
             .. http:get:: /resource_a
                :synopsis: null
 
@@ -274,148 +280,175 @@ class TestOpenApi2HttpDomain(object):
 
                :status 404:
                   error
-        ''').lstrip()
+        """).lstrip()
+        )
 
     def test_path_option(self):
-        spec = collections.defaultdict(collections.OrderedDict)
-        spec['paths']['/resource_a'] = {
-            'get': {
-                'description': 'resource a',
-                'responses': {
-                    '200': {'description': 'ok'},
-                }
+        spec = collections.defaultdict(dict)
+        spec["paths"]["/resource_a"] = {
+            "get": {
+                "description": "resource a",
+                "responses": {
+                    "200": {"description": "ok"},
+                },
             }
         }
-        spec['paths']['/resource_b'] = {
-            'post': {
-                'description': 'resource b',
-                'responses': {
-                    '404': {'description': 'error'},
-                }
-            }
-        }
-
-        renderer = renderers.HttpdomainOldRenderer(None, {'paths': [
-            '/resource_a',
-        ]})
-        text = '\n'.join(renderer.render_restructuredtext_markup(spec))
-        assert text == textwrap.dedent('''
-            .. http:get:: /resource_a
-               :synopsis: null
-
-               resource a
-
-               :status 200:
-                  ok
-        ''').lstrip()
-
-    def test_include_option(self):
-        spec = collections.defaultdict(collections.OrderedDict)
-        spec['paths']['/resource_a'] = {
-            'get': {
-                'description': 'resource a',
-                'responses': {
-                    '200': {'description': 'ok'},
-                }
-            }
-        }
-        spec['paths']['/resource_b'] = {
-            'post': {
-                'description': 'resource b',
-                'responses': {
-                    '404': {'description': 'error'},
-                }
-            }
-        }
-
-        renderer = renderers.HttpdomainOldRenderer(None, {'include': [
-            '/resource',
-        ]})
-        text = '\n'.join(renderer.render_restructuredtext_markup(spec))
-        assert text == textwrap.dedent('''
-            .. http:get:: /resource_a
-               :synopsis: null
-
-               resource a
-
-               :status 200:
-                  ok
-
-            .. http:post:: /resource_b
-               :synopsis: null
-
-               resource b
-
-               :status 404:
-                  error
-        ''').lstrip()
-
-    def test_exclude_option(self):
-        spec = collections.defaultdict(collections.OrderedDict)
-        spec['paths']['/resource_a'] = {
-            'get': {
-                'description': 'resource a',
-                'responses': {
-                    '200': {'description': 'ok'},
-                }
-            }
-        }
-        spec['paths']['/resource_b'] = {
-            'post': {
-                'description': 'resource b',
-                'responses': {
-                    '404': {'description': 'error'},
-                }
-            }
-        }
-
-        renderer = renderers.HttpdomainOldRenderer(None, {'exclude': [
-            '/.*_a',
-        ]})
-        text = '\n'.join(renderer.render_restructuredtext_markup(spec))
-        assert text == textwrap.dedent('''
-            .. http:post:: /resource_b
-               :synopsis: null
-
-               resource b
-
-               :status 404:
-                  error
-        ''').lstrip()
-
-    def test_method_option(self):
-        spec = collections.defaultdict(collections.OrderedDict)
-        spec['paths']['/resource_a'] = {
-            'get': {
-                'description': 'resource a',
-                'responses': {
-                    '200': {'description': 'ok'},
-                }
-            },
-            'post': {
-                'description': 'resource a',
-                'responses': {
-                    '201': {'description': 'ok'},
-                }
-            },
-            'put': {
-                'description': 'resource a',
-                'responses': {
-                    '404': {'description': 'error'},
-                }
+        spec["paths"]["/resource_b"] = {
+            "post": {
+                "description": "resource b",
+                "responses": {
+                    "404": {"description": "error"},
+                },
             }
         }
 
         renderer = renderers.HttpdomainOldRenderer(
             None,
             {
-                'methods': ['post'],
-                'paths': ['/resource_a'],
+                "paths": [
+                    "/resource_a",
+                ]
             },
         )
-        text = '\n'.join(renderer.render_restructuredtext_markup(spec))
+        text = "\n".join(renderer.render_restructuredtext_markup(spec))
+        assert (
+            text
+            == textwrap.dedent("""
+            .. http:get:: /resource_a
+               :synopsis: null
 
-        assert text == textwrap.dedent('''
+               resource a
+
+               :status 200:
+                  ok
+        """).lstrip()
+        )
+
+    def test_include_option(self):
+        spec = collections.defaultdict(dict)
+        spec["paths"]["/resource_a"] = {
+            "get": {
+                "description": "resource a",
+                "responses": {
+                    "200": {"description": "ok"},
+                },
+            }
+        }
+        spec["paths"]["/resource_b"] = {
+            "post": {
+                "description": "resource b",
+                "responses": {
+                    "404": {"description": "error"},
+                },
+            }
+        }
+
+        renderer = renderers.HttpdomainOldRenderer(
+            None,
+            {
+                "include": [
+                    "/resource",
+                ]
+            },
+        )
+        text = "\n".join(renderer.render_restructuredtext_markup(spec))
+        assert (
+            text
+            == textwrap.dedent("""
+            .. http:get:: /resource_a
+               :synopsis: null
+
+               resource a
+
+               :status 200:
+                  ok
+
+            .. http:post:: /resource_b
+               :synopsis: null
+
+               resource b
+
+               :status 404:
+                  error
+        """).lstrip()
+        )
+
+    def test_exclude_option(self):
+        spec = collections.defaultdict(dict)
+        spec["paths"]["/resource_a"] = {
+            "get": {
+                "description": "resource a",
+                "responses": {
+                    "200": {"description": "ok"},
+                },
+            }
+        }
+        spec["paths"]["/resource_b"] = {
+            "post": {
+                "description": "resource b",
+                "responses": {
+                    "404": {"description": "error"},
+                },
+            }
+        }
+
+        renderer = renderers.HttpdomainOldRenderer(
+            None,
+            {
+                "exclude": [
+                    "/.*_a",
+                ]
+            },
+        )
+        text = "\n".join(renderer.render_restructuredtext_markup(spec))
+        assert (
+            text
+            == textwrap.dedent("""
+            .. http:post:: /resource_b
+               :synopsis: null
+
+               resource b
+
+               :status 404:
+                  error
+        """).lstrip()
+        )
+
+    def test_method_option(self):
+        spec = collections.defaultdict(dict)
+        spec["paths"]["/resource_a"] = {
+            "get": {
+                "description": "resource a",
+                "responses": {
+                    "200": {"description": "ok"},
+                },
+            },
+            "post": {
+                "description": "resource a",
+                "responses": {
+                    "201": {"description": "ok"},
+                },
+            },
+            "put": {
+                "description": "resource a",
+                "responses": {
+                    "404": {"description": "error"},
+                },
+            },
+        }
+
+        renderer = renderers.HttpdomainOldRenderer(
+            None,
+            {
+                "methods": ["post"],
+                "paths": ["/resource_a"],
+            },
+        )
+        text = "\n".join(renderer.render_restructuredtext_markup(spec))
+
+        assert (
+            text
+            == textwrap.dedent("""
             .. http:post:: /resource_a
                :synopsis: null
 
@@ -423,43 +456,46 @@ class TestOpenApi2HttpDomain(object):
 
                :status 201:
                   ok
-        ''').lstrip()
+        """).lstrip()
+        )
 
     def test_root_parameters(self):
-        spec = {'paths': {}}
-        spec['paths']['/resources/{name}'] = collections.OrderedDict()
+        spec = {"paths": {}}
+        spec["paths"]["/resources/{name}"] = {}
 
-        spec['paths']['/resources/{name}']['parameters'] = [
+        spec["paths"]["/resources/{name}"]["parameters"] = [
             {
-                'name': 'name',
-                'in': 'path',
-                'type': 'string',
-                'description': 'The name of the resource.',
+                "name": "name",
+                "in": "path",
+                "type": "string",
+                "description": "The name of the resource.",
             }
         ]
-        spec['paths']['/resources/{name}']['get'] = {
-            'summary': 'Fetch a Resource',
-            'description': '~ some useful description ~',
-            'responses': {
-                '200': {
-                    'description': 'The fetched resource.',
+        spec["paths"]["/resources/{name}"]["get"] = {
+            "summary": "Fetch a Resource",
+            "description": "~ some useful description ~",
+            "responses": {
+                "200": {
+                    "description": "The fetched resource.",
                 },
             },
         }
-        spec['paths']['/resources/{name}']['put'] = {
-            'summary': 'Modify a Resource',
-            'description': '~ some useful description ~',
-            'responses': {
-                '200': {
-                    'description': 'The modified resource.',
+        spec["paths"]["/resources/{name}"]["put"] = {
+            "summary": "Modify a Resource",
+            "description": "~ some useful description ~",
+            "responses": {
+                "200": {
+                    "description": "The modified resource.",
                 },
             },
         }
 
         renderer = renderers.HttpdomainOldRenderer(None, {})
-        text = '\n'.join(renderer.render_restructuredtext_markup(spec))
+        text = "\n".join(renderer.render_restructuredtext_markup(spec))
 
-        assert text == textwrap.dedent('''
+        assert (
+            text
+            == textwrap.dedent("""
             .. http:get:: /resources/{name}
                :synopsis: Fetch a Resource
 
@@ -483,58 +519,63 @@ class TestOpenApi2HttpDomain(object):
                   The name of the resource.
                :status 200:
                   The modified resource.
-        ''').lstrip()
+        """).lstrip()
+        )
 
     def test_path_invalid(self):
-        spec = collections.defaultdict(collections.OrderedDict)
-        spec['paths']['/resource_a'] = {
-            'get': {
-                'description': 'resource a',
-                'responses': {
-                    '200': {'description': 'ok'},
-                }
+        spec = collections.defaultdict(dict)
+        spec["paths"]["/resource_a"] = {
+            "get": {
+                "description": "resource a",
+                "responses": {
+                    "200": {"description": "ok"},
+                },
             }
         }
-        spec['paths']['/resource_b'] = {
-            'post': {
-                'description': 'resource b',
-                'responses': {
-                    '404': {'description': 'error'},
-                }
+        spec["paths"]["/resource_b"] = {
+            "post": {
+                "description": "resource b",
+                "responses": {
+                    "404": {"description": "error"},
+                },
             }
         }
 
-        renderer = renderers.HttpdomainOldRenderer(None, {'paths': [
-            '/resource_a',
-            '/resource_invalid_name',
-        ]})
+        renderer = renderers.HttpdomainOldRenderer(
+            None,
+            {
+                "paths": [
+                    "/resource_a",
+                    "/resource_invalid_name",
+                ]
+            },
+        )
 
         with pytest.raises(ValueError) as exc:
-            '\n'.join(renderer.render_restructuredtext_markup(spec))
+            "\n".join(renderer.render_restructuredtext_markup(spec))
 
         assert str(exc.value) == (
-            'One or more paths are not defined in the spec: '
-            '/resource_invalid_name.'
+            "One or more paths are not defined in the spec: /resource_invalid_name."
         )
 
     def test_unicode_is_allowed(self):
         spec = {
-            'paths': {
-                '/resource_a': {
-                    'get': {
-                        'description': '\u041f',
-                        'responses': {
-                            '200': {'description': 'ok'}
-                        }
+            "paths": {
+                "/resource_a": {
+                    "get": {
+                        "description": "\u041f",
+                        "responses": {"200": {"description": "ok"}},
                     }
                 }
             }
         }
 
         renderer = renderers.HttpdomainOldRenderer(None, {})
-        text = '\n'.join(renderer.render_restructuredtext_markup(spec))
+        text = "\n".join(renderer.render_restructuredtext_markup(spec))
 
-        assert text == textwrap.dedent('''
+        assert (
+            text
+            == textwrap.dedent("""
             .. http:get:: /resource_a
                :synopsis: null
 
@@ -542,97 +583,89 @@ class TestOpenApi2HttpDomain(object):
 
                :status 200:
                   ok
-        ''').lstrip()
+        """).lstrip()
+        )
 
     def test_json_in_out(self):
         renderer = renderers.HttpdomainOldRenderer(None, {})
-        text = '\n'.join(renderer.render_restructuredtext_markup({
-            'definitions': {
-                'CreateResourceSchema': {
-                    'additionalProperties': False,
-                    'properties': {
-                        'string_field': {
-                            'type': 'string',
-                            'description': 'some input string'
-                        },
-                        'int_field': {
-                            'default': 1,
-                            'type': 'integer',
-                        },
-                    },
-                    'required': [
-                        'string_field'
-                    ],
-                    'title': 'CreateResourceSchema',
-                    'type': 'object'
-                },
-                'ResourceSchema': {
-                    'properties': {
-                        'string_field': {
-                            'type': 'string',
-                            'description': 'some output string'
-                        },
-                        'int_field': {
-                            'type': 'integer',
-                        },
-                    },
-                    'required': [
-                        'string_field'
-                    ],
-                    'title': 'ResourceSchema',
-                    'type': 'object'
-                },
-                'Error': {
-                    'properties': {
-                        'errors': {
-                            'type': 'object'
-                        },
-                        'message': {
-                            'type': 'string'
-                        }
-                    },
-                    'required': [
-                        'message'
-                    ],
-                    'title': 'Error',
-                    'type': 'object'
-                },
-            },
-            'paths': {
-                '/resources': {
-                    'post': {
-                        'description': '~ some useful description ~',
-                        'parameters': [
-                            {
-                                'in': 'body',
-                                'name': 'CreateResourceSchema',
-                                'required': True,
-                                'schema': {
-                                    '$ref':
-                                        '#/definitions/CreateResourceSchema'
-                                }
+        text = "\n".join(
+            renderer.render_restructuredtext_markup(
+                {
+                    "definitions": {
+                        "CreateResourceSchema": {
+                            "additionalProperties": False,
+                            "properties": {
+                                "string_field": {
+                                    "type": "string",
+                                    "description": "some input string",
+                                },
+                                "int_field": {
+                                    "default": 1,
+                                    "type": "integer",
+                                },
                             },
-                        ],
-                        'responses': {
-                            '201': {
-                                'description': '~ some useful description ~',
-                                'schema': {
-                                    '$ref': '#/definitions/ResourceSchema'
-                                }
+                            "required": ["string_field"],
+                            "title": "CreateResourceSchema",
+                            "type": "object",
+                        },
+                        "ResourceSchema": {
+                            "properties": {
+                                "string_field": {
+                                    "type": "string",
+                                    "description": "some output string",
+                                },
+                                "int_field": {
+                                    "type": "integer",
+                                },
                             },
-                            'default': {
-                                'description': '~ some useful description ~',
-                                'schema': {
-                                    '$ref': '#/definitions/Error'
-                                }
-                            }
+                            "required": ["string_field"],
+                            "title": "ResourceSchema",
+                            "type": "object",
+                        },
+                        "Error": {
+                            "properties": {
+                                "errors": {"type": "object"},
+                                "message": {"type": "string"},
+                            },
+                            "required": ["message"],
+                            "title": "Error",
+                            "type": "object",
                         },
                     },
-                },
-            },
-        }))
+                    "paths": {
+                        "/resources": {
+                            "post": {
+                                "description": "~ some useful description ~",
+                                "parameters": [
+                                    {
+                                        "in": "body",
+                                        "name": "CreateResourceSchema",
+                                        "required": True,
+                                        "schema": {
+                                            "$ref": "#/definitions/CreateResourceSchema"
+                                        },
+                                    },
+                                ],
+                                "responses": {
+                                    "201": {
+                                        "description": "~ some useful description ~",
+                                        "schema": {
+                                            "$ref": "#/definitions/ResourceSchema"
+                                        },
+                                    },
+                                    "default": {
+                                        "description": "~ some useful description ~",
+                                        "schema": {"$ref": "#/definitions/Error"},
+                                    },
+                                },
+                            },
+                        },
+                    },
+                }
+            )
+        )
 
-        text2 = textwrap.dedent('''
+        text2 = textwrap.dedent("""
             .. http:post:: /resources
                :synopsis: null
 
@@ -650,63 +683,68 @@ class TestOpenApi2HttpDomain(object):
                :>json integer int_field:
                :>json string string_field: some output string (required)
 
-        ''').lstrip()
+        """).lstrip()
         assert text == text2
 
 
 class TestOpenApi3HttpDomain(object):
-
     def test_basic(self):
         renderer = renderers.HttpdomainOldRenderer(None, {})
-        text = '\n'.join(renderer.render_restructuredtext_markup({
-            'openapi': '3.0.0',
-            'paths': {
-                '/resources/{kind}': {
-                    'get': {
-                        'summary': 'List Resources',
-                        'description': '~ some useful description ~',
-                        'parameters': [
-                            {
-                                'name': 'kind',
-                                'in': 'path',
-                                'schema': {'type': 'string'},
-                                'description': 'Kind of resource to list.',
-                            },
-                            {
-                                'name': 'limit',
-                                'in': 'query',
-                                'schema': {'type': 'integer'},
-                                'description': 'Show up to `limit` entries.',
-                            },
-                            {
-                                'name': 'If-None-Match',
-                                'in': 'header',
-                                'schema': {'type': 'string'},
-                                'description': 'Last known resource ETag.'
-                            },
-                        ],
-                        'requestBody': {
-                            'content': {
-                                'application/json':  {
-                                    'example': '{"foo2": "bar2"}'
-                                }
-                            }
-                        },
-                        'responses': {
-                            '200': {
-                                'description': 'An array of resources.',
-                                'content': {
-                                    'application/json': {
-                                        'example': '{"foo": "bar"}'
+        text = "\n".join(
+            renderer.render_restructuredtext_markup(
+                {
+                    "openapi": "3.0.0",
+                    "paths": {
+                        "/resources/{kind}": {
+                            "get": {
+                                "summary": "List Resources",
+                                "description": "~ some useful description ~",
+                                "parameters": [
+                                    {
+                                        "name": "kind",
+                                        "in": "path",
+                                        "schema": {"type": "string"},
+                                        "description": "Kind of resource to list.",
+                                    },
+                                    {
+                                        "name": "limit",
+                                        "in": "query",
+                                        "schema": {"type": "integer"},
+                                        "description": "Show up to `limit` entries.",
+                                    },
+                                    {
+                                        "name": "If-None-Match",
+                                        "in": "header",
+                                        "schema": {"type": "string"},
+                                        "description": "Last known resource ETag.",
+                                    },
+                                ],
+                                "requestBody": {
+                                    "content": {
+                                        "application/json": {
+                                            "example": '{"foo2": "bar2"}'
+                                        }
                                     }
-                                }
+                                },
+                                "responses": {
+                                    "200": {
+                                        "description": "An array of resources.",
+                                        "content": {
+                                            "application/json": {
+                                                "example": '{"foo": "bar"}'
+                                            }
+                                        },
+                                    },
+                                },
                             },
                         },
                     },
-                },
-            },
-        }))
-        assert text == textwrap.dedent('''
+                }
+            )
+        )
+        assert (
+            text
+            == textwrap.dedent("""
             .. http:get:: /resources/{kind}
                :synopsis: List Resources
 
@@ -722,46 +760,52 @@ class TestOpenApi3HttpDomain(object):
                   An array of resources.
                :reqheader If-None-Match:
                   Last known resource ETag.
-        ''').lstrip()
+        """).lstrip()
+        )
 
     def test_rfc7807(self):
-        # Fix order to have a reliable test
-        pb_example = collections.OrderedDict()
+        pb_example = {}
         pb_example["type"] = "string"
         pb_example["title"] = "string"
         pb_example["status"] = 1
         pb_example["detail"] = "string"
         pb_example["instance"] = "string"
-        renderer = renderers.HttpdomainOldRenderer(None, {'examples': True})
-        text = '\n'.join(renderer.render_restructuredtext_markup({
-            'openapi': '3.0.0',
-            'paths': {
-                '/problem': {
-                    'post': {
-                        'summary': 'Problem',
-                        'description': '~ some useful description ~',
-                        'requestBody': {
-                            'content': {
-                                'application/problem+json':  {
-                                    'example': pb_example
-                                }
-                            }
-                        },
-                        'responses': {
-                            '200': {
-                                'description': 'An array of resources.',
-                                'content': {
-                                    'application/json': {
-                                        'example': '{"foo": "bar"}'
+        renderer = renderers.HttpdomainOldRenderer(None, {"examples": True})
+        text = "\n".join(
+            renderer.render_restructuredtext_markup(
+                {
+                    "openapi": "3.0.0",
+                    "paths": {
+                        "/problem": {
+                            "post": {
+                                "summary": "Problem",
+                                "description": "~ some useful description ~",
+                                "requestBody": {
+                                    "content": {
+                                        "application/problem+json": {
+                                            "example": pb_example
+                                        }
                                     }
-                                }
+                                },
+                                "responses": {
+                                    "200": {
+                                        "description": "An array of resources.",
+                                        "content": {
+                                            "application/json": {
+                                                "example": '{"foo": "bar"}'
+                                            }
+                                        },
+                                    },
+                                },
                             },
                         },
                     },
-                },
-            },
-        }))
-        assert text == textwrap.dedent('''
+                }
+            )
+        )
+        assert (
+            text
+            == textwrap.dedent("""
             .. http:post:: /problem
                :synopsis: Problem
 
@@ -798,107 +842,110 @@ class TestOpenApi3HttpDomain(object):
 
                      {"foo": "bar"}
 
-        ''').lstrip()
+        """).lstrip()
+        )
 
     def test_groups(self):
-        renderer = renderers.HttpdomainOldRenderer(None, {'group': True})
-        text = '\n'.join(renderer.render_restructuredtext_markup({
-            'openapi': '3.0.0',
-            'tags': [
-                {'name': 'tags'},
-                {'name': 'pets'},
-            ],
-            'paths': collections.OrderedDict([
-                ('/', {
-                    'get': {
-                        'summary': 'Index',
-                        'description': '~ some useful description ~',
-                        'responses': {
-                            '200': {
-                                'description': 'Index',
-                                'content': {
-                                    'application/json': {
-                                        'pets': 'https://example.com/api/pets',
-                                        'tags': 'https://example.com/api/tags',
-                                    }
-                                }
-                            },
-                        },
-                    },
-                }),
-                ('/pets', {
-                    'get': {
-                        'summary': 'List Pets',
-                        'description': '~ some useful description ~',
-                        'responses': {
-                            '200': {
-                                'description': 'Pets',
-                                'content': {
-                                    'application/json': [
-                                        {
-                                            'example': '{"foo": "bar"}'
+        renderer = renderers.HttpdomainOldRenderer(None, {"group": True})
+        text = "\n".join(
+            renderer.render_restructuredtext_markup(
+                {
+                    "openapi": "3.0.0",
+                    "tags": [
+                        {"name": "tags"},
+                        {"name": "pets"},
+                    ],
+                    "paths": {
+                        "/": {
+                            "get": {
+                                "summary": "Index",
+                                "description": "~ some useful description ~",
+                                "responses": {
+                                    "200": {
+                                        "description": "Index",
+                                        "content": {
+                                            "application/json": {
+                                                "pets": "https://example.com/api/pets",
+                                                "tags": "https://example.com/api/tags",
+                                            }
                                         },
-                                    ],
+                                    },
                                 },
                             },
                         },
-                        'tags': [
-                            'pets',
-                        ],
-                    },
-                }),
-                ('/pets/{name}', {
-                    'get': {
-                        'summary': 'Show Pet',
-                        'description': '~ some useful description ~',
-                        'parameters': [
-                            {
-                                'name': 'name',
-                                'in': 'path',
-                                'schema': {'type': 'string'},
-                                'description': 'Name of pet.',
-                            },
-                        ],
-                        'responses': {
-                            '200': {
-                                'description': 'A Pet',
-                                'content': {
-                                    'application/json': {
-                                        'example': '{"foo": "bar"}'
-                                    }
-                                }
-                            },
-                        },
-                        'tags': [
-                            'pets',
-                        ],
-                    },
-                }),
-                ('/tags', {
-                    'get': {
-                        'summary': 'List Tags',
-                        'description': '~ some useful description ~',
-                        'responses': {
-                            '200': {
-                                'description': 'Tags',
-                                'content': {
-                                    'application/json': [
-                                        {
-                                            'example': '{"foo": "bar"}'
+                        "/pets": {
+                            "get": {
+                                "summary": "List Pets",
+                                "description": "~ some useful description ~",
+                                "responses": {
+                                    "200": {
+                                        "description": "Pets",
+                                        "content": {
+                                            "application/json": [
+                                                {"example": '{"foo": "bar"}'},
+                                            ],
                                         },
-                                    ],
-                                }
+                                    },
+                                },
+                                "tags": [
+                                    "pets",
+                                ],
                             },
                         },
-                        'tags': [
-                            'tags',
-                            'pets',
-                        ],
+                        "/pets/{name}": {
+                            "get": {
+                                "summary": "Show Pet",
+                                "description": "~ some useful description ~",
+                                "parameters": [
+                                    {
+                                        "name": "name",
+                                        "in": "path",
+                                        "schema": {"type": "string"},
+                                        "description": "Name of pet.",
+                                    },
+                                ],
+                                "responses": {
+                                    "200": {
+                                        "description": "A Pet",
+                                        "content": {
+                                            "application/json": {
+                                                "example": '{"foo": "bar"}'
+                                            }
+                                        },
+                                    },
+                                },
+                                "tags": [
+                                    "pets",
+                                ],
+                            },
+                        },
+                        "/tags": {
+                            "get": {
+                                "summary": "List Tags",
+                                "description": "~ some useful description ~",
+                                "responses": {
+                                    "200": {
+                                        "description": "Tags",
+                                        "content": {
+                                            "application/json": [
+                                                {"example": '{"foo": "bar"}'},
+                                            ],
+                                        },
+                                    },
+                                },
+                                "tags": [
+                                    "tags",
+                                    "pets",
+                                ],
+                            },
+                        },
                     },
-                }),
-            ]),
-        }))
-        assert text == textwrap.dedent('''
+                }
+            )
+        )
+        assert (
+            text
+            == textwrap.dedent("""
             tags
             ====
 
@@ -949,61 +996,68 @@ class TestOpenApi3HttpDomain(object):
 
                :status 200:
                   Index
-        ''').lstrip()
+        """).lstrip()
+        )
 
     def test_required_parameters(self):
         renderer = renderers.HttpdomainOldRenderer(None, {})
-        text = '\n'.join(renderer.render_restructuredtext_markup({
-            'openapi': '3.0.0',
-            'paths': {
-                '/resources/{kind}': {
-                    'get': {
-                        'summary': 'List Resources',
-                        'description': '~ some useful description ~',
-                        'parameters': [
-                            {
-                                'name': 'kind',
-                                'in': 'path',
-                                'schema': {'type': 'string'},
-                                'description': 'Kind of resource to list.',
-                            },
-                            {
-                                'name': 'limit',
-                                'in': 'query',
-                                'required': True,
-                                'schema': {'type': 'integer'},
-                                'description': 'Show up to `limit` entries.',
-                            },
-                            {
-                                'name': 'If-None-Match',
-                                'in': 'header',
-                                'required': True,
-                                'schema': {'type': 'string'},
-                                'description': 'Last known resource ETag.'
-                            },
-                        ],
-                        'requestBody': {
-                            'content': {
-                                'application/json':  {
-                                    'example': '{"foo2": "bar2"}'
-                                }
-                            }
-                        },
-                        'responses': {
-                            '200': {
-                                'description': 'An array of resources.',
-                                'content': {
-                                    'application/json': {
-                                        'example': '{"foo": "bar"}'
+        text = "\n".join(
+            renderer.render_restructuredtext_markup(
+                {
+                    "openapi": "3.0.0",
+                    "paths": {
+                        "/resources/{kind}": {
+                            "get": {
+                                "summary": "List Resources",
+                                "description": "~ some useful description ~",
+                                "parameters": [
+                                    {
+                                        "name": "kind",
+                                        "in": "path",
+                                        "schema": {"type": "string"},
+                                        "description": "Kind of resource to list.",
+                                    },
+                                    {
+                                        "name": "limit",
+                                        "in": "query",
+                                        "required": True,
+                                        "schema": {"type": "integer"},
+                                        "description": "Show up to `limit` entries.",
+                                    },
+                                    {
+                                        "name": "If-None-Match",
+                                        "in": "header",
+                                        "required": True,
+                                        "schema": {"type": "string"},
+                                        "description": "Last known resource ETag.",
+                                    },
+                                ],
+                                "requestBody": {
+                                    "content": {
+                                        "application/json": {
+                                            "example": '{"foo2": "bar2"}'
+                                        }
                                     }
-                                }
+                                },
+                                "responses": {
+                                    "200": {
+                                        "description": "An array of resources.",
+                                        "content": {
+                                            "application/json": {
+                                                "example": '{"foo": "bar"}'
+                                            }
+                                        },
+                                    },
+                                },
                             },
                         },
                     },
-                },
-            },
-        }))
-        assert text == textwrap.dedent('''
+                }
+            )
+        )
+        assert (
+            text
+            == textwrap.dedent("""
             .. http:get:: /resources/{kind}
                :synopsis: List Resources
 
@@ -1021,167 +1075,174 @@ class TestOpenApi3HttpDomain(object):
                :reqheader If-None-Match:
                   Last known resource ETag.
                   (Required)
-        ''').lstrip()
+        """).lstrip()
+        )
 
     def test_example_generation(self):
-        renderer = renderers.HttpdomainOldRenderer(None, {'examples': True})
-        text = '\n'.join(renderer.render_restructuredtext_markup({
-            'openapi': '3.0.0',
-            'paths': collections.OrderedDict([
-                ('/resources/', collections.OrderedDict([
-                    ('get', {
-                        'summary': 'List Resources',
-                        'description': '~ some useful description ~',
-                        'parameters': [
-                            {
-                                'name': 'kind',
-                                'in': 'path',
-                                'schema': {'type': 'string'},
-                                'description': 'Kind of resource to list.',
+        renderer = renderers.HttpdomainOldRenderer(None, {"examples": True})
+        text = "\n".join(
+            renderer.render_restructuredtext_markup(
+                {
+                    "openapi": "3.0.0",
+                    "paths": {
+                        "/resources/": {
+                            "get": {
+                                "summary": "List Resources",
+                                "description": "~ some useful description ~",
+                                "parameters": [
+                                    {
+                                        "name": "kind",
+                                        "in": "path",
+                                        "schema": {"type": "string"},
+                                        "description": "Kind of resource to list.",
+                                    },
+                                    {
+                                        "name": "limit",
+                                        "in": "query",
+                                        "required": True,
+                                        "schema": {"type": "integer"},
+                                        "description": "Show up to `limit` entries.",
+                                    },
+                                    {
+                                        "name": "If-None-Match",
+                                        "in": "header",
+                                        "schema": {"type": "string"},
+                                        "description": "Last known resource ETag.",
+                                    },
+                                ],
+                                "responses": {
+                                    "200": {
+                                        "description": "An array of resources.",
+                                        "content": {
+                                            "application/json": {
+                                                "schema": {
+                                                    "type": "array",
+                                                    "items": {
+                                                        "$ref": "#/components/schemas/Resource",  # noqa
+                                                    },
+                                                },
+                                            }
+                                        },
+                                    },
+                                },
                             },
-                            {
-                                'name': 'limit',
-                                'in': 'query',
-                                'required': True,
-                                'schema': {'type': 'integer'},
-                                'description': 'Show up to `limit` entries.',
-                            },
-                            {
-                                'name': 'If-None-Match',
-                                'in': 'header',
-                                'schema': {'type': 'string'},
-                                'description': 'Last known resource ETag.'
-                            },
-                        ],
-                        'responses': {
-                            '200': {
-                                'description': 'An array of resources.',
-                                'content': {
-                                    'application/json': {
-                                        'schema': {
-                                            'type': 'array',
-                                            'items': {
-                                                '$ref': '#/components/schemas/Resource',  # noqa
+                            "post": {
+                                "summary": "Create Resource",
+                                "description": "~ some useful description ~",
+                                "parameters": [],
+                                "requestBody": {
+                                    "content": {
+                                        "application/json": {
+                                            "schema": {
+                                                "$ref": "#/components/schemas/Resource",  # noqa
                                             },
-                                        },
+                                        }
                                     }
-                                }
-                            },
-                        },
-                    }),
-                    ('post', {
-                        'summary': 'Create Resource',
-                        'description': '~ some useful description ~',
-                        'parameters': [],
-                        'requestBody': {
-                            'content': {
-                                'application/json':  {
-                                    'schema': {
-                                        '$ref': '#/components/schemas/Resource',  # noqa
+                                },
+                                "responses": {
+                                    "200": {
+                                        "description": "The created resource.",
+                                        "content": {
+                                            "application/json": {
+                                                "schema": {
+                                                    "$ref": "#/components/schemas/Resource",  # noqa
+                                                },
+                                            }
+                                        },
                                     },
-                                }
-                            }
-                        },
-                        'responses': {
-                            '200': {
-                                'description': 'The created resource.',
-                                'content': {
-                                    'application/json': {
-                                        'schema': {
-                                            '$ref': '#/components/schemas/Resource',  # noqa
-                                        },
-                                    }
-                                }
+                                },
                             },
                         },
-                    }),
-                ])),
-                ('/resources/{kind}', collections.OrderedDict([
-                    ('get', {
-                        'summary': 'Show Resource',
-                        'description': '~ some useful description ~',
-                        'parameters': [
-                            {
-                                'name': 'kind',
-                                'in': 'path',
-                                'schema': {'type': 'string'},
-                                'description': 'Kind of resource to list.',
-                            },
-                        ],
-                        'responses': {
-                            '200': {
-                                'description': 'The created resource.',
-                                'content': {
-                                    'application/json': {
-                                        'schema': {
-                                            '$ref': '#/components/schemas/Resource',  # noqa
-                                        },
-                                    }
-                                }
-                            },
-                        },
-                    }),
-                    ('patch', {
-                        'summary': 'Update Resource (partial)',
-                        'description': '~ some useful description ~',
-                        'parameters': [
-                            {
-                                'name': 'kind',
-                                'in': 'path',
-                                'schema': {'type': 'string'},
-                                'description': 'Kind of resource to list.',
-                            },
-                        ],
-                        'requestBody': {
-                            'content': {
-                                'application/json':  {
-                                    'schema': {
-                                        '$ref': '#/components/schemas/Resource',  # noqa
+                        "/resources/{kind}": {
+                            "get": {
+                                "summary": "Show Resource",
+                                "description": "~ some useful description ~",
+                                "parameters": [
+                                    {
+                                        "name": "kind",
+                                        "in": "path",
+                                        "schema": {"type": "string"},
+                                        "description": "Kind of resource to list.",
                                     },
-                                }
-                            }
-                        },
-                        'responses': {
-                            '200': {
-                                'description': 'The created resource.',
-                                'content': {
-                                    'application/json': {
-                                        'schema': {
-                                            '$ref': '#/components/schemas/Resource',  # noqa
+                                ],
+                                "responses": {
+                                    "200": {
+                                        "description": "The created resource.",
+                                        "content": {
+                                            "application/json": {
+                                                "schema": {
+                                                    "$ref": "#/components/schemas/Resource",  # noqa
+                                                },
+                                            }
                                         },
+                                    },
+                                },
+                            },
+                            "patch": {
+                                "summary": "Update Resource (partial)",
+                                "description": "~ some useful description ~",
+                                "parameters": [
+                                    {
+                                        "name": "kind",
+                                        "in": "path",
+                                        "schema": {"type": "string"},
+                                        "description": "Kind of resource to list.",
+                                    },
+                                ],
+                                "requestBody": {
+                                    "content": {
+                                        "application/json": {
+                                            "schema": {
+                                                "$ref": "#/components/schemas/Resource",  # noqa
+                                            },
+                                        }
                                     }
-                                }
+                                },
+                                "responses": {
+                                    "200": {
+                                        "description": "The created resource.",
+                                        "content": {
+                                            "application/json": {
+                                                "schema": {
+                                                    "$ref": "#/components/schemas/Resource",  # noqa
+                                                },
+                                            }
+                                        },
+                                    },
+                                },
                             },
                         },
-                    }),
-                ])),
-            ]),
-            'components': {
-                'schemas': {
-                    'Resource': {
-                        'type': 'object',
-                        'properties': collections.OrderedDict([
-                            ('kind', {
-                                'title': 'Kind',
-                                'type': 'string',
-                                'readOnly': True,
-                            }),
-                            ('description', {
-                                'title': 'Description',
-                                'type': 'string',
-                            }),
-                            ('data', {
-                                'title': 'Data',
-                                'type': 'string',
-                                'format': 'byte',
-                            }),
-                        ]),
                     },
-                },
-            },
-        }))
+                    "components": {
+                        "schemas": {
+                            "Resource": {
+                                "type": "object",
+                                "properties": {
+                                    "kind": {
+                                        "title": "Kind",
+                                        "type": "string",
+                                        "readOnly": True,
+                                    },
+                                    "description": {
+                                        "title": "Description",
+                                        "type": "string",
+                                    },
+                                    "data": {
+                                        "title": "Data",
+                                        "type": "string",
+                                        "format": "byte",
+                                    },
+                                },
+                            },
+                        },
+                    },
+                }
+            )
+        )
 
-        assert text == textwrap.dedent('''
+        assert (
+            text
+            == textwrap.dedent("""
             .. http:get:: /resources/
                :synopsis: List Resources
 
@@ -1334,64 +1395,65 @@ class TestOpenApi3HttpDomain(object):
                          "data": "c3RyaW5n"
                      }
 
-        ''').lstrip()
+        """).lstrip()
+        )
 
     def test_get_example_with_explode(self):
-        renderer = renderers.HttpdomainOldRenderer(None, {'examples': True})
-        text = '\n'.join(renderer.render_restructuredtext_markup({
-            'openapi': '3.0.0',
-            'paths': collections.OrderedDict([
-                ('/resources/', collections.OrderedDict([
-                    ('get', {
-                        'summary': 'List Resources',
-                        'description': '~ some useful description ~',
-                        'parameters': [
+        renderer = renderers.HttpdomainOldRenderer(None, {"examples": True})
+        spec = {
+            "openapi": "3.0.0",
+            "paths": {
+                "/resources/": {
+                    "get": {
+                        "summary": "List Resources",
+                        "description": "~ some useful description ~",
+                        "parameters": [
                             {
-                                'name': 'params',
-                                'in': 'query',
-                                'required': True,
-                                'schema': {
-                                    'type': 'array',
-                                    'items': {
-                                        'type': 'string'
-                                    }
+                                "name": "params",
+                                "in": "query",
+                                "required": True,
+                                "schema": {
+                                    "type": "array",
+                                    "items": {"type": "string"},
                                 },
-                                'style': 'form',
-                                'explode': True,
-                                'example': [
-                                    'p1',
-                                    'p2',
+                                "style": "form",
+                                "explode": True,
+                                "example": [
+                                    "p1",
+                                    "p2",
                                 ],
-                                'description': 'List with explode set to True'
+                                "description": "List with explode set to True",
                             },
                             {
-                                'name': 'values',
-                                'in': 'query',
-                                'required': True,
-                                'schema': {
-                                    'type': 'object',
-                                    'additionalProperties': True
+                                "name": "values",
+                                "in": "query",
+                                "required": True,
+                                "schema": {
+                                    "type": "object",
+                                    "additionalProperties": True,
                                 },
-                                'style': 'form',
-                                'explode': True,
-                                'example': collections.OrderedDict([
-                                    ('v1', 'V1'),
-                                    ('v2', 'V2'),
-                                ]),
-                                'description': 'Dict with explode set to True'
+                                "style": "form",
+                                "explode": True,
+                                "example": {
+                                    "v1": "V1",
+                                    "v2": "V2",
+                                },
+                                "description": "Dict with explode set to True",
                             },
                         ],
-                        'responses': {
-                            '200': {
-                                'description': 'OK'
-                            },
+                        "responses": {
+                            "200": {"description": "OK"},
                         },
-                    }),
-                ])),
-            ]),
-        }))
+                    },
+                },
+            },
+        }
 
-        assert text == textwrap.dedent('''
+        text = "\n".join(renderer.render_restructuredtext_markup(spec))
+
+        assert (
+            text
+            == textwrap.dedent("""
             .. http:get:: /resources/
                :synopsis: List Resources
 
@@ -1415,95 +1477,89 @@ class TestOpenApi3HttpDomain(object):
 
                :status 200:
                   OK
-        ''').lstrip()
+        """).lstrip()
+        )
 
     def test_callback(self):
         renderer = renderers.HttpdomainOldRenderer(None, {})
-        text = '\n'.join(renderer.render_restructuredtext_markup({
-            'openapi': '3.0.0',
-            'paths': {
-                '/resources/{kind}': {
-                    'post': {
-                        'summary': 'List Resources',
-                        'description': '~ some useful description ~',
-                        'parameters': [
+        spec = {
+            "openapi": "3.0.0",
+            "paths": {
+                "/resources/{kind}": {
+                    "post": {
+                        "summary": "List Resources",
+                        "description": "~ some useful description ~",
+                        "parameters": [
                             {
-                                'name': 'kind',
-                                'in': 'path',
-                                'schema': {'type': 'string'},
-                                'description': 'Kind of resource to list.',
+                                "name": "kind",
+                                "in": "path",
+                                "schema": {"type": "string"},
+                                "description": "Kind of resource to list.",
                             },
                             {
-                                'name': 'callback',
-                                'in': 'query',
-                                'description': 'the callback address',
-                                'required': False,
-                                'schema': {
-                                    'type': 'string',
-                                    'format': 'uri'
-                                },
-                                'example': 'http://client.com/callback'
-                            }
+                                "name": "callback",
+                                "in": "query",
+                                "description": "the callback address",
+                                "required": False,
+                                "schema": {"type": "string", "format": "uri"},
+                                "example": "http://client.com/callback",
+                            },
                         ],
-                        'requestBody': {
-                            'content': {
-                                'application/json':  {
-                                    'example': '{"foo2": "bar2"}'
-                                }
+                        "requestBody": {
+                            "content": {
+                                "application/json": {"example": '{"foo2": "bar2"}'}
                             }
                         },
-                        'responses': {
-                            '202': {
-                                'description': 'Something',
-                                'content': {
-                                    'application/json': {
-                                        'example': '{"foo": "bar"}'
-                                    }
-                                }
+                        "responses": {
+                            "202": {
+                                "description": "Something",
+                                "content": {
+                                    "application/json": {"example": '{"foo": "bar"}'}
+                                },
                             },
                         },
-                        'callbacks': {
-                            'callback': {
-                                '${request.query.callback}': {
-                                    'post': {
-                                        'summary': 'Response callback',
-                                        'operationId': 'sampleCB',
-                                        'requestBody': {
-                                            'required': True,
-                                            'description': 'Result',
-                                            'content': {
-                                                'application/json': {
-                                                    'schema': {
-                                                        'type': 'object',
-                                                        'required': ['status'],
-                                                        'properties': {
-                                                            'status': {
-                                                                'type':
-                                                                    'string',
-                                                                'enum': [
-                                                                    'OK',
-                                                                    'ERROR'
-                                                                ]
+                        "callbacks": {
+                            "callback": {
+                                "${request.query.callback}": {
+                                    "post": {
+                                        "summary": "Response callback",
+                                        "operationId": "sampleCB",
+                                        "requestBody": {
+                                            "required": True,
+                                            "description": "Result",
+                                            "content": {
+                                                "application/json": {
+                                                    "schema": {
+                                                        "type": "object",
+                                                        "required": ["status"],
+                                                        "properties": {
+                                                            "status": {
+                                                                "type": "string",
+                                                                "enum": [
+                                                                    "OK",
+                                                                    "ERROR",
+                                                                ],
                                                             }
-                                                        }
+                                                        },
                                                     }
                                                 }
-                                            }
+                                            },
                                         },
-                                        'responses': {
-                                            '200': {
-                                                'description': 'Success'
-                                            }
-                                        }
+                                        "responses": {
+                                            "200": {"description": "Success"}
+                                        },
                                     }
                                 }
                             }
-                        }
+                        },
                     },
                 },
             },
-        }))
-        assert text == textwrap.dedent('''
+        }
+        text = "\n".join(renderer.render_restructuredtext_markup(spec))
+        assert (
+            text
+            == textwrap.dedent("""
             .. http:post:: /resources/{kind}
                :synopsis: List Resources
 
@@ -1528,35 +1584,40 @@ class TestOpenApi3HttpDomain(object):
                      :status 200:
                         Success
 
-        ''').lstrip()
+        """).lstrip()
+        )
 
     def test_string_example(self):
-        renderer = renderers.HttpdomainOldRenderer(None, {'examples': True})
-        text = '\n'.join(renderer.render_restructuredtext_markup({
-            'openapi': '3.0.0',
-            'paths': {
-                '/resources': {
-                    'get': {
-                        'summary': 'Get resources',
-                        'responses': {
-                            '200': {
-                                'description': 'Something',
-                                'content': {
-                                    'application/json': {
-                                        'schema': {
-                                            'type': 'string',
-                                            'example': '"A sample"',
+        renderer = renderers.HttpdomainOldRenderer(None, {"examples": True})
+        spec = {
+            "openapi": "3.0.0",
+            "paths": {
+                "/resources": {
+                    "get": {
+                        "summary": "Get resources",
+                        "responses": {
+                            "200": {
+                                "description": "Something",
+                                "content": {
+                                    "application/json": {
+                                        "schema": {
+                                            "type": "string",
+                                            "example": '"A sample"',
                                         }
                                     }
-                                }
+                                },
                             },
                         },
                     },
                 },
             },
-        }))
+        }
 
-        assert text == textwrap.dedent('''
+        text = "\n".join(renderer.render_restructuredtext_markup(spec))
+
+        assert (
+            text
+            == textwrap.dedent("""
             .. http:get:: /resources
                :synopsis: Get resources
 
@@ -1582,46 +1643,49 @@ class TestOpenApi3HttpDomain(object):
 
                      "A sample"
 
-        ''').lstrip()
+        """).lstrip()
+        )
 
     def test_ref_example(self):
-        renderer = renderers.HttpdomainOldRenderer(None, {'examples': True})
-        text = '\n'.join(renderer.render_restructuredtext_markup({
-            'openapi': '3.0.0',
-            'paths': {
-                '/resources': {
-                    'get': {
-                        'summary': 'Get resources',
-                        'responses': {
-                            '200': {
-                                'description': 'Something',
-                                'content': {
-                                    'application/json': {
-                                        'schema': {
-                                            '$ref':
-                                                '#/components/schemas/Data',
+        renderer = renderers.HttpdomainOldRenderer(None, {"examples": True})
+        spec = {
+            "openapi": "3.0.0",
+            "paths": {
+                "/resources": {
+                    "get": {
+                        "summary": "Get resources",
+                        "responses": {
+                            "200": {
+                                "description": "Something",
+                                "content": {
+                                    "application/json": {
+                                        "schema": {
+                                            "$ref": "#/components/schemas/Data",
                                         }
                                     }
-                                }
+                                },
                             },
                         },
                     },
                 },
             },
-            'components': {
-                'schemas': {
-                    'Data': {
-                        'type': 'object',
-                        'additionalProperties': True,
-                        'example': {
-                            'prop1': "Sample 1",
-                        }
+            "components": {
+                "schemas": {
+                    "Data": {
+                        "type": "object",
+                        "additionalProperties": True,
+                        "example": {
+                            "prop1": "Sample 1",
+                        },
                     }
                 }
-            }
-        }))
+            },
+        }
+        text = "\n".join(renderer.render_restructuredtext_markup(spec))
 
-        assert text == textwrap.dedent('''
+        assert (
+            text
+            == textwrap.dedent("""
             .. http:get:: /resources
                :synopsis: Get resources
 
@@ -1649,41 +1713,44 @@ class TestOpenApi3HttpDomain(object):
                          "prop1": "Sample 1"
                      }
 
-        ''').lstrip()
+        """).lstrip()
+        )
 
     def test_method_option(self):
-        spec = collections.defaultdict(collections.OrderedDict)
-        spec['paths']['/resource_a'] = {
-            'get': {
-                'description': 'resource a',
-                'responses': {
-                    '200': {'description': 'ok'},
-                }
+        spec = collections.defaultdict(dict)
+        spec["paths"]["/resource_a"] = {
+            "get": {
+                "description": "resource a",
+                "responses": {
+                    "200": {"description": "ok"},
+                },
             },
-            'post': {
-                'description': 'resource a',
-                'responses': {
-                    '201': {'description': 'ok'},
-                }
+            "post": {
+                "description": "resource a",
+                "responses": {
+                    "201": {"description": "ok"},
+                },
             },
-            'put': {
-                'description': 'resource a',
-                'responses': {
-                    '404': {'description': 'error'},
-                }
-            }
+            "put": {
+                "description": "resource a",
+                "responses": {
+                    "404": {"description": "error"},
+                },
+            },
         }
 
         renderer = renderers.HttpdomainOldRenderer(
             None,
             {
-                'methods': ['post'],
-                'paths': ['/resource_a'],
+                "methods": ["post"],
+                "paths": ["/resource_a"],
             },
         )
-        text = '\n'.join(renderer.render_restructuredtext_markup(spec))
+        text = "\n".join(renderer.render_restructuredtext_markup(spec))
 
-        assert text == textwrap.dedent('''
+        assert (
+            text
+            == textwrap.dedent("""
             .. http:post:: /resource_a
                :synopsis: null
 
@@ -1691,145 +1758,151 @@ class TestOpenApi3HttpDomain(object):
 
                :status 201:
                   ok
-        ''').lstrip()
+        """).lstrip()
+        )
 
 
 class TestResolveRefs(object):
-
     def test_ref_resolving(self):
         data = {
-            'foo': {
-                'a': 13,
-                'b': {
-                    'c': True,
-                }
+            "foo": {
+                "a": 13,
+                "b": {
+                    "c": True,
+                },
             },
-            'bar': {
-                '$ref': '#/foo/b'
-            },
-            'baz': [
-                {'$ref': '#/foo/a'},
-                {'$ref': '#/foo/b'},
-                'batman',
-            ]
+            "bar": {"$ref": "#/foo/b"},
+            "baz": [
+                {"$ref": "#/foo/a"},
+                {"$ref": "#/foo/b"},
+                "batman",
+            ],
         }
 
-        assert utils._resolve_refs('', data) == {
-            'foo': {
-                'a': 13,
-                'b': {
-                    'c': True,
-                }
+        assert utils._resolve_refs("", data) == {
+            "foo": {
+                "a": 13,
+                "b": {
+                    "c": True,
+                },
             },
-            'bar': {
-                'c': True,
+            "bar": {
+                "c": True,
             },
-            'baz': [
+            "baz": [
                 13,
-                {'c': True},
-                'batman',
-            ]
+                {"c": True},
+                "batman",
+            ],
         }
 
     def test_relative_ref_resolving_on_fs(self):
-        baseuri = 'file://%s' % os.path.abspath(__file__)
+        baseuri = "file://%s" % os.path.abspath(__file__)
 
         data = {
-            'bar': {
-                '$ref': 'testdata/foo.json#/foo/b',
+            "bar": {
+                "$ref": "testdata/foo.json#/foo/b",
             },
             # check also JSON to YAML references:
-            'baz': {
-                '$ref': 'testdata/foo.yaml#/foo',
-            }
+            "baz": {
+                "$ref": "testdata/foo.yaml#/foo",
+            },
         }
 
         # import pdb
         # pdb.set_trace()
         assert utils._resolve_refs(baseuri, data) == {
-            'bar': {
-                'c': True,
+            "bar": {
+                "c": True,
             },
-            'baz': {
-                'a': 17,
-                'b': 13,
+            "baz": {
+                "a": 17,
+                "b": 13,
             },
         }
 
-    @mock.patch('requests.get')
+    @mock.patch("requests.get")
     def test_relative_ref_resolving_remote(self, mock_get):
         baseuri = os.path.abspath(__file__)
         with open(
-                os.path.join(os.path.dirname(baseuri), 'testdata', 'foo.json'),
-                'r',
-                encoding='utf-8'
+            os.path.join(os.path.dirname(baseuri), "testdata", "foo.json"),
+            "r",
+            encoding="utf-8",
         ) as file:
             json_content = json.loads(file.read())
-        with open(os.path.join(os.path.dirname(baseuri), 'testdata', 'foo.yaml'), 'rb') as file:
+        with open(
+            os.path.join(os.path.dirname(baseuri), "testdata", "foo.yaml"), "rb"
+        ) as file:
             yaml_content = file.read()
 
         def get_side_effect(path):
-            if path.endswith('.json'):
+            if path.endswith(".json"):
                 return mock.Mock(json=mock.Mock(return_value=json_content))
-            return mock.Mock(content=yaml_content, read=mock.Mock(side_effect=Exception))
+            return mock.Mock(
+                content=yaml_content, read=mock.Mock(side_effect=Exception)
+            )
+
         mock_get.side_effect = get_side_effect
 
         data = {
-            'bar': {
-                '$ref': 'testdata/foo.json#/foo/b',
+            "bar": {
+                "$ref": "testdata/foo.json#/foo/b",
             },
             # check also JSON to YAML references:
-            'baz': {
-                '$ref': 'testdata/foo.yaml#/foo',
-            }
-        }
-        assert utils._resolve_refs('https://some/remote/file', data) == {
-            'bar': {
-                'c': True,
+            "baz": {
+                "$ref": "testdata/foo.yaml#/foo",
             },
-            'baz': {
-                'a': 17,
-                'b': 13,
+        }
+        assert utils._resolve_refs("https://some/remote/file", data) == {
+            "bar": {
+                "c": True,
+            },
+            "baz": {
+                "a": 17,
+                "b": 13,
             },
         }
 
     def test_noproperties(self):
-        renderer = renderers.HttpdomainOldRenderer(None, {'examples': True})
-        text = '\n'.join(renderer.render_restructuredtext_markup({
-            'openapi': '3.0.0',
-            'paths': {
-                '/resources': {
-                    'post': {
-                        'summary': 'Create Resources',
-                        'description': '~ some useful description ~',
-                        'requestBody': {
-                            'content': {
-                                'application/json':  {
-                                    'schema': {
-                                        '$ref': '#/components/schemas/Resource',  # noqa
+        renderer = renderers.HttpdomainOldRenderer(None, {"examples": True})
+        data = {
+            "openapi": "3.0.0",
+            "paths": {
+                "/resources": {
+                    "post": {
+                        "summary": "Create Resources",
+                        "description": "~ some useful description ~",
+                        "requestBody": {
+                            "content": {
+                                "application/json": {
+                                    "schema": {
+                                        "$ref": "#/components/schemas/Resource",  # noqa
                                     }
                                 }
                             }
                         },
-                        'responses': {
-                            '200': {
-                                'description': 'Something',
+                        "responses": {
+                            "200": {
+                                "description": "Something",
                             },
                         },
                     },
                 },
             },
-            'components': {
-                'schemas': {
-                    'Resource': {
-                        'type': 'object',
-                        'additionalProperties': True,
+            "components": {
+                "schemas": {
+                    "Resource": {
+                        "type": "object",
+                        "additionalProperties": True,
                     },
                 },
             },
+        }
 
-        }))
-        assert text == textwrap.dedent('''
+        text = "\n".join(renderer.render_restructuredtext_markup(data))
+        assert (
+            text
+            == textwrap.dedent("""
             .. http:post:: /resources
                :synopsis: Create Resources
 
@@ -1850,135 +1923,126 @@ class TestResolveRefs(object):
 
                :status 200:
                   Something
-        ''').lstrip()
+        """).lstrip()
+        )
 
 
 def test_openapi2_examples(tmpdir, run_sphinx):
     spec = os.path.join(
         os.path.abspath(os.path.dirname(__file__)),
-        'examples',
-        'v2.0',
-        'json',
-        'uber.json')
-    py.path.local(spec).copy(tmpdir.join('src', 'test-spec.yml'))
+        "examples",
+        "v2.0",
+        "json",
+        "uber.json",
+    )
+    py.path.local(spec).copy(tmpdir.join("src", "test-spec.yml"))
 
     with pytest.raises(ValueError) as excinfo:
-        run_sphinx('test-spec.yml', options={'examples': True})
+        run_sphinx("test-spec.yml", options={"examples": True})
 
     assert str(excinfo.value) == (
-        'Rendering examples is not supported for OpenAPI v2.x specs.')
+        "Rendering examples is not supported for OpenAPI v2.x specs."
+    )
 
 
-@pytest.mark.parametrize('render_examples', [False, True])
+@pytest.mark.parametrize("render_examples", [False, True])
 def test_openapi3_examples(tmpdir, run_sphinx, render_examples):
     spec = os.path.join(
-        os.path.abspath(os.path.dirname(__file__)),
-        'examples',
-        'v3.0',
-        'petstore.yaml')
-    py.path.local(spec).copy(tmpdir.join('src', 'test-spec.yml'))
-    run_sphinx('test-spec.yml', options={'examples': render_examples})
+        os.path.abspath(os.path.dirname(__file__)), "examples", "v3.0", "petstore.yaml"
+    )
+    py.path.local(spec).copy(tmpdir.join("src", "test-spec.yml"))
+    run_sphinx("test-spec.yml", options={"examples": render_examples})
 
-    rendered_html = tmpdir.join('out', 'index.html').read_text('utf-8')
+    rendered_html = tmpdir.join("out", "index.html").read_text("utf-8")
 
-    assert ('<strong>Example response:</strong>' in rendered_html) \
-        == render_examples
+    assert ("<strong>Example response:</strong>" in rendered_html) == render_examples
 
 
 class TestConvertJsonSchema(object):
     schema = {
-        'type': 'object',
-        'required': ['name', 'surprise'],
-        'properties': {
-            'name': {
-                'type': 'string',
-                'description': 'The name of user'},
-            'alias': {
-                'type': 'array',
-                'items': {
-                    'type': 'string'},
-                'description': 'The list of user alias'},
-            'id': {
-                'type': 'integer',
-                'description': 'the id of user',
-                'readOnly': True},
-            'surprise': {
-                'type': 'string'},
-            'secret': {
-                'type': 'string',
-                'readOnly': True}}}
+        "type": "object",
+        "required": ["name", "surprise"],
+        "properties": {
+            "name": {"type": "string", "description": "The name of user"},
+            "alias": {
+                "type": "array",
+                "items": {"type": "string"},
+                "description": "The list of user alias",
+            },
+            "id": {
+                "type": "integer",
+                "description": "the id of user",
+                "readOnly": True,
+            },
+            "surprise": {"type": "string"},
+            "secret": {"type": "string", "readOnly": True},
+        },
+    }
 
     result = list(openapi20.convert_json_schema(schema))
 
     def test_required_field_with_description(self):
-        assert ':<json string name: The name of user (required)' in self.result
+        assert ":<json string name: The name of user (required)" in self.result
 
     def test_required_field_without_description(self):
-        assert ':<json string surprise: (required)' in self.result
+        assert ":<json string surprise: (required)" in self.result
 
     def test_array_field(self):
-        assert ':<json string alias[]:' in self.result
+        assert ":<json string alias[]:" in self.result
 
     def test_read_only_field_with_description(self):
-        assert ':<json integer id: the id of user (read only)' in self.result
+        assert ":<json integer id: the id of user (read only)" in self.result
 
     def test_read_only_field_without_description(self):
-        assert ':<json string secret: (read only)' in self.result
+        assert ":<json string secret: (read only)" in self.result
 
     def test_nested_schema(self):
         schema = {
-            'type': 'object',
-            'required': ['name'],
-            'properties': {
-                'name': {
-                    'type': 'string',
-                    'description': 'The name of user'
-                },
-                'friends': {
-                    'type': 'array',
-                    'items': {
-                        'type': 'object',
-                        'properties': {
-                            'name': {
-                                'type': 'string',
-                                'readOnly': True
-                            },
-                            'age': {'type': 'integer'}
-                        }
+            "type": "object",
+            "required": ["name"],
+            "properties": {
+                "name": {"type": "string", "description": "The name of user"},
+                "friends": {
+                    "type": "array",
+                    "items": {
+                        "type": "object",
+                        "properties": {
+                            "name": {"type": "string", "readOnly": True},
+                            "age": {"type": "integer"},
+                        },
                     },
-                    'description': 'The list of user alias'
+                    "description": "The list of user alias",
                 },
-                'id': {
-                    'type': 'integer',
-                    'description': 'the id of user',
-                    'readOnly': True
+                "id": {
+                    "type": "integer",
+                    "description": "the id of user",
+                    "readOnly": True,
                 },
-                'car': {
-                    'type': 'object',
-                    'properties': {
-                        'provider': {'type': 'string'},
-                        'date': {
-                            'type': 'string',
-                            'description': 'The car of user'
-                        }
-                    }
+                "car": {
+                    "type": "object",
+                    "properties": {
+                        "provider": {"type": "string"},
+                        "date": {"type": "string", "description": "The car of user"},
+                    },
                 },
-                'meta': {
-                    'type': 'object',
-                    'description': 'free form metadata',
+                "meta": {
+                    "type": "object",
+                    "description": "free form metadata",
                 },
-            }
+            },
         }
 
-        result = '\n'.join(openapi20.convert_json_schema(schema))
+        result = "\n".join(openapi20.convert_json_schema(schema))
 
-        expected = textwrap.dedent('''
+        expected = textwrap.dedent(
+            """
             :<json string car.date: The car of user
             :<json string car.provider:
             :<json integer friends[].age:
             :<json string friends[].name: (read only)
             :<json integer id: the id of user (read only)
             :<json object meta: free form metadata
-            :<json string name: The name of user (required)'''.strip('\n'))
+            :<json string name: The name of user (required)""".strip("\n")
+        )
 
         assert result == expected

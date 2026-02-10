@@ -15,39 +15,9 @@ repos:
       - id: check-yaml
       - id: debug-statements
 
-  - repo: https://github.com/psf/black
-    rev: 26.1.0
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: v0.15.0
     hooks:
-      - id: black
-        args: [--line-length=88, --target-version=py35]
-        exclude: >
-          (?x)(
-            # black defaults
-              \.eggs
-            | \.git\
-            | \.hg
-            | \.mypy_cache
-            | \.nox
-            | \.tox
-            | \.venv
-            | _build
-            | buck-out
-            | build
-            | dist
-
-            # sphinxcontrib-openapi
-            | sphinxcontrib/openapi/__init__.py
-            | sphinxcontrib/openapi/__main__.py
-            | sphinxcontrib/openapi/openapi20.py
-            | sphinxcontrib/openapi/openapi30.py
-            | sphinxcontrib/openapi/directive.py
-            | sphinxcontrib/openapi/utils.py
-            | tests/test_openapi.py
-            | tests/conftest.py
-            | tests/test_spec_examples.py
-          )
-
-  - repo: https://github.com/pycqa/flake8
-    rev: 7.3.0
-    hooks:
-      - id: flake8
+      - id: ruff-check
+        args: ['--fix', '--unsafe-fixes']
+      - id: ruff-format

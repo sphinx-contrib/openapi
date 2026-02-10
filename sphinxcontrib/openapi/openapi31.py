@@ -86,7 +86,7 @@ def _parse_schema(schema, method):
     Convert a Schema Object to a Python object.
 
     Args:
-        schema: An ``OrderedDict`` representing the schema object.
+        schema: A dict representing the schema object.
     """
     if method and schema.get("readOnly", False):
         return _READONLY_PROPERTY
@@ -157,13 +157,13 @@ def _parse_schema(schema, method):
         ):
             return _READONLY_PROPERTY
 
-        results = []
+        results = {}
         for name, prop in schema.get("properties", {}).items():
             result = _parse_schema(prop, method)
             if result != _READONLY_PROPERTY:
-                results.append((name, result))
+                results[name] = result
 
-        return collections.OrderedDict(results)
+        return results
 
     if (schema_type, schema.get("format")) in _TYPE_MAPPING:
         return _TYPE_MAPPING[(schema_type, schema.get("format"))]
@@ -493,9 +493,7 @@ def openapihttpdomain(spec, **options):
 
     # https://github.com/OAI/OpenAPI-Specification/blob/3.1.0/versions/3.1.0.md#paths-object
     if "group" in options:
-        groups = collections.OrderedDict(
-            [(x["name"], []) for x in spec.get("tags", {})]
-        )
+        groups = {x["name"]: [] for x in spec.get("tags", {})}
 
         for endpoint in paths:
             for method, properties in spec["paths"][endpoint].items():
