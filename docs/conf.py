@@ -20,7 +20,4 @@ exclude_patterns = ["_build"]
 pygments_style = "default"
 
 if not os.environ.get("READTHEDOCS") == "True":
-    import sphinx_rtd_theme
-
     html_theme = "sphinx_rtd_theme"
-    html_theme_path = [sphinx_rtd_theme.get_html_theme_path()]
