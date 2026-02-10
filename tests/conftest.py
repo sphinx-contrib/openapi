@@ -52,8 +52,8 @@ class _Tee(io.StringIO):
 
 def _format_option_raw(key, val):
     if isinstance(val, bool) and val:
-        return ":%s:" % key
-    return ":%s: %s" % (key, val)
+        return f":{key}:"
+    return f":{key}: {val}"
 
 
 @pytest.fixture(scope="function")
@@ -63,12 +63,12 @@ def run_sphinx(tmpdir):
 
     def run(spec, options={}, renderer=None):
         options_raw = "\n".join(
-            ["   %s" % _format_option_raw(key, val) for key, val in options.items()]
+            [f"   {_format_option_raw(key, val)}" for key, val in options.items()]
         )
 
         conf_raw = ""
         if renderer:
-            conf_raw = "openapi_default_renderer = '%s'" % renderer
+            conf_raw = f"openapi_default_renderer = '{renderer}'"
 
         src.join("conf.py").write_text(
             textwrap.dedent("""
@@ -86,7 +86,7 @@ def run_sphinx(tmpdir):
         )
 
         src.join("index.rst").write_text(
-            ".. openapi:: %s\n%s" % (spec, options_raw), encoding="utf-8"
+            f".. openapi:: {spec}\n{options_raw}", encoding="utf-8"
         )
 
         # Warnings are captured and returned so tests can assert on them. They

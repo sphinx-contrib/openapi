@@ -77,7 +77,7 @@ def _resolve_refs(uri, spec):
                 deepcopy(resolved.contents),
                 resolved.resolver,
                 urldefrag(ref)[0],
-                seen + (ref,),
+                (*seen, ref),
             )
         elif isinstance(node, collections.abc.Mapping):
             for k, v in node.items():

@@ -34,14 +34,14 @@ def _register_rendering_directives(app, conf):
 
     for renderer_name, renderer_cls in renderers_map.items():
         app.add_directive(
-            "openapi:%s" % renderer_name,
+            f"openapi:{renderer_name}",
             directive.create_directive_from_renderer(renderer_cls),
         )
 
     if conf.openapi_default_renderer not in renderers_map:
         raise ValueError(
             "invalid 'openapi_default_renderer' value: "
-            "no such renderer: '%s'" % conf.openapi_default_renderer
+            f"no such renderer: '{conf.openapi_default_renderer}'"
         )
 
     app.add_directive(
