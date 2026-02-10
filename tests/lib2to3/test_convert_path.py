@@ -8,8 +8,7 @@ import sphinxcontrib.openapi._lib2to3 as lib2to3
 @pytest.fixture(scope="function")
 def convert_path(oas_fragment):
     def _wrapper(path):
-        oas2 = oas_fragment(
-            """
+        oas2 = oas_fragment("""
             swagger: "2.0"
             info:
               title: An example spec
@@ -20,8 +19,7 @@ def convert_path(oas_fragment):
                   responses:
                     '200':
                       description: a response description
-            """
-        )
+            """)
         oas2["paths"]["/test"] = path
 
         oas3 = lib2to3.convert(oas2)
@@ -35,29 +33,24 @@ def convert_path(oas_fragment):
 )
 def test_minimal(convert_path, oas_fragment, method):
     converted = convert_path(
-        oas_fragment(
-            f"""
+        oas_fragment(f"""
             {method}:
               responses:
                 '200':
                   description: a response description
-            """
-        ),
+            """),
     )
-    assert converted == oas_fragment(
-        f"""
+    assert converted == oas_fragment(f"""
         {method}:
           responses:
             '200':
               description: a response description
-        """
-    )
+        """)
 
 
 def test_complete(convert_path, oas_fragment):
     converted = convert_path(
-        oas_fragment(
-            """
+        oas_fragment("""
             parameters:
               - in: path
                 name: username
@@ -88,11 +81,9 @@ def test_complete(convert_path, oas_fragment):
                       type: integer
                     type: array
                   description: a response description
-            """
-        ),
+            """),
     )
-    assert converted == oas_fragment(
-        """
+    assert converted == oas_fragment("""
         parameters:
           - in: path
             name: username
@@ -126,14 +117,12 @@ def test_complete(convert_path, oas_fragment):
                       type: integer
                     type: array
               description: a response description
-        """
-    )
+        """)
 
 
 def test_shared_parameters(convert_path, oas_fragment):
     converted = convert_path(
-        oas_fragment(
-            """
+        oas_fragment("""
             parameters:
               - in: path
                 name: username
@@ -150,11 +139,9 @@ def test_shared_parameters(convert_path, oas_fragment):
               responses:
                 '200':
                   description: a response description
-            """
-        ),
+            """),
     )
-    assert converted == oas_fragment(
-        """
+    assert converted == oas_fragment("""
         parameters:
           - in: path
             name: username
@@ -174,14 +161,12 @@ def test_shared_parameters(convert_path, oas_fragment):
           responses:
             '200':
               description: a response description
-        """
-    )
+        """)
 
 
 def test_multiple(convert_path, oas_fragment):
     converted = convert_path(
-        oas_fragment(
-            """
+        oas_fragment("""
             post:
               responses:
                 '201':
@@ -190,11 +175,9 @@ def test_multiple(convert_path, oas_fragment):
               responses:
                 '200':
                   description: a get response description
-            """
-        ),
+            """),
     )
-    assert converted == oas_fragment(
-        """
+    assert converted == oas_fragment("""
         post:
           responses:
             '201':
@@ -203,28 +186,23 @@ def test_multiple(convert_path, oas_fragment):
           responses:
             '200':
               description: a get response description
-        """
-    )
+        """)
 
 
 def test_vendor_extensions(convert_path, oas_fragment):
     converted = convert_path(
-        oas_fragment(
-            """
+        oas_fragment("""
             get:
               responses:
                 '200':
                   description: a response description
             x-vendor-ext: vendor-ext
-            """
-        ),
+            """),
     )
-    assert converted == oas_fragment(
-        """
+    assert converted == oas_fragment("""
         get:
           responses:
             '200':
               description: a response description
         x-vendor-ext: vendor-ext
-        """
-    )
+        """)

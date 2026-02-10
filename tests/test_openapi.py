@@ -1769,7 +1769,6 @@ class TestResolveRefs(object):
             yaml_content = file.read()
 
         def get_side_effect(path):
-            nonlocal json_content
             if path.endswith('.json'):
                 return mock.Mock(json=mock.Mock(return_value=json_content))
             return mock.Mock(content=yaml_content, read=mock.Mock(side_effect=Exception))

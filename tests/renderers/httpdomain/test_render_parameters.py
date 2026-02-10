@@ -15,51 +15,34 @@ def textify(generator):
 def test_render_parameters_no_items(testrenderer, oas_fragment):
     """No parameter definitions are rendered."""
 
-    markup = textify(
-        testrenderer.render_parameters(
-            oas_fragment(
-                """
+    markup = textify(testrenderer.render_parameters(oas_fragment("""
                 []
-                """
-            )
-        )
-    )
+                """)))
     assert markup == ""
 
 
 def test_render_parameters_one_item(testrenderer, oas_fragment):
     """One usual parameter definition is rendered."""
 
-    markup = textify(
-        testrenderer.render_parameters(
-            oas_fragment(
-                """
+    markup = textify(testrenderer.render_parameters(oas_fragment("""
                 - name: evidenceId
                   in: path
                   required: true
                   description: A unique evidence identifier to query.
                   schema:
                     type: string
-                """
-            )
-        )
-    )
-    assert markup == textwrap.dedent(
-        """\
+                """)))
+    assert markup == textwrap.dedent("""\
         :param evidenceId:
            A unique evidence identifier to query.
         :paramtype evidenceId: string, required
-        """.rstrip()
-    )
+        """.rstrip())
 
 
 def test_render_parameters_many_items(testrenderer, oas_fragment):
     """Many parameter definitions are rendered."""
 
-    markup = textify(
-        testrenderer.render_parameters(
-            oas_fragment(
-                """
+    markup = textify(testrenderer.render_parameters(oas_fragment("""
                 - name: evidenceId
                   in: path
                   required: true
@@ -77,12 +60,8 @@ def test_render_parameters_many_items(testrenderer, oas_fragment):
                   description: API version to use for the request.
                   schema:
                     type: integer
-                """
-            )
-        )
-    )
-    assert markup == textwrap.dedent(
-        """\
+                """)))
+    assert markup == textwrap.dedent("""\
         :reqheader Api-Version:
            API version to use for the request.
         :reqheadertype Api-Version: integer
@@ -92,8 +71,7 @@ def test_render_parameters_many_items(testrenderer, oas_fragment):
         :queryparam details:
            If true, information w/ details is returned.
         :queryparamtype details: boolean
-        """.rstrip()
-    )
+        """.rstrip())
 
 
 @pytest.mark.parametrize("permutation_seq", itertools.permutations(range(3)))
@@ -102,8 +80,7 @@ def test_render_parameters_many_items_ordered(
 ):
     """Many parameter definitions are rendered and properly ordered."""
 
-    parameters = oas_fragment(
-        """
+    parameters = oas_fragment("""
         - name: evidenceId
           in: path
           required: true
@@ -122,8 +99,7 @@ def test_render_parameters_many_items_ordered(
           description: API version to use for the request.
           schema:
             type: integer
-        """
-    )
+        """)
 
     markup = textify(
         testrenderer.render_parameters(
@@ -134,8 +110,7 @@ def test_render_parameters_many_items_ordered(
         )
     )
 
-    assert markup == textwrap.dedent(
-        """\
+    assert markup == textwrap.dedent("""\
         :reqheader Api-Version:
            API version to use for the request.
         :reqheadertype Api-Version: integer
@@ -145,17 +120,13 @@ def test_render_parameters_many_items_ordered(
         :queryparam details:
            If true, information w/ details is returned.
         :queryparamtype details: boolean
-        """.rstrip()
-    )
+        """.rstrip())
 
 
 def test_render_parameters_many_items_stable_order(testrenderer, oas_fragment):
     """Many parameter definitions are rendered w/ preserved order."""
 
-    markup = textify(
-        testrenderer.render_parameters(
-            oas_fragment(
-                """
+    markup = textify(testrenderer.render_parameters(oas_fragment("""
                 - name: kind
                   in: path
                   required: true
@@ -190,12 +161,8 @@ def test_render_parameters_many_items_stable_order(testrenderer, oas_fragment):
                   description: A desired Content-Type of HTTP response.
                   schema:
                     type: string
-                """
-            )
-        )
-    )
-    assert markup == textwrap.dedent(
-        """\
+                """)))
+    assert markup == textwrap.dedent("""\
         :reqheader Api-Version:
            API version to use for the request.
         :reqheadertype Api-Version: integer
@@ -214,8 +181,7 @@ def test_render_parameters_many_items_stable_order(testrenderer, oas_fragment):
         :queryparam related:
            If true, links to related evidences are returned.
         :queryparamtype related: boolean
-        """.rstrip()
-    )
+        """.rstrip())
 
 
 def test_render_parameters_custom_order(fakestate, oas_fragment):
@@ -225,10 +191,7 @@ def test_render_parameters_custom_order(fakestate, oas_fragment):
         fakestate, {"request-parameters-order": ["query", "path", "header"]}
     )
 
-    markup = textify(
-        testrenderer.render_parameters(
-            oas_fragment(
-                """
+    markup = textify(testrenderer.render_parameters(oas_fragment("""
                 - name: kind
                   in: path
                   required: true
@@ -263,12 +226,8 @@ def test_render_parameters_custom_order(fakestate, oas_fragment):
                   description: A desired Content-Type of HTTP response.
                   schema:
                     type: string
-                """
-            )
-        )
-    )
-    assert markup == textwrap.dedent(
-        """\
+                """)))
+    assert markup == textwrap.dedent("""\
         :queryparam details:
            If true, information w/ details is returned.
         :queryparamtype details: boolean
@@ -287,8 +246,7 @@ def test_render_parameters_custom_order(fakestate, oas_fragment):
         :reqheader Accept:
            A desired Content-Type of HTTP response.
         :reqheadertype Accept: string
-        """.rstrip()
-    )
+        """.rstrip())
 
 
 def test_render_parameters_custom_order_partial(fakestate, oas_fragment):
@@ -298,10 +256,7 @@ def test_render_parameters_custom_order_partial(fakestate, oas_fragment):
         fakestate, {"request-parameters-order": ["query", "path"]}
     )
 
-    markup = textify(
-        testrenderer.render_parameters(
-            oas_fragment(
-                """
+    markup = textify(testrenderer.render_parameters(oas_fragment("""
                 - name: kind
                   in: path
                   required: true
@@ -336,12 +291,8 @@ def test_render_parameters_custom_order_partial(fakestate, oas_fragment):
                   description: A desired Content-Type of HTTP response.
                   schema:
                     type: string
-                """
-            )
-        )
-    )
-    assert markup == textwrap.dedent(
-        """\
+                """)))
+    assert markup == textwrap.dedent("""\
         :queryparam details:
            If true, information w/ details is returned.
         :queryparamtype details: boolean
@@ -360,8 +311,7 @@ def test_render_parameters_custom_order_partial(fakestate, oas_fragment):
         :reqheader Accept:
            A desired Content-Type of HTTP response.
         :reqheadertype Accept: string
-        """.rstrip()
-    )
+        """.rstrip())
 
 
 def test_render_parameters_case_insensitive(fakestate, oas_fragment):
@@ -371,10 +321,7 @@ def test_render_parameters_case_insensitive(fakestate, oas_fragment):
         fakestate, {"request-parameters-order": ["QUERY", "pAth", "Header"]}
     )
 
-    markup = textify(
-        testrenderer.render_parameters(
-            oas_fragment(
-                """
+    markup = textify(testrenderer.render_parameters(oas_fragment("""
                 - name: kind
                   in: PATH
                   required: true
@@ -409,12 +356,8 @@ def test_render_parameters_case_insensitive(fakestate, oas_fragment):
                   description: A desired Content-Type of HTTP response.
                   schema:
                     type: string
-                """
-            )
-        )
-    )
-    assert markup == textwrap.dedent(
-        """\
+                """)))
+    assert markup == textwrap.dedent("""\
         :queryparam details:
            If true, information w/ details is returned.
         :queryparamtype details: boolean
@@ -433,5 +376,4 @@ def test_render_parameters_case_insensitive(fakestate, oas_fragment):
         :reqheader Accept:
            A desired Content-Type of HTTP response.
         :reqheadertype Accept: string
-        """.rstrip()
-    )
+        """.rstrip())

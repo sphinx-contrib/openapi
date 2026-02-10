@@ -8,8 +8,7 @@ import sphinxcontrib.openapi._lib2to3 as lib2to3
 @pytest.fixture(scope="function")
 def convert_operation(oas_fragment):
     def _wrapper(operation):
-        oas2 = oas_fragment(
-            """
+        oas2 = oas_fragment("""
             swagger: "2.0"
             info:
               title: An example spec
@@ -20,8 +19,7 @@ def convert_operation(oas_fragment):
                   responses:
                     '200':
                       description: a response description
-            """
-        )
+            """)
         oas2["paths"]["/test"]["get"] = operation
 
         oas3 = lib2to3.convert(oas2)
@@ -32,27 +30,22 @@ def convert_operation(oas_fragment):
 
 def test_minimal(convert_operation, oas_fragment):
     converted = convert_operation(
-        oas_fragment(
-            """
+        oas_fragment("""
             responses:
               '200':
                 description: a response description
-            """
-        ),
+            """),
     )
-    assert converted == oas_fragment(
-        """
+    assert converted == oas_fragment("""
         responses:
           '200':
             description: a response description
-        """
-    )
+        """)
 
 
 def test_complete(convert_operation, oas_fragment):
     converted = convert_operation(
-        oas_fragment(
-            """
+        oas_fragment("""
             tags:
               - tag_a
               - tag_b
@@ -82,11 +75,9 @@ def test_complete(convert_operation, oas_fragment):
                     format: int32
                     type: integer
                   type: array
-            """
-        ),
+            """),
     )
-    assert converted == oas_fragment(
-        """
+    assert converted == oas_fragment("""
         tags:
           - tag_a
           - tag_b
@@ -119,14 +110,12 @@ def test_complete(convert_operation, oas_fragment):
                     type: integer
                   type: array
             description: a response description
-        """
-    )
+        """)
 
 
 def test_request_body(convert_operation, oas_fragment):
     converted = convert_operation(
-        oas_fragment(
-            """
+        oas_fragment("""
             description: an operation description
             consumes:
               - application/json
@@ -146,11 +135,9 @@ def test_request_body(convert_operation, oas_fragment):
             responses:
               '200':
                 description: a response description
-            """
-        ),
+            """),
     )
-    assert converted == oas_fragment(
-        """
+    assert converted == oas_fragment("""
         description: an operation description
         parameters:
           - in: path
@@ -170,14 +157,12 @@ def test_request_body(convert_operation, oas_fragment):
         responses:
           '200':
              description: a response description
-        """
-    )
+        """)
 
 
 def test_request_body_formdata(convert_operation, oas_fragment):
     converted = convert_operation(
-        oas_fragment(
-            """
+        oas_fragment("""
             description: an operation description
             consumes:
               - application/x-www-form-urlencoded
@@ -192,11 +177,9 @@ def test_request_body_formdata(convert_operation, oas_fragment):
             responses:
               '200':
                 description: a response description
-            """
-        ),
+            """),
     )
-    assert converted == oas_fragment(
-        """
+    assert converted == oas_fragment("""
         description: an operation description
         parameters:
           - in: path
@@ -215,14 +198,12 @@ def test_request_body_formdata(convert_operation, oas_fragment):
         responses:
           '200':
              description: a response description
-        """
-    )
+        """)
 
 
 def test_only_request_body(convert_operation, oas_fragment):
     converted = convert_operation(
-        oas_fragment(
-            """
+        oas_fragment("""
             description: an operation description
             consumes:
               - application/json
@@ -238,11 +219,9 @@ def test_only_request_body(convert_operation, oas_fragment):
             responses:
               '200':
                 description: a response description
-            """
-        ),
+            """),
     )
-    assert converted == oas_fragment(
-        """
+    assert converted == oas_fragment("""
         description: an operation description
         requestBody:
           content:
@@ -256,26 +235,21 @@ def test_only_request_body(convert_operation, oas_fragment):
         responses:
           '200':
              description: a response description
-        """
-    )
+        """)
 
 
 def test_vendor_extensions(convert_operation, oas_fragment):
     converted = convert_operation(
-        oas_fragment(
-            """
+        oas_fragment("""
             responses:
               '200':
                 description: a response description
             x-vendor-ext: vendor-ext
-            """
-        ),
+            """),
     )
-    assert converted == oas_fragment(
-        """
+    assert converted == oas_fragment("""
         responses:
           '200':
             description: a response description
         x-vendor-ext: vendor-ext
-        """
-    )
+        """)

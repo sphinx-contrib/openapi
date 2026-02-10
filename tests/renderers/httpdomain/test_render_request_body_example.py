@@ -127,8 +127,7 @@ def test_render_request_body_example(testrenderer, content, oas_fragment):
             "POST",
         )
     )
-    assert markup == textwrap.dedent(
-        """\
+    assert markup == textwrap.dedent("""\
         .. sourcecode:: http
 
            POST /evidences/{evidenceId} HTTP/1.1
@@ -138,8 +137,7 @@ def test_render_request_body_example(testrenderer, content, oas_fragment):
              "foo": "bar",
              "baz": 42
            }
-        """.rstrip()
-    )
+        """.rstrip())
 
 
 def test_render_request_body_example_1st_from_examples(testrenderer, oas_fragment):
@@ -147,8 +145,7 @@ def test_render_request_body_example_1st_from_examples(testrenderer, oas_fragmen
 
     markup = textify(
         testrenderer.render_request_body_example(
-            oas_fragment(
-                """
+            oas_fragment("""
                 content:
                   application/json:
                     examples:
@@ -159,14 +156,12 @@ def test_render_request_body_example_1st_from_examples(testrenderer, oas_fragmen
                       bar:
                         value:
                           foobar: bazinga
-                """
-            ),
+                """),
             "/evidences/{evidenceId}",
             "POST",
         )
     )
-    assert markup == textwrap.dedent(
-        """\
+    assert markup == textwrap.dedent("""\
         .. sourcecode:: http
 
            POST /evidences/{evidenceId} HTTP/1.1
@@ -176,8 +171,7 @@ def test_render_request_body_example_1st_from_examples(testrenderer, oas_fragmen
              "foo": "bar",
              "baz": 42
            }
-        """.rstrip()
-    )
+        """.rstrip())
 
 
 def test_render_request_body_example_1st_from_media_type(testrenderer, oas_fragment):
@@ -185,8 +179,7 @@ def test_render_request_body_example_1st_from_media_type(testrenderer, oas_fragm
 
     markup = textify(
         testrenderer.render_request_body_example(
-            oas_fragment(
-                """
+            oas_fragment("""
                 content:
                   text/plain:
                     example: |
@@ -195,15 +188,13 @@ def test_render_request_body_example_1st_from_media_type(testrenderer, oas_fragm
                   application/json:
                     schema:
                       type: object
-                """
-            ),
+                """),
             "/evidences/{evidenceId}",
             "POST",
         )
     )
 
-    assert markup == textwrap.dedent(
-        """\
+    assert markup == textwrap.dedent("""\
         .. sourcecode:: http
 
            POST /evidences/{evidenceId} HTTP/1.1
@@ -211,8 +202,7 @@ def test_render_request_body_example_1st_from_media_type(testrenderer, oas_fragm
 
            foo = "bar"
            baz = 42
-        """.rstrip()
-    )
+        """.rstrip())
 
 
 @pytest.mark.parametrize(
@@ -230,8 +220,7 @@ def test_render_request_body_example_preference(
 
     markup = textify(
         testrenderer.render_request_body_example(
-            oas_fragment(
-                """
+            oas_fragment("""
                 content:
                   application/json:
                     example:
@@ -241,15 +230,13 @@ def test_render_request_body_example_preference(
                     example: |
                       foo = "bar"
                       baz = 42
-                """
-            ),
+                """),
             "/evidences/{evidenceId}",
             "POST",
         )
     )
 
-    assert markup == textwrap.dedent(
-        """\
+    assert markup == textwrap.dedent("""\
         .. sourcecode:: http
 
            POST /evidences/{evidenceId} HTTP/1.1
@@ -257,8 +244,7 @@ def test_render_request_body_example_preference(
 
            foo = "bar"
            baz = 42
-        """.rstrip()
-    )
+        """.rstrip())
 
 
 @pytest.mark.parametrize(
@@ -276,8 +262,7 @@ def test_render_request_body_example_preference_complex(
 
     markup = textify(
         testrenderer.render_request_body_example(
-            oas_fragment(
-                """
+            oas_fragment("""
                 content:
                   text/csv:
                     example: |
@@ -290,15 +275,13 @@ def test_render_request_body_example_preference_complex(
                   application/json:
                     schema:
                       type: object
-                """
-            ),
+                """),
             "/evidences/{evidenceId}",
             "POST",
         )
     )
 
-    assert markup == textwrap.dedent(
-        """\
+    assert markup == textwrap.dedent("""\
         .. sourcecode:: http
 
            POST /evidences/{evidenceId} HTTP/1.1
@@ -306,8 +289,7 @@ def test_render_request_body_example_preference_complex(
 
            foo = "bar"
            baz = 42
-        """.rstrip()
-    )
+        """.rstrip())
 
 
 def test_render_request_body_example_preference_priority(fakestate, oas_fragment):
@@ -323,8 +305,7 @@ def test_render_request_body_example_preference_priority(fakestate, oas_fragment
 
     markup = textify(
         testrenderer.render_request_body_example(
-            oas_fragment(
-                """
+            oas_fragment("""
                 content:
                   application/json:
                     example:
@@ -334,15 +315,13 @@ def test_render_request_body_example_preference_priority(fakestate, oas_fragment
                     example: |
                       foo = "bar"
                       baz = 42
-                """
-            ),
+                """),
             "/evidences/{evidenceId}",
             "POST",
         )
     )
 
-    assert markup == textwrap.dedent(
-        """\
+    assert markup == textwrap.dedent("""\
         .. sourcecode:: http
 
            POST /evidences/{evidenceId} HTTP/1.1
@@ -350,8 +329,7 @@ def test_render_request_body_example_preference_priority(fakestate, oas_fragment
 
            foo = "bar"
            baz = 42
-        """.rstrip()
-    )
+        """.rstrip())
 
 
 @responses.activate
@@ -367,29 +345,25 @@ def test_render_request_body_example_external(testrenderer, oas_fragment):
 
     markup = textify(
         testrenderer.render_request_body_example(
-            oas_fragment(
-                """
+            oas_fragment("""
                 content:
                   application/json:
                     examples:
                       test:
                         externalValue: https://example.com/json/examples/test.json
-                """
-            ),
+                """),
             "/evidences/{evidenceId}",
             "POST",
         )
     )
-    assert markup == textwrap.dedent(
-        """\
+    assert markup == textwrap.dedent("""\
         .. sourcecode:: http
 
            POST /evidences/{evidenceId} HTTP/1.1
            Content-Type: application/json
 
            {"foo": "bar", "baz": 42}
-        """.rstrip()
-    )
+        """.rstrip())
 
 
 @responses.activate
@@ -406,8 +380,7 @@ def test_render_request_body_example_external_errored_next_example(
 
     markup = textify(
         testrenderer.render_request_body_example(
-            oas_fragment(
-                """
+            oas_fragment("""
                 content:
                   application/json:
                     examples:
@@ -415,22 +388,19 @@ def test_render_request_body_example_external_errored_next_example(
                         externalValue: https://example.com/json/examples/test.json
                       fallback:
                         value: '{"spam": 42}'
-                """
-            ),
+                """),
             "/evidences/{evidenceId}",
             "POST",
         )
     )
-    assert markup == textwrap.dedent(
-        """\
+    assert markup == textwrap.dedent("""\
         .. sourcecode:: http
 
            POST /evidences/{evidenceId} HTTP/1.1
            Content-Type: application/json
 
            {"spam": 42}
-        """.rstrip()
-    )
+        """.rstrip())
 
 
 @responses.activate
@@ -449,8 +419,7 @@ def test_render_request_body_example_external_errored_next_media_type(
 
     markup = textify(
         testrenderer.render_request_body_example(
-            oas_fragment(
-                """
+            oas_fragment("""
                 content:
                   application/json:
                     examples:
@@ -458,22 +427,19 @@ def test_render_request_body_example_external_errored_next_media_type(
                         externalValue: https://example.com/json/examples/test.json
                   text/csv:
                     example: spam,42
-                """
-            ),
+                """),
             "/evidences/{evidenceId}",
             "POST",
         )
     )
-    assert markup == textwrap.dedent(
-        """\
+    assert markup == textwrap.dedent("""\
         .. sourcecode:: http
 
            POST /evidences/{evidenceId} HTTP/1.1
            Content-Type: text/csv
 
            spam,42
-        """.rstrip()
-    )
+        """.rstrip())
 
 
 def test_render_request_body_example_content_type(testrenderer, oas_fragment):
@@ -481,21 +447,18 @@ def test_render_request_body_example_content_type(testrenderer, oas_fragment):
 
     markup = textify(
         testrenderer.render_request_body_example(
-            oas_fragment(
-                """
+            oas_fragment("""
                 content:
                   text/csv:
                     example: |
                       foo,baz
                       bar,42
-                """
-            ),
+                """),
             "/evidences/{evidenceId}",
             "POST",
         )
     )
-    assert markup == textwrap.dedent(
-        """\
+    assert markup == textwrap.dedent("""\
         .. sourcecode:: http
 
            POST /evidences/{evidenceId} HTTP/1.1
@@ -503,8 +466,7 @@ def test_render_request_body_example_content_type(testrenderer, oas_fragment):
 
            foo,baz
            bar,42
-        """.rstrip()
-    )
+        """.rstrip())
 
 
 def test_render_request_body_example_noop(testrenderer, oas_fragment):
@@ -512,14 +474,12 @@ def test_render_request_body_example_noop(testrenderer, oas_fragment):
 
     markup = textify(
         testrenderer.render_request_body_example(
-            oas_fragment(
-                """
+            oas_fragment("""
                 content:
                   application/json:
                     schema:
                       type: object
-                """
-            ),
+                """),
             "/evidences/{evidenceId}",
             "POST",
         )
@@ -540,22 +500,19 @@ def test_render_request_body_example_http_method(
 
     markup = textify(
         testrenderer.render_request_body_example(
-            oas_fragment(
-                """
+            oas_fragment("""
                 content:
                   text/csv:
                     example: |
                       foo,baz
                       bar,42
-                """
-            ),
+                """),
             "/evidences/{evidenceId}",
             http_method,
         )
     )
 
-    assert markup == textwrap.dedent(
-        f"""\
+    assert markup == textwrap.dedent(f"""\
         .. sourcecode:: http
 
            {http_method} /evidences/{{evidenceId}} HTTP/1.1
@@ -563,8 +520,7 @@ def test_render_request_body_example_http_method(
 
            foo,baz
            bar,42
-        """.rstrip()
-    )
+        """.rstrip())
 
 
 @pytest.mark.parametrize(
@@ -580,22 +536,19 @@ def test_render_request_body_example_http_endpoint(
 
     markup = textify(
         testrenderer.render_request_body_example(
-            oas_fragment(
-                """
+            oas_fragment("""
                 content:
                   text/csv:
                     example: |
                       foo,baz
                       bar,42
-                """
-            ),
+                """),
             http_endpoint,
             "POST",
         )
     )
 
-    assert markup == textwrap.dedent(
-        f"""\
+    assert markup == textwrap.dedent(f"""\
         .. sourcecode:: http
 
            POST {http_endpoint} HTTP/1.1
@@ -603,5 +556,4 @@ def test_render_request_body_example_http_endpoint(
 
            foo,baz
            bar,42
-        """.rstrip()
-    )
+        """.rstrip())

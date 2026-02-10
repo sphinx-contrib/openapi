@@ -8,8 +8,7 @@ import sphinxcontrib.openapi._lib2to3 as lib2to3
 @pytest.fixture(scope="function")
 def convert_response(oas_fragment):
     def _wrapper(response, produces):
-        oas2 = oas_fragment(
-            """
+        oas2 = oas_fragment("""
             swagger: "2.0"
             info:
               title: An example spec
@@ -20,8 +19,7 @@ def convert_response(oas_fragment):
                   responses:
                     '200':
                       description: a response description
-            """
-        )
+            """)
         oas2["paths"]["/test"]["get"]["responses"]["200"] = response
         oas2["paths"]["/test"]["get"]["produces"] = produces
 
@@ -33,36 +31,29 @@ def convert_response(oas_fragment):
 
 def test_minimal(convert_response, oas_fragment):
     converted = convert_response(
-        oas_fragment(
-            """
+        oas_fragment("""
             description: a response description
-            """
-        ),
+            """),
         produces=["application/json"],
     )
-    assert converted == oas_fragment(
-        """
+    assert converted == oas_fragment("""
         description: a response description
-        """
-    )
+        """)
 
 
 def test_schema(convert_response, oas_fragment):
     converted = convert_response(
-        oas_fragment(
-            """
+        oas_fragment("""
             description: a response description
             schema:
               items:
                 format: int32
                 type: integer
               type: array
-            """
-        ),
+            """),
         produces=["application/json"],
     )
-    assert converted == oas_fragment(
-        """
+    assert converted == oas_fragment("""
         content:
           application/json:
             schema:
@@ -71,26 +62,22 @@ def test_schema(convert_response, oas_fragment):
                 type: integer
               type: array
         description: a response description
-        """
-    )
+        """)
 
 
 def test_schema_mimetypes(convert_response, oas_fragment):
     converted = convert_response(
-        oas_fragment(
-            """
+        oas_fragment("""
             description: a response description
             schema:
               items:
                 format: int32
                 type: integer
               type: array
-            """
-        ),
+            """),
         produces=["application/json", "text/plain"],
     )
-    assert converted == oas_fragment(
-        """
+    assert converted == oas_fragment("""
         content:
           application/json:
             schema:
@@ -105,26 +92,22 @@ def test_schema_mimetypes(convert_response, oas_fragment):
                 type: integer
               type: array
         description: a response description
-        """
-    )
+        """)
 
 
 def test_schema_no_mimetypes(convert_response, oas_fragment):
     converted = convert_response(
-        oas_fragment(
-            """
+        oas_fragment("""
             description: a response description
             schema:
               items:
                 format: int32
                 type: integer
               type: array
-            """
-        ),
+            """),
         produces=None,
     )
-    assert converted == oas_fragment(
-        """
+    assert converted == oas_fragment("""
         content:
           '*/*':
             schema:
@@ -133,69 +116,57 @@ def test_schema_no_mimetypes(convert_response, oas_fragment):
                 type: integer
               type: array
         description: a response description
-        """
-    )
+        """)
 
 
 def test_examples(convert_response, oas_fragment):
     converted = convert_response(
-        oas_fragment(
-            """
+        oas_fragment("""
             description: a response description
             examples:
               application/json:
                 something: important
-            """
-        ),
+            """),
         produces=["application/json"],
     )
-    assert converted == oas_fragment(
-        """
+    assert converted == oas_fragment("""
         content:
           application/json:
             example:
               something: important
         description: a response description
-        """
-    )
+        """)
 
 
 def test_examples_any_type(convert_response, oas_fragment):
     converted = convert_response(
-        oas_fragment(
-            """
+        oas_fragment("""
             description: a response description
             examples:
               application/json: '{"something": "important"}'
-            """
-        ),
+            """),
         produces=["application/json"],
     )
-    assert converted == oas_fragment(
-        """
+    assert converted == oas_fragment("""
         content:
           application/json:
             example: '{"something": "important"}'
         description: a response description
-        """
-    )
+        """)
 
 
 def test_examples_mimetypes(convert_response, oas_fragment):
     converted = convert_response(
-        oas_fragment(
-            """
+        oas_fragment("""
             description: a response description
             examples:
               application/json:
                 something: important
               text/plain: something=imporant
-            """
-        ),
+            """),
         produces=["application/json", "text/plain"],
     )
-    assert converted == oas_fragment(
-        """
+    assert converted == oas_fragment("""
         content:
           application/json:
             example:
@@ -203,62 +174,52 @@ def test_examples_mimetypes(convert_response, oas_fragment):
           text/plain:
             example: something=imporant
         description: a response description
-        """
-    )
+        """)
 
 
 def test_headers_schema_only(convert_response, oas_fragment):
     converted = convert_response(
-        oas_fragment(
-            """
+        oas_fragment("""
             description: a response description
             headers:
               X-Test:
                 type: string
-            """
-        ),
+            """),
         produces=["application/json"],
     )
-    assert converted == oas_fragment(
-        """
+    assert converted == oas_fragment("""
         description: a response description
         headers:
           X-Test:
             schema:
               type: string
-        """
-    )
+        """)
 
 
 def test_headers_schema_extra(convert_response, oas_fragment):
     converted = convert_response(
-        oas_fragment(
-            """
+        oas_fragment("""
             description: a response description
             headers:
               X-Test:
                 description: Is it a test?
                 type: string
-            """
-        ),
+            """),
         produces=["application/json"],
     )
-    assert converted == oas_fragment(
-        """
+    assert converted == oas_fragment("""
         description: a response description
         headers:
           X-Test:
             description: Is it a test?
             schema:
               type: string
-        """
-    )
+        """)
 
 
 def test_headers_multiple(convert_response, oas_fragment):
     converted = convert_response(
-        oas_fragment(
-            """
+        oas_fragment("""
             description: a response description
             headers:
               X-Bar:
@@ -266,12 +227,10 @@ def test_headers_multiple(convert_response, oas_fragment):
                 type: integer
               X-Foo:
                 type: string
-            """
-        ),
+            """),
         produces=["application/json"],
     )
-    assert converted == oas_fragment(
-        """
+    assert converted == oas_fragment("""
         description: a response description
         headers:
           X-Bar:
@@ -281,14 +240,12 @@ def test_headers_multiple(convert_response, oas_fragment):
           X-Foo:
             schema:
               type: string
-        """
-    )
+        """)
 
 
 def test_schema_examples_headers(convert_response, oas_fragment):
     converted = convert_response(
-        oas_fragment(
-            """
+        oas_fragment("""
             description: a response description
             examples:
               application/json:
@@ -302,12 +259,10 @@ def test_schema_examples_headers(convert_response, oas_fragment):
                 format: int32
                 type: integer
               type: array
-            """
-        ),
+            """),
         produces=["application/json"],
     )
-    assert converted == oas_fragment(
-        """
+    assert converted == oas_fragment("""
         description: a response description
         content:
           application/json:
@@ -323,14 +278,12 @@ def test_schema_examples_headers(convert_response, oas_fragment):
             description: Is it a test?
             schema:
               type: string
-        """
-    )
+        """)
 
 
 def test_complete(convert_response, oas_fragment):
     converted = convert_response(
-        oas_fragment(
-            """
+        oas_fragment("""
             description: a response description
             examples:
               application/json:
@@ -344,12 +297,10 @@ def test_complete(convert_response, oas_fragment):
                 format: int32
                 type: integer
               type: array
-            """
-        ),
+            """),
         produces=["application/json"],
     )
-    assert converted == oas_fragment(
-        """
+    assert converted == oas_fragment("""
         description: a response description
         content:
           application/json:
@@ -365,14 +316,12 @@ def test_complete(convert_response, oas_fragment):
             description: Is it a test?
             schema:
               type: string
-        """
-    )
+        """)
 
 
 def test_vendor_extensions(convert_response, oas_fragment):
     converted = convert_response(
-        oas_fragment(
-            """
+        oas_fragment("""
             description: a response description
             examples:
               application/json:
@@ -389,12 +338,10 @@ def test_vendor_extensions(convert_response, oas_fragment):
               type: array
               x-schema-ext: schema-ext
             x-response-ext: response-ext
-            """
-        ),
+            """),
         produces=["application/json"],
     )
-    assert converted == oas_fragment(
-        """
+    assert converted == oas_fragment("""
         description: a response description
         content:
           application/json:
@@ -413,5 +360,4 @@ def test_vendor_extensions(convert_response, oas_fragment):
               type: string
             x-header-ext: header-ext
         x-response-ext: response-ext
-        """
-    )
+        """)

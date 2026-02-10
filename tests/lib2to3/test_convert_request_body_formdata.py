@@ -8,8 +8,7 @@ import sphinxcontrib.openapi._lib2to3 as lib2to3
 @pytest.fixture(scope="function")
 def convert_request_body(oas_fragment):
     def _wrapper(operation_fragment):
-        oas2 = oas_fragment(
-            """
+        oas2 = oas_fragment("""
             swagger: "2.0"
             info:
               title: An example spec
@@ -20,8 +19,7 @@ def convert_request_body(oas_fragment):
                   responses:
                     '200':
                       description: a response description
-            """
-        )
+            """)
         oas2["paths"]["/test"]["get"].update(operation_fragment)
 
         oas3 = lib2to3.convert(oas2)
@@ -32,17 +30,14 @@ def convert_request_body(oas_fragment):
 
 def test_minimal(convert_request_body, oas_fragment):
     converted = convert_request_body(
-        oas_fragment(
-            """
+        oas_fragment("""
             parameters:
               - in: formData
                 name: user
                 type: string
-            """
-        ),
+            """),
     )
-    assert converted == oas_fragment(
-        """
+    assert converted == oas_fragment("""
         content:
           application/x-www-form-urlencoded:
             schema:
@@ -50,25 +45,21 @@ def test_minimal(convert_request_body, oas_fragment):
                 user:
                   type: string
               type: object
-        """
-    )
+        """)
 
 
 def test_complete(convert_request_body, oas_fragment):
     converted = convert_request_body(
-        oas_fragment(
-            """
+        oas_fragment("""
             parameters:
               - description: a name of the user
                 in: formData
                 name: user
                 type: string
                 required: true
-            """
-        ),
+            """),
     )
-    assert converted == oas_fragment(
-        """
+    assert converted == oas_fragment("""
         content:
           application/x-www-form-urlencoded:
             schema:
@@ -78,14 +69,12 @@ def test_complete(convert_request_body, oas_fragment):
                   description: a name of the user
                   type: string
               required: [user]
-        """
-    )
+        """)
 
 
 def test_complex_schema(convert_request_body, oas_fragment):
     converted = convert_request_body(
-        oas_fragment(
-            """
+        oas_fragment("""
             parameters:
               - format: int32
                 in: formData
@@ -93,11 +82,9 @@ def test_complex_schema(convert_request_body, oas_fragment):
                 minimum: 5
                 name: age
                 type: integer
-            """
-        ),
+            """),
     )
-    assert converted == oas_fragment(
-        """
+    assert converted == oas_fragment("""
         content:
           application/x-www-form-urlencoded:
             schema:
@@ -108,14 +95,12 @@ def test_complex_schema(convert_request_body, oas_fragment):
                   minimum: 5
                   type: integer
               type: object
-        """
-    )
+        """)
 
 
 def test_consumes_urlencoded(convert_request_body, oas_fragment):
     converted = convert_request_body(
-        oas_fragment(
-            """
+        oas_fragment("""
             consumes:
               - application/x-www-form-urlencoded
             parameters:
@@ -123,11 +108,9 @@ def test_consumes_urlencoded(convert_request_body, oas_fragment):
                 in: formData
                 name: user
                 type: string
-            """
-        ),
+            """),
     )
-    assert converted == oas_fragment(
-        """
+    assert converted == oas_fragment("""
         content:
           application/x-www-form-urlencoded:
             schema:
@@ -136,14 +119,12 @@ def test_consumes_urlencoded(convert_request_body, oas_fragment):
                   description: a name of the user
                   type: string
               type: object
-        """
-    )
+        """)
 
 
 def test_consumes_form_data(convert_request_body, oas_fragment):
     converted = convert_request_body(
-        oas_fragment(
-            """
+        oas_fragment("""
             consumes:
               - multipart/form-data
             parameters:
@@ -151,11 +132,9 @@ def test_consumes_form_data(convert_request_body, oas_fragment):
                 in: formData
                 name: user
                 type: string
-            """
-        ),
+            """),
     )
-    assert converted == oas_fragment(
-        """
+    assert converted == oas_fragment("""
         content:
           multipart/form-data:
             schema:
@@ -164,14 +143,12 @@ def test_consumes_form_data(convert_request_body, oas_fragment):
                   description: a name of the user
                   type: string
               type: object
-        """
-    )
+        """)
 
 
 def test_consumes_urlencoded_and_form_data(convert_request_body, oas_fragment):
     converted = convert_request_body(
-        oas_fragment(
-            """
+        oas_fragment("""
             consumes:
               - application/x-www-form-urlencoded
               - multipart/form-data
@@ -180,11 +157,9 @@ def test_consumes_urlencoded_and_form_data(convert_request_body, oas_fragment):
                 in: formData
                 name: user
                 type: string
-            """
-        ),
+            """),
     )
-    assert converted == oas_fragment(
-        """
+    assert converted == oas_fragment("""
         content:
           application/x-www-form-urlencoded:
             schema:
@@ -200,25 +175,21 @@ def test_consumes_urlencoded_and_form_data(convert_request_body, oas_fragment):
                   description: a name of the user
                   type: string
               type: object
-        """
-    )
+        """)
 
 
 def test_required(convert_request_body, oas_fragment):
     converted = convert_request_body(
-        oas_fragment(
-            """
+        oas_fragment("""
             parameters:
               - description: a name of the user
                 in: formData
                 name: user
                 required: true
                 type: string
-            """
-        ),
+            """),
     )
-    assert converted == oas_fragment(
-        """
+    assert converted == oas_fragment("""
         content:
           application/x-www-form-urlencoded:
             schema:
@@ -229,14 +200,12 @@ def test_required(convert_request_body, oas_fragment):
               required:
                 - user
               type: object
-        """
-    )
+        """)
 
 
 def test_multiple(convert_request_body, oas_fragment):
     converted = convert_request_body(
-        oas_fragment(
-            """
+        oas_fragment("""
             parameters:
               - description: a name of the user
                 in: formData
@@ -246,11 +215,9 @@ def test_multiple(convert_request_body, oas_fragment):
                 in: formData
                 name: status
                 type: string
-            """
-        ),
+            """),
     )
-    assert converted == oas_fragment(
-        """
+    assert converted == oas_fragment("""
         content:
           application/x-www-form-urlencoded:
             schema:
@@ -262,24 +229,20 @@ def test_multiple(convert_request_body, oas_fragment):
                   description: a name of the user
                   type: string
               type: object
-        """
-    )
+        """)
 
 
 def test_type_file_implicit_form_data(convert_request_body, oas_fragment):
     converted = convert_request_body(
-        oas_fragment(
-            """
+        oas_fragment("""
             parameters:
               - description: a user pic
                 in: formData
                 name: userpic
                 type: file
-            """
-        ),
+            """),
     )
-    assert converted == oas_fragment(
-        """
+    assert converted == oas_fragment("""
         content:
           multipart/form-data:
             schema:
@@ -288,14 +251,12 @@ def test_type_file_implicit_form_data(convert_request_body, oas_fragment):
                   description: a user pic
                   type: file
               type: object
-        """
-    )
+        """)
 
 
 def test_type_file_consumes_form_data(convert_request_body, oas_fragment):
     converted = convert_request_body(
-        oas_fragment(
-            """
+        oas_fragment("""
             consumes:
               - multipart/form-data
             parameters:
@@ -303,11 +264,9 @@ def test_type_file_consumes_form_data(convert_request_body, oas_fragment):
                 in: formData
                 name: userpic
                 type: file
-            """
-        ),
+            """),
     )
-    assert converted == oas_fragment(
-        """
+    assert converted == oas_fragment("""
         content:
           multipart/form-data:
             schema:
@@ -316,14 +275,12 @@ def test_type_file_consumes_form_data(convert_request_body, oas_fragment):
                   description: a user pic
                   type: file
               type: object
-        """
-    )
+        """)
 
 
 def test_consumes_json_and_urlencoded(convert_request_body, oas_fragment):
     converted = convert_request_body(
-        oas_fragment(
-            """
+        oas_fragment("""
             consumes:
               - application/json
               - application/x-www-form-urlencoded
@@ -332,11 +289,9 @@ def test_consumes_json_and_urlencoded(convert_request_body, oas_fragment):
                 in: formData
                 name: user
                 type: string
-            """
-        ),
+            """),
     )
-    assert converted == oas_fragment(
-        """
+    assert converted == oas_fragment("""
         content:
           application/x-www-form-urlencoded:
             schema:
@@ -345,14 +300,12 @@ def test_consumes_json_and_urlencoded(convert_request_body, oas_fragment):
                   description: a name of the user
                   type: string
               type: object
-        """
-    )
+        """)
 
 
 def test_consumes_json_and_form_data(convert_request_body, oas_fragment):
     converted = convert_request_body(
-        oas_fragment(
-            """
+        oas_fragment("""
             consumes:
               - application/json
               - multipart/form-data
@@ -361,11 +314,9 @@ def test_consumes_json_and_form_data(convert_request_body, oas_fragment):
                 in: formData
                 name: user
                 type: string
-            """
-        ),
+            """),
     )
-    assert converted == oas_fragment(
-        """
+    assert converted == oas_fragment("""
         content:
           multipart/form-data:
             schema:
@@ -374,5 +325,4 @@ def test_consumes_json_and_form_data(convert_request_body, oas_fragment):
                   description: a name of the user
                   type: string
               type: object
-        """
-    )
+        """)

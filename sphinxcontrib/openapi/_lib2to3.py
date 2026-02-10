@@ -5,7 +5,6 @@ import urllib
 
 import picobox
 
-
 __all__ = [
     "convert",
 ]

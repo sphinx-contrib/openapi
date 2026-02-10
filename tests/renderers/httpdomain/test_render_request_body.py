@@ -21,8 +21,7 @@ def test_render_request_body_schema_description(
 
     markup = textify(
         testrenderer.render_request_body(
-            oas_fragment(
-                f"""
+            oas_fragment(f"""
                 content:
                   {content_type}:
                     schema:
@@ -31,21 +30,18 @@ def test_render_request_body_schema_description(
                           type: string
                         bar:
                           type: integer
-                """
-            ),
+                """),
             "/evidences/{evidenceId}",
             "POST",
         )
     )
-    assert markup == textwrap.dedent(
-        """\
+    assert markup == textwrap.dedent("""\
         :reqjson foo:
         :reqjsonobj foo: string
         :reqjson bar:
         :reqjsonobj bar: integer
 
-        """
-    )
+        """)
 
 
 def test_render_request_body_schema_description_non_json(testrenderer, oas_fragment):
@@ -53,8 +49,7 @@ def test_render_request_body_schema_description_non_json(testrenderer, oas_fragm
 
     markup = textify(
         testrenderer.render_request_body(
-            oas_fragment(
-                """
+            oas_fragment("""
                 content:
                   text/csv:
                     schema:
@@ -63,16 +58,13 @@ def test_render_request_body_schema_description_non_json(testrenderer, oas_fragm
                           type: string
                         bar:
                           type: integer
-                """
-            ),
+                """),
             "/evidences/{evidenceId}",
             "POST",
         )
     )
-    assert markup == textwrap.dedent(
-        """\
-        """
-    )
+    assert markup == textwrap.dedent("""\
+        """)
 
 
 def test_render_request_body_schema_description_turned_off(fakestate, oas_fragment):
@@ -85,8 +77,7 @@ def test_render_request_body_schema_description_turned_off(fakestate, oas_fragme
 
     markup = textify(
         testrenderer.render_request_body(
-            oas_fragment(
-                """
+            oas_fragment("""
                 content:
                   application/json:
                     schema:
@@ -95,13 +86,10 @@ def test_render_request_body_schema_description_turned_off(fakestate, oas_fragme
                           type: string
                         bar:
                           type: integer
-                """
-            ),
+                """),
             "/evidences/{evidenceId}",
             "POST",
         )
     )
-    assert markup == textwrap.dedent(
-        """\
-        """
-    )
+    assert markup == textwrap.dedent("""\
+        """)

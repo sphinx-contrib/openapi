@@ -4,15 +4,13 @@ import pytest
 
 import sphinxcontrib.openapi._lib2to3 as lib2to3
 
-
 _MISSING = object()
 
 
 @pytest.fixture(scope="function")
 def convert_parameters(oas_fragment):
     def _wrapper(parameters):
-        oas2 = oas_fragment(
-            """
+        oas2 = oas_fragment("""
             swagger: "2.0"
             info:
               title: An example spec
@@ -23,8 +21,7 @@ def convert_parameters(oas_fragment):
                   responses:
                     '200':
                       description: a response description
-            """
-        )
+            """)
         oas2["paths"]["/test"]["get"]["parameters"] = parameters
 
         oas3 = lib2to3.convert(oas2)
@@ -35,8 +32,7 @@ def convert_parameters(oas_fragment):
 
 def test_header_path_query(convert_parameters, oas_fragment):
     converted = convert_parameters(
-        oas_fragment(
-            """
+        oas_fragment("""
             - in: header
               name: token
               type: string
@@ -47,11 +43,9 @@ def test_header_path_query(convert_parameters, oas_fragment):
             - in: query
               name: id
               type: string
-            """
-        ),
+            """),
     )
-    assert converted == oas_fragment(
-        """
+    assert converted == oas_fragment("""
         - in: header
           name: token
           schema:
@@ -65,36 +59,31 @@ def test_header_path_query(convert_parameters, oas_fragment):
           name: id
           schema:
             type: string
-        """
-    )
+        """)
 
 
 def test_body_is_ignored(convert_parameters, oas_fragment):
     converted = convert_parameters(
-        oas_fragment(
-            """
+        oas_fragment("""
             - description: user to add to the system
               in: body
               name: user
               required: true
               schema:
                 $ref: '#/definitions/User'
-            """
-        ),
+            """),
     )
     assert converted is _MISSING
 
 
 def test_formData_is_ignored(convert_parameters, oas_fragment):
     converted = convert_parameters(
-        oas_fragment(
-            """
+        oas_fragment("""
             - description: The avatar of the user
               in: formData
               name: avatar
               type: file
-            """
-        ),
+            """),
     )
 
     assert converted is _MISSING

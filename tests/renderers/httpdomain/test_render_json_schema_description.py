@@ -25,8 +25,7 @@ def test_render_json_schema_description_root_object(
 
     markup = textify(
         testrenderer.render_json_schema_description(
-            oas_fragment(
-                """
+            oas_fragment("""
                 type: object
                 properties:
                   prop_a:
@@ -38,13 +37,11 @@ def test_render_json_schema_description_root_object(
                         type: boolean
                   prop_c:
                     type: number
-                """
-            ),
+                """),
             req_or_res,
         )
     )
-    assert markup == textwrap.dedent(
-        f"""\
+    assert markup == textwrap.dedent(f"""\
         :{directive} prop_a:
         :{typedirective} prop_a: string
         :{directive} prop_b:
@@ -53,8 +50,7 @@ def test_render_json_schema_description_root_object(
         :{typedirective} prop_b.eggs: boolean
         :{directive} prop_c:
         :{typedirective} prop_c: number
-        """.rstrip()
-    )
+        """.rstrip())
 
 
 @pytest.mark.parametrize(
@@ -71,25 +67,21 @@ def test_render_json_schema_description_root_array(
 
     markup = textify(
         testrenderer.render_json_schema_description(
-            oas_fragment(
-                """
+            oas_fragment("""
                 type: array
                 items:
                   type: object
                   properties:
                     prop:
                       type: string
-                """
-            ),
+                """),
             req_or_res,
         )
     )
-    assert markup == textwrap.dedent(
-        f"""\
+    assert markup == textwrap.dedent(f"""\
         :{directive} prop:
         :{typedirective} prop: string
-        """.rstrip()
-    )
+        """.rstrip())
 
 
 @pytest.mark.parametrize(
@@ -116,18 +108,14 @@ def test_render_json_schema_description_root_unsupported(
 
     markup = textify(
         testrenderer.render_json_schema_description(
-            oas_fragment(
-                f"""
+            oas_fragment(f"""
                 type: {schema_type}
-                """
-            ),
+                """),
             req_or_res,
         )
     )
-    assert markup == textwrap.dedent(
-        """\
-        """.rstrip()
-    )
+    assert markup == textwrap.dedent("""\
+        """.rstrip())
 
 
 @pytest.mark.parametrize(
@@ -144,8 +132,7 @@ def test_render_json_schema_description_root_any_of_object(
 
     markup = textify(
         testrenderer.render_json_schema_description(
-            oas_fragment(
-                """
+            oas_fragment("""
                 anyOf:
                   - type: object
                     properties:
@@ -160,19 +147,16 @@ def test_render_json_schema_description_root_any_of_object(
                         properties:
                           eggs:
                             type: boolean
-                """
-            ),
+                """),
             req_or_res,
         )
     )
-    assert markup == textwrap.dedent(
-        f"""\
+    assert markup == textwrap.dedent(f"""\
         :{directive} prop_a:
         :{typedirective} prop_a: string
         :{directive} prop_b:
         :{typedirective} prop_b: number
-        """.rstrip()
-    )
+        """.rstrip())
 
 
 @pytest.mark.parametrize(
@@ -189,8 +173,7 @@ def test_render_json_schema_description_root_any_of_array(
 
     markup = textify(
         testrenderer.render_json_schema_description(
-            oas_fragment(
-                """
+            oas_fragment("""
                 anyOf:
                   - type: array
                     items:
@@ -204,17 +187,14 @@ def test_render_json_schema_description_root_any_of_array(
                       properties:
                         prop:
                           type: number
-                """
-            ),
+                """),
             req_or_res,
         )
     )
-    assert markup == textwrap.dedent(
-        f"""\
+    assert markup == textwrap.dedent(f"""\
         :{directive} prop:
         :{typedirective} prop: string
-        """.rstrip()
-    )
+        """.rstrip())
 
 
 @pytest.mark.parametrize(
@@ -241,20 +221,16 @@ def test_render_json_schema_description_root_any_of_unsupported(
 
     markup = textify(
         testrenderer.render_json_schema_description(
-            oas_fragment(
-                f"""
+            oas_fragment(f"""
                 anyOf:
                   - type: {schema_type}
                   - type: object
-                """
-            ),
+                """),
             req_or_res,
         )
     )
-    assert markup == textwrap.dedent(
-        """\
-        """.rstrip()
-    )
+    assert markup == textwrap.dedent("""\
+        """.rstrip())
 
 
 @pytest.mark.parametrize(
@@ -271,8 +247,7 @@ def test_render_json_schema_description_root_one_of_object(
 
     markup = textify(
         testrenderer.render_json_schema_description(
-            oas_fragment(
-                """
+            oas_fragment("""
                 oneOf:
                   - type: object
                     properties:
@@ -287,19 +262,16 @@ def test_render_json_schema_description_root_one_of_object(
                         properties:
                           eggs:
                             type: boolean
-                """
-            ),
+                """),
             req_or_res,
         )
     )
-    assert markup == textwrap.dedent(
-        f"""\
+    assert markup == textwrap.dedent(f"""\
         :{directive} prop_a:
         :{typedirective} prop_a: string
         :{directive} prop_b:
         :{typedirective} prop_b: number
-        """.rstrip()
-    )
+        """.rstrip())
 
 
 @pytest.mark.parametrize(
@@ -316,8 +288,7 @@ def test_render_json_schema_description_root_one_of_array(
 
     markup = textify(
         testrenderer.render_json_schema_description(
-            oas_fragment(
-                """
+            oas_fragment("""
                 oneOf:
                   - type: array
                     items:
@@ -331,17 +302,14 @@ def test_render_json_schema_description_root_one_of_array(
                       properties:
                         prop:
                           type: number
-                """
-            ),
+                """),
             req_or_res,
         )
     )
-    assert markup == textwrap.dedent(
-        f"""\
+    assert markup == textwrap.dedent(f"""\
         :{directive} prop:
         :{typedirective} prop: string
-        """.rstrip()
-    )
+        """.rstrip())
 
 
 @pytest.mark.parametrize(
@@ -368,20 +336,16 @@ def test_render_json_schema_description_root_one_of_unsupported(
 
     markup = textify(
         testrenderer.render_json_schema_description(
-            oas_fragment(
-                f"""
+            oas_fragment(f"""
                 oneOf:
                   - type: {schema_type}
                   - type: object
-                """
-            ),
+                """),
             req_or_res,
         )
     )
-    assert markup == textwrap.dedent(
-        """\
-        """.rstrip()
-    )
+    assert markup == textwrap.dedent("""\
+        """.rstrip())
 
 
 @pytest.mark.parametrize(
@@ -398,8 +362,7 @@ def test_render_json_schema_description_root_all_of_object(
 
     markup = textify(
         testrenderer.render_json_schema_description(
-            oas_fragment(
-                """
+            oas_fragment("""
                 allOf:
                   - properties:
                       name:
@@ -413,13 +376,11 @@ def test_render_json_schema_description_root_all_of_object(
                         properties:
                           last:
                             type: string
-                """
-            ),
+                """),
             req_or_res,
         )
     )
-    assert markup == textwrap.dedent(
-        f"""\
+    assert markup == textwrap.dedent(f"""\
         :{directive} name:
         :{typedirective} name: object
         :{directive} name.first:
@@ -428,8 +389,7 @@ def test_render_json_schema_description_root_all_of_object(
         :{typedirective} name.last: string
         :{directive} age:
         :{typedirective} age: integer
-        """.rstrip()
-    )
+        """.rstrip())
 
 
 @pytest.mark.parametrize(
@@ -456,23 +416,19 @@ def test_render_json_schema_description_primitive(
 
     markup = textify(
         testrenderer.render_json_schema_description(
-            oas_fragment(
-                f"""
+            oas_fragment(f"""
                 type: object
                 properties:
                   some_key:
                     type: "{schema_type}"
-                """
-            ),
+                """),
             req_or_res,
         )
     )
-    assert markup == textwrap.dedent(
-        f"""\
+    assert markup == textwrap.dedent(f"""\
         :{directive} some_key:
         :{typedirective} some_key: {schema_type}
-        """.rstrip()
-    )
+        """.rstrip())
 
 
 @pytest.mark.parametrize(
@@ -489,8 +445,7 @@ def test_render_json_schema_description_object(
 
     markup = textify(
         testrenderer.render_json_schema_description(
-            oas_fragment(
-                """
+            oas_fragment("""
                 type: object
                 properties:
                   root:
@@ -505,13 +460,11 @@ def test_render_json_schema_description_object(
                             type: boolean
                       prop_c:
                         type: number
-                """
-            ),
+                """),
             req_or_res,
         )
     )
-    assert markup == textwrap.dedent(
-        f"""\
+    assert markup == textwrap.dedent(f"""\
         :{directive} root:
         :{typedirective} root: object
         :{directive} root.prop_a:
@@ -522,8 +475,7 @@ def test_render_json_schema_description_object(
         :{typedirective} root.prop_b.eggs: boolean
         :{directive} root.prop_c:
         :{typedirective} root.prop_c: number
-        """.rstrip()
-    )
+        """.rstrip())
 
 
 @pytest.mark.parametrize(
@@ -540,8 +492,7 @@ def test_render_json_schema_description_object_implicit(
 
     markup = textify(
         testrenderer.render_json_schema_description(
-            oas_fragment(
-                """
+            oas_fragment("""
                 type: object
                 properties:
                   root:
@@ -554,13 +505,11 @@ def test_render_json_schema_description_object_implicit(
                             type: boolean
                       prop_c:
                         type: number
-                """
-            ),
+                """),
             req_or_res,
         )
     )
-    assert markup == textwrap.dedent(
-        f"""\
+    assert markup == textwrap.dedent(f"""\
         :{directive} root:
         :{typedirective} root: object
         :{directive} root.prop_a:
@@ -571,8 +520,7 @@ def test_render_json_schema_description_object_implicit(
         :{typedirective} root.prop_b.eggs: boolean
         :{directive} root.prop_c:
         :{typedirective} root.prop_c: number
-        """.rstrip()
-    )
+        """.rstrip())
 
 
 @pytest.mark.parametrize(
@@ -589,8 +537,7 @@ def test_render_json_schema_description_array(
 
     markup = textify(
         testrenderer.render_json_schema_description(
-            oas_fragment(
-                """
+            oas_fragment("""
                 type: object
                 properties:
                   root:
@@ -606,13 +553,11 @@ def test_render_json_schema_description_array(
                             type: number
                         prop_c:
                           type: number
-                """
-            ),
+                """),
             req_or_res,
         )
     )
-    assert markup == textwrap.dedent(
-        f"""\
+    assert markup == textwrap.dedent(f"""\
         :{directive} root[]:
         :{typedirective} root[]: object
         :{directive} root[].prop_a:
@@ -621,8 +566,7 @@ def test_render_json_schema_description_array(
         :{typedirective} root[].prop_b[]: number
         :{directive} root[].prop_c:
         :{typedirective} root[].prop_c: number
-        """.rstrip()
-    )
+        """.rstrip())
 
 
 @pytest.mark.parametrize(
@@ -639,8 +583,7 @@ def test_render_json_schema_description_array_implicit(
 
     markup = textify(
         testrenderer.render_json_schema_description(
-            oas_fragment(
-                """
+            oas_fragment("""
                 type: object
                 properties:
                   root:
@@ -654,13 +597,11 @@ def test_render_json_schema_description_array_implicit(
                             type: number
                         prop_c:
                           type: number
-                """
-            ),
+                """),
             req_or_res,
         )
     )
-    assert markup == textwrap.dedent(
-        f"""\
+    assert markup == textwrap.dedent(f"""\
         :{directive} root[]:
         :{typedirective} root[]: object
         :{directive} root[].prop_a:
@@ -669,8 +610,7 @@ def test_render_json_schema_description_array_implicit(
         :{typedirective} root[].prop_b[]: number
         :{directive} root[].prop_c:
         :{typedirective} root[].prop_c: number
-        """.rstrip()
-    )
+        """.rstrip())
 
 
 @pytest.mark.parametrize(
@@ -687,24 +627,20 @@ def test_render_json_schema_description_format(
 
     markup = textify(
         testrenderer.render_json_schema_description(
-            oas_fragment(
-                """
+            oas_fragment("""
                 type: object
                 properties:
                   created_at:
                     type: string
                     format: date-time
-                """
-            ),
+                """),
             req_or_res,
         )
     )
-    assert markup == textwrap.dedent(
-        f"""\
+    assert markup == textwrap.dedent(f"""\
         :{directive} created_at:
         :{typedirective} created_at: string:date-time
-        """.rstrip()
-    )
+        """.rstrip())
 
 
 @pytest.mark.parametrize(
@@ -721,24 +657,20 @@ def test_render_json_schema_description_deprecated(
 
     markup = textify(
         testrenderer.render_json_schema_description(
-            oas_fragment(
-                """
+            oas_fragment("""
                 type: object
                 properties:
                   created_at:
                     type: string
                     deprecated: true
-                """
-            ),
+                """),
             req_or_res,
         )
     )
-    assert markup == textwrap.dedent(
-        f"""\
+    assert markup == textwrap.dedent(f"""\
         :{directive} created_at:
         :{typedirective} created_at: string, deprecated
-        """.rstrip()
-    )
+        """.rstrip())
 
 
 @pytest.mark.parametrize(
@@ -755,8 +687,7 @@ def test_render_json_schema_description_required(
 
     markup = textify(
         testrenderer.render_json_schema_description(
-            oas_fragment(
-                """
+            oas_fragment("""
                 type: object
                 properties:
                   root:
@@ -773,13 +704,11 @@ def test_render_json_schema_description_required(
                       prop_c:
                         type: number
                     required: [prop_a]
-                """
-            ),
+                """),
             req_or_res,
         )
     )
-    assert markup == textwrap.dedent(
-        f"""\
+    assert markup == textwrap.dedent(f"""\
         :{directive} root:
         :{typedirective} root: object
         :{directive} root.prop_a:
@@ -790,8 +719,7 @@ def test_render_json_schema_description_required(
         :{typedirective} root.prop_b.eggs: boolean, required
         :{directive} root.prop_c:
         :{typedirective} root.prop_c: number
-        """.rstrip()
-    )
+        """.rstrip())
 
 
 @pytest.mark.parametrize(
@@ -808,8 +736,7 @@ def test_render_json_schema_description_deprecated_and_required(
 
     markup = textify(
         testrenderer.render_json_schema_description(
-            oas_fragment(
-                """
+            oas_fragment("""
                 type: object
                 properties:
                   root:
@@ -827,13 +754,11 @@ def test_render_json_schema_description_deprecated_and_required(
                       prop_c:
                         type: number
                     required: [prop_a]
-                """
-            ),
+                """),
             req_or_res,
         )
     )
-    assert markup == textwrap.dedent(
-        f"""\
+    assert markup == textwrap.dedent(f"""\
         :{directive} root:
         :{typedirective} root: object
         :{directive} root.prop_a:
@@ -844,8 +769,7 @@ def test_render_json_schema_description_deprecated_and_required(
         :{typedirective} root.prop_b.eggs: boolean, deprecated, required
         :{directive} root.prop_c:
         :{typedirective} root.prop_c: number
-        """.rstrip()
-    )
+        """.rstrip())
 
 
 @pytest.mark.parametrize(
@@ -862,26 +786,22 @@ def test_render_json_schema_description_description(
 
     markup = textify(
         testrenderer.render_json_schema_description(
-            oas_fragment(
-                """
+            oas_fragment("""
                 type: object
                 description: a resource representation
                 properties:
                   created_at:
                     type: string
                     description: a resource creation time
-                """
-            ),
+                """),
             req_or_res,
         )
     )
-    assert markup == textwrap.dedent(
-        f"""\
+    assert markup == textwrap.dedent(f"""\
         :{directive} created_at:
            a resource creation time
         :{typedirective} created_at: string
-        """.rstrip()
-    )
+        """.rstrip())
 
 
 @pytest.mark.parametrize(
@@ -898,26 +818,22 @@ def test_render_json_schema_description_description_commonmark_default(
 
     markup = textify(
         testrenderer.render_json_schema_description(
-            oas_fragment(
-                """
+            oas_fragment("""
                 type: object
                 description: a resource representation
                 properties:
                   created_at:
                     type: string
                     description: a `resource` creation __time__
-                """
-            ),
+                """),
             req_or_res,
         )
     )
-    assert markup == textwrap.dedent(
-        f"""\
+    assert markup == textwrap.dedent(f"""\
         :{directive} created_at:
            a ``resource`` creation **time**
         :{typedirective} created_at: string
-        """.rstrip()
-    )
+        """.rstrip())
 
 
 @pytest.mark.parametrize(
@@ -935,26 +851,22 @@ def test_render_json_schema_description_description_commonmark(
     testrenderer = renderers.HttpdomainRenderer(fakestate, {"markup": "commonmark"})
     markup = textify(
         testrenderer.render_json_schema_description(
-            oas_fragment(
-                """
+            oas_fragment("""
                 type: object
                 description: a resource representation
                 properties:
                   created_at:
                     type: string
                     description: a `resource` creation __time__
-                """
-            ),
+                """),
             req_or_res,
         )
     )
-    assert markup == textwrap.dedent(
-        f"""\
+    assert markup == textwrap.dedent(f"""\
         :{directive} created_at:
            a ``resource`` creation **time**
         :{typedirective} created_at: string
-        """.rstrip()
-    )
+        """.rstrip())
 
 
 @pytest.mark.parametrize(
@@ -974,26 +886,22 @@ def test_render_json_schema_description_description_restructuredtext(
     )
     markup = textify(
         testrenderer.render_json_schema_description(
-            oas_fragment(
-                """
+            oas_fragment("""
                 type: object
                 description: a resource representation
                 properties:
                   created_at:
                     type: string
                     description: a `resource` creation __time__
-                """
-            ),
+                """),
             req_or_res,
         )
     )
-    assert markup == textwrap.dedent(
-        f"""\
+    assert markup == textwrap.dedent(f"""\
         :{directive} created_at:
            a `resource` creation __time__
         :{typedirective} created_at: string
-        """.rstrip()
-    )
+        """.rstrip())
 
 
 @pytest.mark.parametrize(
@@ -1010,25 +918,21 @@ def test_render_json_schema_description_any_of(
 
     markup = textify(
         testrenderer.render_json_schema_description(
-            oas_fragment(
-                f"""
+            oas_fragment(f"""
                 type: object
                 properties:
                   some_key:
                     anyOf:
                       - type: integer
                       - type: string
-                """
-            ),
+                """),
             req_or_res,
         )
     )
-    assert markup == textwrap.dedent(
-        f"""\
+    assert markup == textwrap.dedent(f"""\
         :{directive} some_key:
         :{typedirective} some_key: integer
-        """.rstrip()
-    )
+        """.rstrip())
 
 
 @pytest.mark.parametrize(
@@ -1045,25 +949,21 @@ def test_render_json_schema_description_one_of(
 
     markup = textify(
         testrenderer.render_json_schema_description(
-            oas_fragment(
-                """
+            oas_fragment("""
                 type: object
                 properties:
                   some_key:
                     oneOf:
                       - type: integer
                       - type: string
-                """
-            ),
+                """),
             req_or_res,
         )
     )
-    assert markup == textwrap.dedent(
-        f"""\
+    assert markup == textwrap.dedent(f"""\
         :{directive} some_key:
         :{typedirective} some_key: integer
-        """.rstrip()
-    )
+        """.rstrip())
 
 
 @pytest.mark.parametrize(
@@ -1080,8 +980,7 @@ def test_render_json_schema_description_all_of(
 
     markup = textify(
         testrenderer.render_json_schema_description(
-            oas_fragment(
-                """
+            oas_fragment("""
                 type: object
                 properties:
                   person:
@@ -1098,13 +997,11 @@ def test_render_json_schema_description_all_of(
                             properties:
                               last:
                                 type: string
-                """
-            ),
+                """),
             req_or_res,
         )
     )
-    assert markup == textwrap.dedent(
-        f"""\
+    assert markup == textwrap.dedent(f"""\
         :{directive} person:
         :{typedirective} person: object
         :{directive} person.name:
@@ -1115,8 +1012,7 @@ def test_render_json_schema_description_all_of(
         :{typedirective} person.name.last: string
         :{directive} person.age:
         :{typedirective} person.age: integer
-        """.rstrip()
-    )
+        """.rstrip())
 
 
 @pytest.mark.parametrize(
@@ -1133,25 +1029,21 @@ def test_render_json_schema_description_all_of_logical_impossible(
 
     markup = textify(
         testrenderer.render_json_schema_description(
-            oas_fragment(
-                """
+            oas_fragment("""
                 type: object
                 properties:
                   some_key:
                     allOf:
                       - type: integer
                       - type: string
-                """
-            ),
+                """),
             req_or_res,
         )
     )
-    assert markup == textwrap.dedent(
-        f"""\
+    assert markup == textwrap.dedent(f"""\
         :{directive} some_key:
         :{typedirective} some_key: string
-        """.rstrip()
-    )
+        """.rstrip())
 
 
 @pytest.mark.parametrize(
@@ -1168,8 +1060,7 @@ def test_render_json_schema_description_any_of_shared_type(
 
     markup = textify(
         testrenderer.render_json_schema_description(
-            oas_fragment(
-                """
+            oas_fragment("""
                 type: object
                 properties:
                   some_key:
@@ -1177,17 +1068,14 @@ def test_render_json_schema_description_any_of_shared_type(
                     anyOf:
                       - minLength: 3
                       - maxLength: 5
-                """
-            ),
+                """),
             req_or_res,
         )
     )
-    assert markup == textwrap.dedent(
-        f"""\
+    assert markup == textwrap.dedent(f"""\
         :{directive} some_key:
         :{typedirective} some_key: string
-        """.rstrip()
-    )
+        """.rstrip())
 
 
 @pytest.mark.parametrize(
@@ -1204,8 +1092,7 @@ def test_render_json_schema_description_one_of_shared_type(
 
     markup = textify(
         testrenderer.render_json_schema_description(
-            oas_fragment(
-                """
+            oas_fragment("""
                 type: object
                 properties:
                   some_key:
@@ -1213,17 +1100,14 @@ def test_render_json_schema_description_one_of_shared_type(
                     oneOf:
                       - minLength: 3
                       - maxLength: 5
-                """
-            ),
+                """),
             req_or_res,
         )
     )
-    assert markup == textwrap.dedent(
-        f"""\
+    assert markup == textwrap.dedent(f"""\
         :{directive} some_key:
         :{typedirective} some_key: string
-        """.rstrip()
-    )
+        """.rstrip())
 
 
 @pytest.mark.parametrize(
@@ -1240,8 +1124,7 @@ def test_render_json_schema_description_all_of_shared_type(
 
     markup = textify(
         testrenderer.render_json_schema_description(
-            oas_fragment(
-                """
+            oas_fragment("""
                 type: object
                 properties:
                   some_key:
@@ -1249,17 +1132,14 @@ def test_render_json_schema_description_all_of_shared_type(
                     alOf:
                       - minLength: 3
                       - maxLength: 5
-                """
-            ),
+                """),
             req_or_res,
         )
     )
-    assert markup == textwrap.dedent(
-        f"""\
+    assert markup == textwrap.dedent(f"""\
         :{directive} some_key:
         :{typedirective} some_key: string
-        """.rstrip()
-    )
+        """.rstrip())
 
 
 @pytest.mark.parametrize(
@@ -1276,23 +1156,19 @@ def test_render_json_schema_description_not(
 
     markup = textify(
         testrenderer.render_json_schema_description(
-            oas_fragment(
-                """
+            oas_fragment("""
                 type: object
                 properties:
                   root:
                     not:
                       type: boolean
-                """
-            ),
+                """),
             req_or_res,
         )
     )
-    assert markup == textwrap.dedent(
-        f"""\
+    assert markup == textwrap.dedent(f"""\
         :{directive} root:
-        """.rstrip()
-    )
+        """.rstrip())
 
 
 @pytest.mark.parametrize(
@@ -1309,8 +1185,7 @@ def test_render_json_schema_description_enum(
 
     markup = textify(
         testrenderer.render_json_schema_description(
-            oas_fragment(
-                """
+            oas_fragment("""
                 type: object
                 properties:
                   root:
@@ -1318,17 +1193,14 @@ def test_render_json_schema_description_enum(
                     enum:
                       - foo
                       - bar
-                """
-            ),
+                """),
             req_or_res,
         )
     )
-    assert markup == textwrap.dedent(
-        f"""\
+    assert markup == textwrap.dedent(f"""\
         :{directive} root:
         :{typedirective} root: string:enum
-        """.rstrip()
-    )
+        """.rstrip())
 
 
 @pytest.mark.parametrize(
@@ -1345,22 +1217,18 @@ def test_render_json_schema_description_enum_wo_type(
 
     markup = textify(
         testrenderer.render_json_schema_description(
-            oas_fragment(
-                """
+            oas_fragment("""
                 type: object
                 properties:
                   root:
                     enum:
                       - foo
                       - bar
-                """
-            ),
+                """),
             req_or_res,
         )
     )
-    assert markup == textwrap.dedent(
-        f"""\
+    assert markup == textwrap.dedent(f"""\
         :{directive} root:
         :{typedirective} root: enum
-        """.rstrip()
-    )
+        """.rstrip())

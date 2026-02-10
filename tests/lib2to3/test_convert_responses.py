@@ -8,8 +8,7 @@ import sphinxcontrib.openapi._lib2to3 as lib2to3
 @pytest.fixture(scope="function")
 def convert_responses(oas_fragment):
     def _wrapper(responses, produces):
-        oas2 = oas_fragment(
-            """
+        oas2 = oas_fragment("""
             swagger: "2.0"
             info:
               title: An example spec
@@ -20,8 +19,7 @@ def convert_responses(oas_fragment):
                   responses:
                     '200':
                       description: a response description
-            """
-        )
+            """)
         oas2["paths"]["/test"]["get"]["responses"] = responses
         oas2["paths"]["/test"]["get"]["produces"] = produces
 
@@ -33,26 +31,21 @@ def convert_responses(oas_fragment):
 
 def test_minimal(convert_responses, oas_fragment):
     converted = convert_responses(
-        oas_fragment(
-            """
+        oas_fragment("""
             '200':
               description: a response description
-            """
-        ),
+            """),
         produces=["application/json"],
     )
-    assert converted == oas_fragment(
-        """
+    assert converted == oas_fragment("""
         '200':
           description: a response description
-        """
-    )
+        """)
 
 
 def test_complete(convert_responses, oas_fragment):
     converted = convert_responses(
-        oas_fragment(
-            """
+        oas_fragment("""
             '200':
               description: a response description
               examples:
@@ -67,12 +60,10 @@ def test_complete(convert_responses, oas_fragment):
                   format: int32
                   type: integer
                 type: array
-            """
-        ),
+            """),
         produces=["application/json"],
     )
-    assert converted == oas_fragment(
-        """
+    assert converted == oas_fragment("""
         '200':
           description: a response description
           content:
@@ -89,14 +80,12 @@ def test_complete(convert_responses, oas_fragment):
               description: Is it a test?
               schema:
                 type: string
-        """
-    )
+        """)
 
 
 def test_multiple(convert_responses, oas_fragment):
     converted = convert_responses(
-        oas_fragment(
-            """
+        oas_fragment("""
             '200':
               description: OK
               schema:
@@ -112,12 +101,10 @@ def test_multiple(convert_responses, oas_fragment):
                   type: string
             default:
               description: Internal Server Error
-            """
-        ),
+            """),
         produces=["application/json"],
     )
-    assert converted == oas_fragment(
-        """
+    assert converted == oas_fragment("""
         '200':
           content:
             application/json:
@@ -136,25 +123,20 @@ def test_multiple(convert_responses, oas_fragment):
                 type: string
         default:
           description: Internal Server Error
-        """
-    )
+        """)
 
 
 def test_vendor_extensions(convert_responses, oas_fragment):
     converted = convert_responses(
-        oas_fragment(
-            """
+        oas_fragment("""
             '200':
               description: a response description
             x-vendor-ext: vendor-ext
-            """
-        ),
+            """),
         produces=["application/json"],
     )
-    assert converted == oas_fragment(
-        """
+    assert converted == oas_fragment("""
         '200':
           description: a response description
         x-vendor-ext: vendor-ext
-        """
-    )
+        """)
