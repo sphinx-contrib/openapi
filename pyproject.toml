@@ -1,0 +1,53 @@
+[build-system]
+requires = ["setuptools>=64.0.0", "setuptools_scm>=8.0.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "sphinxcontrib-openapi"
+description = "OpenAPI (fka Swagger) spec renderer for Sphinx"
+readme = "README.rst"
+license = "BSD-3-Clause"
+authors = [
+    {name = "Ihor Kalnytskyi", email = "ihor@kalnytskyi.com"},
+]
+keywords = ["sphinx", "openapi", "swagger", "rest", "api", "renderer", "docs"]
+classifiers = [
+    "Topic :: Documentation",
+    "Topic :: Documentation :: Sphinx",
+    "Environment :: Console",
+    "Intended Audience :: Developers",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3 :: Only",
+    "Programming Language :: Python :: Implementation :: CPython",
+    "Framework :: Setuptools Plugin",
+    "Framework :: Sphinx",
+    "Framework :: Sphinx :: Extension",
+]
+requires-python = ">=3.10"
+dependencies = [
+    "sphinx >= 2.0",
+    "sphinxcontrib-httpdomain >= 1.5.0",
+    "PyYAML >= 3.12",
+    "jsonschema >= 2.5.1",
+    "sphinx-mdinclude >= 0.5.2",
+    "picobox >= 2.2",
+    "deepmerge >= 0.1",
+]
+dynamic = ["version"]
+
+[project.urls]
+Homepage = "https://github.com/sphinx-contrib/openapi"
+Documentation = "https://sphinxcontrib-openapi.readthedocs.io/"
+Source = "https://github.com/sphinx-contrib/openapi"
+Bugs = "https://github.com/sphinx-contrib/openapi/issues"
+
+[tool.setuptools]
+zip-safe = false
+include-package-data = true
+
+[tool.setuptools.packages.find]
+include = ["sphinxcontrib.*"]
+
+[tool.setuptools_scm]
