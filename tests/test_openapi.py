@@ -1856,7 +1856,6 @@ class TestResolveRefs(object):
 def test_openapi2_examples(tmpdir, run_sphinx):
     spec = os.path.join(
         os.path.abspath(os.path.dirname(__file__)),
-        'OpenAPI-Specification',
         'examples',
         'v2.0',
         'json',
@@ -1874,7 +1873,6 @@ def test_openapi2_examples(tmpdir, run_sphinx):
 def test_openapi3_examples(tmpdir, run_sphinx, render_examples):
     spec = os.path.join(
         os.path.abspath(os.path.dirname(__file__)),
-        'OpenAPI-Specification',
         'examples',
         'v3.0',
         'petstore.yaml')

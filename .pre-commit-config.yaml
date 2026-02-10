@@ -3,10 +3,12 @@ repos:
     rev: v6.0.0
     hooks:
       - id: trailing-whitespace
+        exclude: 'tests/examples'
       - id: end-of-file-fixer
         exclude: >
           (?x)(
-            tests/renderers/httpdomain/rendered
+            tests/renderers/httpdomain/rendered |
+            tests/examples/
           )
       - id: check-docstring-first
       - id: check-json
