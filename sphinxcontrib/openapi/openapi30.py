@@ -313,7 +313,7 @@ def _httpresource(endpoint, method, properties, convert, render_examples,
             for line in req_properties.splitlines():
                 # yield indent + line
                 yield '{indent}{indent}{line}'.format(**locals())
-                # yield ''
+            yield ''
 
     # print request example
     if render_examples:
