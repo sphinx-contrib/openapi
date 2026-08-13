@@ -1743,6 +1743,58 @@ class TestOpenApi3HttpDomain(object):
         ''').lstrip()
 
 
+class TestOpenApi31HttpDomain(object):
+
+    def test_request_body(self):
+        renderer = renderers.HttpdomainOldRenderer(None, {'request': True})
+        text = '\n'.join(renderer.render_restructuredtext_markup({
+            'openapi': '3.1.0',
+            'paths': {
+                '/things': {
+                    'post': {
+                        'summary': 'Create Thing',
+                        'requestBody': {
+                            'content': {
+                                'application/json': {
+                                    'schema': {
+                                        'type': 'object',
+                                        'properties': {
+                                            'name': {'type': 'string'},
+                                        },
+                                    },
+                                },
+                            },
+                        },
+                        'responses': {
+                            '200': {
+                                'description': 'A thing created.',
+                            },
+                        },
+                    },
+                },
+            },
+        }))
+        assert text == textwrap.dedent('''
+            .. http:post:: /things
+               :synopsis: Create Thing
+
+               **Create Thing**
+
+               **Request body:**
+
+               .. sourcecode:: json
+
+                  {
+                    "name":{
+                      "type":"string"
+                    }
+                  }
+
+               :status 200:
+                  A thing created.
+        ''').lstrip()
+
+
 class TestResolveRefs(object):
 
     def test_ref_resolving(self):
