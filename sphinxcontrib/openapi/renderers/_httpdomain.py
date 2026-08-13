@@ -281,7 +281,7 @@ class HttpdomainRenderer(abc.RestructuredTextRenderer):
         yield ""
 
         if operation.get("summary"):
-            yield f"   **{operation['summary']}**"
+            yield f"   **{' '.join(operation['summary'].split())}**"
             yield ""
 
         if operation.get("description"):

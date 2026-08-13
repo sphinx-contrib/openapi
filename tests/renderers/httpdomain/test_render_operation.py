@@ -108,6 +108,59 @@ def test_render_operation_summary(testrenderer, oas_fragment):
         """.rstrip())
 
 
+def test_render_operation_summary_block_scalar(testrenderer, oas_fragment):
+    """Operation's 'summary' is stripped of its trailing newline."""
+
+    markup = textify(
+        testrenderer.render_operation(
+            "/evidences",
+            "post",
+            oas_fragment("""
+                summary: |
+                  Create an evidence.
+                responses:
+                  '201':
+                    description: An evidence created.
+                """),
+        )
+    )
+    assert markup == textwrap.dedent("""\
+        .. http:post:: /evidences
+
+           **Create an evidence.**
+
+           :statuscode 201:
+              An evidence created.
+        """.rstrip())
+
+
+def test_render_operation_summary_multiline(testrenderer, oas_fragment):
+    """Operation's 'summary' is rendered as a single line."""
+
+    markup = textify(
+        testrenderer.render_operation(
+            "/evidences",
+            "post",
+            oas_fragment("""
+                summary: |
+                  Create
+                  an evidence.
+                responses:
+                  '201':
+                    description: An evidence created.
+                """),
+        )
+    )
+    assert markup == textwrap.dedent("""\
+        .. http:post:: /evidences
+
+           **Create an evidence.**
+
+           :statuscode 201:
+              An evidence created.
+        """.rstrip())
+
+
 def test_render_operation_description(testrenderer, oas_fragment):
     """Operation's 'description' is rendered."""
 
