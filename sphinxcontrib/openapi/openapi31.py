@@ -136,7 +136,7 @@ def _parse_schema(schema, method):
                 "supported."
             )
 
-        schema_type = [x for x in schema_type if x != "null"][0]
+        schema_type = next(x for x in schema_type if x != "null")
 
     if schema_type == "array":
         # special case oneOf and anyOf so that we can show examples for all
@@ -282,8 +282,8 @@ def _httpresource(
     query_param_examples = []
     indent = "   "
 
-    yield ".. http:{0}:: {1}".format(method, endpoint)
-    yield "   :synopsis: {0}".format(properties.get("summary", "null"))
+    yield f".. http:{method}:: {endpoint}"
+    yield "   :synopsis: {}".format(properties.get("summary", "null"))
     yield ""
 
     if "summary" in properties:
@@ -397,7 +397,7 @@ def _httpresource(
     # print response headers
     for status, response in responses.items():
         for headername, header in response.get("headers", {}).items():
-            yield indent + ":resheader {name}:".format(name=headername)
+            yield indent + f":resheader {headername}:"
             for line in convert(header.get("description", "")).splitlines():
                 yield "{indent}{indent}{line}".format(**locals())
 
@@ -460,8 +460,9 @@ def openapihttpdomain(spec, **options):
     if "paths" in options:
         if not set(options["paths"]).issubset(spec["paths"]):
             raise ValueError(
-                "One or more paths are not defined in the spec: %s."
-                % (", ".join(set(options["paths"]) - set(spec["paths"])),)
+                "One or more paths are not defined in the spec: {}.".format(
+                    ", ".join(set(options["paths"]) - set(spec["paths"]))
+                )
             )
         paths = options["paths"]
 

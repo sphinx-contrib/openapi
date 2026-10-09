@@ -50,6 +50,6 @@ class HttpdomainOldRenderer(abc.RestructuredTextRenderer):
         elif spec_version.startswith("3.1."):
             openapihttpdomain = openapi31.openapihttpdomain
         else:
-            raise ValueError("Unsupported OpenAPI version (%s)" % spec_version)
+            raise ValueError(f"Unsupported OpenAPI version ({spec_version})")
 
         yield from openapihttpdomain(spec, **self._options)
