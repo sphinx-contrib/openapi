@@ -1,12 +1,12 @@
 """
-    sphinxcontrib.openapi
-    ---------------------
+sphinxcontrib.openapi
+---------------------
 
-    The OpenAPI spec renderer for Sphinx. It's a new way to document your
-    RESTful API. Based on ``sphinxcontrib-httpdomain``.
+The OpenAPI spec renderer for Sphinx. It's a new way to document your
+RESTful API. Based on ``sphinxcontrib-httpdomain``.
 
-    :copyright: (c) 2016, Ihor Kalnytskyi.
-    :license: BSD, see LICENSE for details.
+:copyright: (c) 2016, Ihor Kalnytskyi.
+:license: BSD, see LICENSE for details.
 """
 
 from importlib.metadata import distribution, PackageNotFoundError
@@ -59,22 +59,22 @@ def setup(app):
     from sphinxcontrib import httpdomain
 
     for idx, fieldtype in enumerate(httpdomain.HTTPResource.doc_field_types):
-        if fieldtype.name == 'requestheader':
+        if fieldtype.name == "requestheader":
             httpdomain.HTTPResource.doc_field_types[idx] = httpdomain.TypedField(
                 fieldtype.name,
                 label=fieldtype.label,
                 names=fieldtype.names,
-                typerolename='header',
-                typenames=('reqheadertype', ),
+                typerolename="header",
+                typenames=("reqheadertype",),
             )
 
-        if fieldtype.name == 'responseheader':
+        if fieldtype.name == "responseheader":
             httpdomain.HTTPResource.doc_field_types[idx] = httpdomain.TypedField(
                 fieldtype.name,
                 label=fieldtype.label,
                 names=fieldtype.names,
-                typerolename='header',
-                typenames=('resheadertype', ),
+                typerolename="header",
+                typenames=("resheadertype",),
             )
 
     app.setup_extension("sphinxcontrib.httpdomain")
