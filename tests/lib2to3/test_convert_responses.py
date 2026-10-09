@@ -43,6 +43,20 @@ def test_minimal(convert_responses, oas_fragment):
         """)
 
 
+def test_integer_status_code(convert_responses, oas_fragment):
+    converted = convert_responses(
+        oas_fragment("""
+            200:
+              description: a response description
+            """),
+        produces=["application/json"],
+    )
+    assert converted == oas_fragment("""
+        '200':
+          description: a response description
+        """)
+
+
 def test_complete(convert_responses, oas_fragment):
     converted = convert_responses(
         oas_fragment("""
