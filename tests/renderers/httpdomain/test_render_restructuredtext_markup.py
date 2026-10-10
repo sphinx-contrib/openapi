@@ -667,11 +667,7 @@ def test_oas31_schema_examples(fakestate, schema, expected):
     markup = textify(renderer.render_restructuredtext_markup(spec))
     assert "HTTP/1.1 200 OK" in markup
     body = markup.split("Content-Type: application/json\n\n")[1]
-    # String examples use the renderer's existing verbatim serialization.
-    if isinstance(expected, str):
-        assert body.strip() == expected
-    else:
-        assert json.loads(textwrap.dedent(body)) == expected
+    assert json.loads(textwrap.dedent(body)) == expected
 
 
 @pytest.mark.parametrize("generate_examples", [False, True])

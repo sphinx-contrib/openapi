@@ -72,14 +72,17 @@ def _iterexamples(media_types, example_preference, examples_from_schemas):
 
     for content_type in _iterinorder(media_types, example_preference):
         media_type = media_types[content_type]
+        example = None
 
-        # Look for a example in a bunch of possible places. According to
+        # Look for an example in a bunch of possible places. According to
         # OpenAPI v3 spec, `examples` and `example` keys are mutually
         # exclusive, so there's no much difference between their
         # inspection order, while both must take precedence over a
         # schema example.
         if media_type.get("examples", {}):
             for example in media_type["examples"].values():
+                # Keep fetched content and rendering metadata out of the spec.
+                example = example.copy()
                 if "externalValue" in example:
                     if not example["externalValue"].startswith(("http://", "https://")):
                         logger.warning(
@@ -93,6 +96,7 @@ def _iterexamples(media_types, example_preference, examples_from_schemas):
                         response.raise_for_status()
 
                         example["value"] = response.text
+                        example["_serialize_json"] = False
                         example.pop("externalValue")
                     except Exception:
                         logger.error(
@@ -100,31 +104,39 @@ def _iterexamples(media_types, example_preference, examples_from_schemas):
                             example["externalValue"],
                         )
                         continue
+                # Example Objects can contain annotations without a value.
+                # An explicitly supplied falsey value is nevertheless valid.
+                if "value" not in example:
+                    continue
                 break
             else:
-                # If the loop over examples has not been interrupted, we
-                # probably didn't find an example to render. In that case,
-                # let's try and go next media type.
+                example = None
+
+        if example is None:
+            if "example" in media_type:
+                example = {"value": media_type["example"]}
+            elif isinstance(media_type.get("schema"), dict) and (
+                "example" in media_type["schema"]
+                or media_type["schema"].get("examples")
+            ):
+                # Schema examples are literal values, unlike media-type examples.
+                # Preserve singular-example precedence for legacy specifications.
+                schema = media_type["schema"]
+                example = {"value": example_from_schema(schema)}
+                if "example" not in schema:
+                    example["_serialize_json"] = True
+            elif "schema" in media_type and examples_from_schemas:
+                # A valid OAS 3.1 schema can forbid all values. In that case there
+                # is no generated example to render; try another media type.
+                try:
+                    example = {
+                        "value": example_from_schema(media_type["schema"]),
+                        "_serialize_json": True,
+                    }
+                except NoExampleError:
+                    continue
+            else:
                 continue
-        elif media_type.get("example"):
-            # Save example from "example" in "examples" compatible format. This
-            # allows to treat all returned examples the same way.
-            example = {"value": media_type["example"]}
-        elif isinstance(media_type.get("schema"), dict) and media_type["schema"].get(
-            "example"
-        ):
-            # Save example from "schema" in "examples" compatible format. This
-            # allows to treat all returned examples the same way.
-            example = {"value": media_type["schema"]["example"]}
-        elif "schema" in media_type and examples_from_schemas:
-            # A valid OAS 3.1 schema can forbid all values. In that case there
-            # is no generated example to render; try another media type.
-            try:
-                example = {"value": example_from_schema(media_type["schema"])}
-            except NoExampleError:
-                continue
-        else:
-            continue
 
         yield content_type, example
 
@@ -163,12 +175,28 @@ def _get_markers_from_object(oas_object, schema):
 def _is_json_mimetype(mimetype):
     """Returns 'True' if a given mimetype implies JSON data."""
 
+    mimetype = mimetype.split(";", 1)[0].strip().lower()
     return any(
         [
             mimetype == "application/json",
             mimetype.startswith("application/") and mimetype.endswith("+json"),
         ]
     )
+
+
+def _format_example(content_type, example):
+    """Serialize instance values while preserving legacy preformatted payloads."""
+
+    value = example["value"]
+    # Generated and schema-level plural examples are literal values. Legacy
+    # nonempty strings may contain preformatted payloads, but an empty string
+    # cannot be preformatted JSON and must be quoted unless fetched verbatim.
+    serialize_json = _is_json_mimetype(content_type) and example.get(
+        "_serialize_json", value == ""
+    )
+    if not isinstance(value, str) or serialize_json:
+        return json.dumps(value, indent=2, default=str)
+    return value
 
 
 def _is_2xx_status(status_code):
@@ -560,10 +588,7 @@ class HttpdomainRenderer(abc.RestructuredTextRenderer):
         )
 
         if content_type and example:
-            example = example["value"]
-
-            if not isinstance(example, str):
-                example = json.dumps(example, indent=2, default=str)
+            example = _format_example(content_type, example)
 
             yield ".. sourcecode:: http"
             yield ""
@@ -665,10 +690,7 @@ class HttpdomainRenderer(abc.RestructuredTextRenderer):
         )
 
         if content_type and example:
-            example = example["value"]
-
-            if not isinstance(example, str):
-                example = json.dumps(example, indent=2, default=str)
+            example = _format_example(content_type, example)
 
             # According to OpenAPI v3 spec, status code may be a special value
             # - "default". It's not quite clear what to render in this case.

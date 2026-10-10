@@ -140,6 +140,14 @@ The following options are boolean flags. They can be passed without a value to e
   Controls rendering of request and response examples. If enabled, examples are generated from schemas when not supplied in the spec, and examples are rendered for all response codes unless ``response-examples-for`` is set.
   If disabled, neither supplied nor generated examples are rendered.
 
+  Supplied media-type ``example`` or named ``examples`` values take precedence over schema examples.
+  OpenAPI 3.1 schema-level ``examples`` is an array of literal instance values, not a mapping of Example Objects; the first entry is selected even when it is ``null``, ``false``, zero, or empty.
+  If a schema contains both the legacy singular ``example`` and plural ``examples``, the singular value takes precedence for compatibility.
+  Supplied schema examples do not require ``generate-examples-from-schemas`` to be enabled.
+
+  For JSON media types, generated examples and schema-level ``examples`` entries are JSON-encoded, including strings.
+  Legacy nonempty string examples and fetched external payloads remain verbatim.
+
   :Type: Flag.
   :Default: Supplied examples are rendered, but examples are not generated from schemas.
 

@@ -359,6 +359,77 @@ def test_generate_example_from_schema(schema, expected):
     assert example_from_schema(schema) == expected
 
 
+@pytest.mark.parametrize("value", [0, 0.0, False, None, "", [], {}, {"value": False}])
+def test_schema_examples(value):
+    """The first schema examples entry is a literal value, even when falsey."""
+
+    schema = {"examples": [value, "fallback"]}
+    original_schema = copy.deepcopy(schema)
+    example = example_from_schema(schema)
+    assert example == value
+    jsonschema.Draft202012Validator(schema).validate(example)
+    assert schema == original_schema
+
+
+@pytest.mark.parametrize("value", [0, False, None, "", [], {}])
+def test_schema_example_precedes_examples(value):
+    """Keep singular example precedence when both schema annotations are present."""
+
+    assert example_from_schema({"example": value, "examples": ["fallback"]}) == value
+
+
+@pytest.mark.parametrize(
+    "schema, expected",
+    [
+        ({"type": "string", "examples": []}, "string"),
+        (
+            {"type": "object", "properties": {"name": {"examples": [False]}}},
+            {"name": False},
+        ),
+        ({"type": "array", "items": {"examples": [0]}}, [0, 0]),
+        ({"oneOf": [{"examples": [0]}, {"type": "string"}]}, 0),
+        ({"anyOf": [{"examples": [False]}, {"type": "string"}]}, False),
+        ({"allOf": [{"type": "boolean"}, {"examples": [False]}]}, False),
+        ({"allOf": [{"examples": [False]}, {"type": "boolean"}]}, False),
+        ({"allOf": [{"type": ["string", "null"]}, {"examples": [None]}]}, None),
+        ({"allOf": [{"examples": [None]}, {"type": ["string", "null"]}]}, None),
+        (
+            {
+                "allOf": [
+                    {"type": "array", "items": {"type": "integer"}},
+                    {"examples": [[]]},
+                ]
+            },
+            [],
+        ),
+        (
+            {
+                "allOf": [
+                    {"examples": [[]]},
+                    {"type": "array", "items": {"type": "integer"}},
+                ]
+            },
+            [],
+        ),
+        (
+            {
+                "allOf": [
+                    {"type": "object", "properties": {"name": {"type": "string"}}},
+                    {"examples": []},
+                ]
+            },
+            {"name": "string"},
+        ),
+    ],
+)
+def test_schema_examples_in_generation(schema, expected):
+    """Nested annotations contribute explicit examples without losing empty values."""
+
+    example = example_from_schema(schema)
+    assert example == expected
+    jsonschema.Draft202012Validator(schema).validate(example)
+
+
 @pytest.mark.parametrize("combining_keyword", ["oneOf", "anyOf"])
 @pytest.mark.parametrize(
     "first_schema, expected_item",

@@ -1,5 +1,6 @@
 """OpenAPI spec renderer: render_response_example."""
 
+import json
 import sys
 import textwrap
 
@@ -16,6 +17,150 @@ else:
 
 def textify(generator):
     return "\n".join(generator)
+
+
+@pytest.mark.parametrize("value", [0, 0.0, False, None, "", [], {}])
+@pytest.mark.parametrize(
+    "source", ["example", "examples", "schema/example", "schema/examples"]
+)
+@pytest.mark.parametrize("generate", [False, True])
+def test_render_response_explicit_falsey_example(fakestate, value, source, generate):
+    """Explicit falsey values override schema examples and generated defaults."""
+
+    schema = {"example": {"fallback": True}, "examples": [{"fallback": False}]}
+    media_type = {"schema": schema}
+    if source == "example":
+        media_type["example"] = value
+    elif source == "examples":
+        media_type["examples"] = {
+            "annotation": {"summary": "No value here"},
+            "first": {"value": value},
+            "second": {"value": "fallback"},
+        }
+    elif source == "schema/example":
+        schema["example"] = value
+    else:
+        schema.pop("example")
+        schema["examples"] = [value, {"fallback": True}]
+    renderer = renderers.HttpdomainRenderer(
+        fakestate, {"generate-examples-from-schemas": generate}
+    )
+    markup = textify(
+        renderer.render_response_example({"application/json": media_type}, "200")
+    )
+    expected_lines = [
+        ".. sourcecode:: http",
+        "",
+        "   HTTP/1.1 200 OK",
+        "   Content-Type: application/json",
+        "",
+    ] + ["   " + line for line in json.dumps(value, indent=2).splitlines()]
+    assert markup == "\n".join(expected_lines)
+
+
+@pytest.mark.parametrize("value", ["literal", '{"value": false}', {"value": False}])
+def test_render_response_schema_examples_literal_values(testrenderer, value):
+    """Schema examples are instance values, not named Example Objects or raw JSON."""
+
+    markup = textify(
+        testrenderer.render_response_example(
+            {"application/json": {"schema": {"examples": [value]}}}, "200"
+        )
+    )
+    payload = textwrap.dedent(markup.split("Content-Type: application/json\n\n")[1])
+    assert json.loads(payload) == value
+
+
+@pytest.mark.parametrize("generate", [False, True])
+def test_render_response_annotation_only_examples(fakestate, generate):
+    """Example Objects without values do not hide available schema examples."""
+
+    content = {
+        "application/json": {
+            "examples": {"annotation": {"summary": "No value here"}},
+            "schema": {"examples": [None]},
+        }
+    }
+    renderer = renderers.HttpdomainRenderer(
+        fakestate, {"generate-examples-from-schemas": generate}
+    )
+    markup = textify(renderer.render_response_example(content, "200"))
+    assert markup.endswith("   null")
+
+
+@responses.activate
+def test_render_response_external_empty_payload(testrenderer):
+    """Fetched payloads stay verbatim and do not mutate their Example Object."""
+
+    url = "https://example.com/empty.json"
+    responses.add(responses.GET, url, body="", content_type="application/json")
+    content = {"application/json": {"examples": {"external": {"externalValue": url}}}}
+    markup = textify(testrenderer.render_response_example(content, "200"))
+    assert markup == "\n".join(
+        [
+            ".. sourcecode:: http",
+            "",
+            "   HTTP/1.1 200 OK",
+            "   Content-Type: application/json",
+            "",
+        ]
+    )
+    assert content["application/json"]["examples"]["external"] == {"externalValue": url}
+
+
+@pytest.mark.parametrize(
+    "content_type",
+    [
+        "application/problem+json",
+        "APPLICATION/JSON",
+        "application/json; charset=utf-8",
+    ],
+)
+def test_render_response_schema_examples_json_media_type(testrenderer, content_type):
+    """JSON suffixes, case and media-type parameters do not change serialization."""
+
+    markup = textify(
+        testrenderer.render_response_example(
+            {content_type: {"schema": {"examples": ["literal"]}}}, "200"
+        )
+    )
+    payload = textwrap.dedent(markup.split(f"Content-Type: {content_type}\n\n")[1])
+    assert json.loads(payload) == "literal"
+
+
+def test_render_response_empty_text_example(testrenderer):
+    """JSON serialization must not quote empty text/plain examples."""
+
+    markup = textify(
+        testrenderer.render_response_example(
+            {"text/plain": {"schema": {"examples": [""]}}}, "200"
+        )
+    )
+    assert markup.endswith("   Content-Type: text/plain\n")
+
+
+def test_render_response_empty_schema_examples(fakestate):
+    """An empty schema examples array supplies no example, but permits generation."""
+
+    content = {"application/json": {"schema": {"type": "string", "examples": []}}}
+    assert (
+        textify(
+            renderers.HttpdomainRenderer(fakestate, {}).render_response_example(
+                content, "200"
+            )
+        )
+        == ""
+    )
+    renderer = renderers.HttpdomainRenderer(
+        fakestate, {"generate-examples-from-schemas": True}
+    )
+    markup = textify(renderer.render_response_example(content, "200"))
+    assert (
+        json.loads(
+            textwrap.dedent(markup.split("Content-Type: application/json\n\n")[1])
+        )
+        == "string"
+    )
 
 
 @pytest.mark.parametrize(

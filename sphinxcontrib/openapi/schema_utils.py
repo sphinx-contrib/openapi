@@ -27,7 +27,17 @@ _DEFAULT_STRING_EXAMPLES = {
 # '$ref' is absent because references are expected to be resolved before a
 # schema gets here, and 'default' because it's not consulted below.
 _EXAMPLE_KEYWORDS = frozenset(
-    ["example", "oneOf", "anyOf", "allOf", "enum", "type", "properties", "items"]
+    [
+        "example",
+        "examples",
+        "oneOf",
+        "anyOf",
+        "allOf",
+        "enum",
+        "type",
+        "properties",
+        "items",
+    ]
 )
 
 
@@ -78,6 +88,11 @@ def example_from_schema(schema):
     if "example" in schema:
         return schema["example"]
 
+    elif schema.get("examples"):
+        # JSON Schema examples is an array of literal values, not the named
+        # Example Objects used by an OpenAPI Media Type Object.
+        return schema["examples"][0]
+
     elif "oneOf" in schema or "anyOf" in schema:
         alternatives = schema.get("oneOf", schema.get("anyOf"))
         for alternative in alternatives:
@@ -109,13 +124,18 @@ def example_from_schema(schema):
 
             # A subschema that carries annotations only, a lone 'description'
             # being the common case, has no example to contribute either.
-            if not _EXAMPLE_KEYWORDS & sub_schema.keys():
+            example_keywords = _EXAMPLE_KEYWORDS & sub_schema.keys()
+            if not sub_schema.get("examples"):
+                example_keywords -= {"examples"}
+            if not example_keywords:
                 continue
 
             sub_example = example_from_schema(sub_schema)
 
             if not isinstance(sub_example, dict):
-                is_explicit = "example" in sub_schema
+                is_explicit = "example" in sub_schema or bool(
+                    sub_schema.get("examples")
+                )
                 if non_object_example is _NO_EXAMPLE or (
                     is_explicit and not non_object_example_is_explicit
                 ):
