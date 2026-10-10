@@ -330,13 +330,14 @@ class HttpdomainRenderer(abc.RestructuredTextRenderer):
             paths_to_render = list(paths.keys())
 
         if "exclude" in self._options:
-            excluded = []
-            for e in _to_list(self._options["exclude"]):
-                er = re.compile(e)
-                for path in paths_to_render:
-                    if not er.match(path):
-                        excluded.append(path)
-            paths_to_render = excluded
+            excluded_patterns = [
+                re.compile(pattern) for pattern in _to_list(self._options["exclude"])
+            ]
+            paths_to_render = [
+                path
+                for path in paths_to_render
+                if not any(pattern.match(path) for pattern in excluded_patterns)
+            ]
 
         allowed_methods = None
         if "methods" in self._options:

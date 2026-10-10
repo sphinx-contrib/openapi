@@ -2,6 +2,8 @@
 
 import textwrap
 
+import pytest
+
 from sphinxcontrib.openapi import renderers
 
 
@@ -464,6 +466,48 @@ def test_render_paths_filtering_include_exclude(fakestate, oas_fragment):
            :statuscode 200:
               public api
         """)
+
+
+@pytest.mark.parametrize("group", [False, True])
+@pytest.mark.parametrize(
+    "selection",
+    [
+        {},
+        {"include": [r"/api/.*"]},
+        {"paths": ["/api/public", "/api/private", "/api/admin"]},
+    ],
+)
+@pytest.mark.parametrize(
+    "exclude, expected_paths",
+    [
+        ([r".*/private", r".*/admin"], ["/api/public"]),
+        ([r"/api/.*", r"/api/private"], []),
+        (
+            [r"/missing", r"/also-missing"],
+            ["/api/public", "/api/private", "/api/admin"],
+        ),
+        ([], ["/api/public", "/api/private", "/api/admin"]),
+    ],
+)
+def test_render_paths_filtering_multiple_exclusions(
+    fakestate, group, selection, exclude, expected_paths
+):
+    """Exclude any matching path once, preserving the remaining path order."""
+
+    paths = {
+        endpoint: {"get": {"responses": {"200": {"description": "A response."}}}}
+        for endpoint in ["/api/public", "/api/private", "/api/admin", "/other"]
+    }
+    testrenderer = renderers.HttpdomainRenderer(
+        fakestate, {**selection, "exclude": exclude, "group": group}
+    )
+    markup = textify(testrenderer.render_paths(paths))
+    expected_paths = list(expected_paths)
+    if not selection:
+        expected_paths.append("/other")
+    assert [line for line in markup.splitlines() if line.startswith(".. http:")] == [
+        f".. http:get:: {endpoint}" for endpoint in expected_paths
+    ]
 
 
 def test_render_paths_filtering_methods(fakestate, oas_fragment):
