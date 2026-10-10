@@ -78,6 +78,10 @@ def setup(app):
             )
 
     app.setup_extension("sphinxcontrib.httpdomain")
+    for method in ('get', 'put', 'post', 'delete', 'options', 'head', 'patch', 'trace'):
+        app.add_directive_to_domain(
+            'http', 'openapi-' + method, directive.create_outbound_directive(method),
+        )
     app.connect("config-inited", _register_rendering_directives)
 
     return {"version": __version__, "parallel_read_safe": True}

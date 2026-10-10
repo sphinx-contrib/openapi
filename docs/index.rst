@@ -46,6 +46,22 @@ or:
    .. openapi:httpdomain:old:: specs/openapi.yml
 
 
+Callbacks and webhooks
+======================
+
+The ``httpdomain`` renderer displays OpenAPI 3 callbacks beneath their parent operation and OpenAPI 3.1 webhooks in separate, named admonitions.
+These describe requests initiated by the API provider, not incoming API routes, and are not registered in the HTTP domain's route index.
+Callback URL runtime expressions are displayed without evaluating them.
+Webhook names are not URLs; ``{webhook_url}`` stands for the receiver's URL.
+Webhook-only documents are supported, while components-only documents have no operations to render.
+
+``paths``, ``include``, ``exclude`` and ``methods`` select incoming operations.
+Callbacks accompany their selected parent operation, including callback methods not listed in ``methods``.
+Webhooks are rendered independently of these incoming-path filters.
+Grouping applies to incoming operations; callbacks stay with their parent and webhooks stay in their own admonitions.
+Example, request-schema and method-order options apply to outbound operations as well.
+
+
 Configuration
 =============
 

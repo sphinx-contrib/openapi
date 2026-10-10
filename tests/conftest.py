@@ -8,6 +8,7 @@ import pytest
 import yaml
 
 from sphinx.application import Sphinx
+from sphinx.util.docutils import docutils_namespace
 from sphinxcontrib.openapi import utils
 
 
@@ -59,7 +60,7 @@ def run_sphinx(tmpdir):
     src = tmpdir.ensure('src', dir=True)
     out = tmpdir.ensure('out', dir=True)
 
-    def run(spec, options={}, renderer=None):
+    def run(spec, options={}, renderer=None, *, warningiserror=False, return_app=False):
         options_raw = '\n'.join([
             '   %s' % _format_option_raw(key, val)
             for key, val in options.items()])
@@ -85,21 +86,23 @@ def run_sphinx(tmpdir):
             '.. openapi:: %s\n%s' % (spec, options_raw),
             encoding='utf-8')
 
-        # Warnings are captured and returned so tests can assert on them. They
-        # keep going to stderr as well, so that a test that doesn't care about
-        # them still shows them when it fails.
+        # Preserve the warning-text result used by the option tests. Tests
+        # inspecting the doctree or domain registry can explicitly request app.
         warning = _Tee(sys.stderr)
-
-        Sphinx(
-            srcdir=src.strpath,
-            confdir=src.strpath,
-            outdir=out.strpath,
-            doctreedir=out.join('.doctrees').strpath,
-            buildername='html',
-            warning=warning
-        ).build()
-
-        return warning.getvalue()
+        # Isolate docutils registrations between Sphinx builds so strict
+        # warning checks do not fail on prior tests' nodes and directives.
+        with docutils_namespace():
+            app = Sphinx(
+                srcdir=src.strpath,
+                confdir=src.strpath,
+                outdir=out.strpath,
+                doctreedir=out.join('.doctrees').strpath,
+                buildername='html',
+                warning=warning,
+                warningiserror=warningiserror,
+            )
+            app.build()
+            return app if return_app else warning.getvalue()
 
     yield run
 

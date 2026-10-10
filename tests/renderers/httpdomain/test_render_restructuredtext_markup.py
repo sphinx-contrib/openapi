@@ -1009,3 +1009,144 @@ def test_oas2_inherited_request_body(fakestate, group):
     assert "POST /resources HTTP/1.1" in markup
     assert '"name": "An inherited body"' in markup
     assert ":statuscode 201:" in markup
+
+
+def outbound_path():
+    return {
+        "summary": "Path metadata",
+        "x-notes": "Path metadata",
+        "parameters": [
+            {"name": "token", "in": "header", "schema": {"type": "string"}},
+            {"name": "trace", "in": "header", "schema": {"type": "string"}},
+        ],
+        "post": {
+            "summary": "A notification",
+            "parameters": [
+                {"name": "token", "in": "header", "schema": {"type": "integer"}},
+            ],
+            "requestBody": {
+                "content": {
+                    "application/json": {
+                        "schema": {
+                            "$ref": "#/components/schemas/Event",
+                        }
+                    }
+                }
+            },
+            "responses": {"202": {"description": "Notification accepted"}},
+        },
+    }
+
+
+@pytest.mark.parametrize("group", [False, True])
+@pytest.mark.parametrize("version", ["3.0.3", "3.1.0"])
+def test_referenced_callbacks(fakestate, version, group):
+    """Callbacks retain their own inheritance, references and payloads."""
+
+    expression = "{$request.query.callbackUrl}/data"
+    spec = make_spec(
+        version,
+        {
+            "get": {
+                "parameters": [
+                    {"name": "parent", "in": "query", "schema": {"type": "string"}}
+                ],
+                "responses": {"200": {"description": "Subscribed"}},
+                "callbacks": {"onEvent": {"$ref": "#/components/callbacks/Event"}},
+            }
+        },
+    )
+    spec["components"] = {
+        "callbacks": {
+            "Event": {expression: outbound_path(), "x-notes": "Callback metadata"}
+        },
+        "schemas": {
+            "Event": {
+                "type": "object",
+                "required": ["active"],
+                "properties": {"active": {"type": "boolean"}},
+                "example": {"active": False},
+            }
+        },
+    }
+    renderer = renderers.HttpdomainRenderer(
+        fakestate, {"group": group, "paths": ["/resources"], "methods": ["get"]}
+    )
+    markup = textify(renderer.render_restructuredtext_markup(spec))
+    assert ".. admonition:: Callback: onEvent" in markup
+    assert f".. http:openapi-post:: {expression}" in markup
+    callback_markup = markup.split(".. admonition:: Callback: onEvent")[1]
+    assert callback_markup.count(":reqheader token:") == 1
+    assert ":reqheadertype token: integer" in callback_markup
+    assert ":reqheader trace:" in callback_markup
+    assert ":queryparam parent:" not in callback_markup
+    assert ":reqjsonobj active: boolean, required" in callback_markup
+    assert '"active": false' in callback_markup
+    assert ":statuscode 202:" in callback_markup
+    assert "Path metadata" not in markup
+    assert "Callback metadata" not in markup
+    assert textify(renderer.render_restructuredtext_markup(spec)) == markup
+    filtered = renderers.HttpdomainRenderer(fakestate, {"exclude": ["/resources"]})
+    assert textify(filtered.render_restructuredtext_markup(spec)) == ""
+
+
+@pytest.mark.parametrize("group", [False, True])
+@pytest.mark.parametrize("examples", [False, True])
+@pytest.mark.parametrize("render_request", [False, True])
+def test_referenced_webhook_only_spec(fakestate, group, examples, render_request):
+    """Webhook-only specs render independently of incoming-path filters."""
+
+    spec = {
+        "openapi": "3.1.0",
+        "info": {"title": "Events", "version": "1"},
+        "webhooks": {"newEvent": {"$ref": "#/components/pathItems/Event"}},
+        "components": {
+            "pathItems": {"Event": outbound_path()},
+            "schemas": {
+                "Event": {
+                    "type": "object",
+                    "required": ["active"],
+                    "properties": {"active": {"type": "boolean"}},
+                    "example": {"active": False},
+                }
+            },
+        },
+    }
+    renderer = renderers.HttpdomainRenderer(
+        fakestate,
+        {
+            "group": group,
+            "examples": examples,
+            "request": render_request,
+            "exclude": [".*"],
+            "methods": ["get"],
+        },
+    )
+    markup = textify(renderer.render_restructuredtext_markup(spec))
+    assert ".. admonition:: Webhook: newEvent" in markup
+    assert ".. http:openapi-post:: {webhook_url}" in markup
+    assert ":reqheader token:" in markup
+    assert ":reqheadertype token: integer" in markup
+    assert ":reqheader trace:" in markup
+    assert (":reqjsonobj active: boolean, required" in markup) == render_request
+    assert ('"active": false' in markup) == examples
+    assert ":statuscode 202:" in markup
+    assert ".. http:post:: newEvent" not in markup
+    assert "Path metadata" not in markup
+
+
+def test_components_only_spec(testrenderer):
+    """A valid components-only OAS 3.1 document has no operations to render."""
+
+    assert (
+        textify(
+            testrenderer.render_restructuredtext_markup(
+                {
+                    "openapi": "3.1.0",
+                    "info": {"title": "Models", "version": "1"},
+                    "components": {"schemas": {"Event": {"type": "object"}}},
+                }
+            )
+        )
+        == ""
+    )

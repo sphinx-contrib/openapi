@@ -378,6 +378,41 @@ class HttpdomainRenderer(abc.RestructuredTextRenderer):
         if spec.get("swagger") == "2.0":
             spec = lib2to3.convert(spec)
         yield from self.render_paths(spec.get("paths", {}), spec=spec)
+        for name, path in spec.get("webhooks", {}).items():
+            yield ""
+            yield f".. admonition:: Webhook: {name}"
+            yield ""
+            yield "   The API provider sends this request to the webhook receiver URL."
+            yield "   The webhook name is not an API path; ``{webhook_url}`` is a placeholder."
+            yield ""
+            for endpoint, method, operation in self._iter_path_operations(
+                "{webhook_url}", path
+            ):
+                yield from indented(
+                    self.render_operation(endpoint, method, operation, outbound=True)
+                )
+                yield ""
+
+    def _iter_path_operations(self, endpoint, path, allowed_methods=None):
+        """Yield operations with their own Path Item parameter inheritance."""
+        common_parameters = path.get("parameters", [])
+        methods = [
+            method
+            for method in path
+            if isinstance(method, str) and method.lower() in _HTTP_METHODS
+        ]
+        for method in _iterinorder(methods, self._http_methods_order):
+            if allowed_methods is not None and method.lower() not in allowed_methods:
+                continue
+            operation = copy.deepcopy(path[method])
+            operation.setdefault("parameters", [])
+            parameter_ids = {(p["name"], p["in"]) for p in operation["parameters"]}
+            operation["parameters"] = [
+                p
+                for p in common_parameters
+                if (p["name"], p["in"]) not in parameter_ids
+            ] + operation["parameters"]
+            yield endpoint, method, operation
 
     def render_paths(self, paths, spec=None):
         """Render OAS paths item."""
@@ -423,30 +458,9 @@ class HttpdomainRenderer(abc.RestructuredTextRenderer):
             groups = collections.OrderedDict([(t, []) for t in tags_order])
 
             for endpoint in paths_to_render:
-                path = paths[endpoint]
-                common_parameters = path.get("parameters", [])
-
-                for method in _iterinorder(path, self._http_methods_order):
-                    if method.lower() not in _HTTP_METHODS:
-                        continue
-                    if (
-                        allowed_methods is not None
-                        and method.lower() not in allowed_methods
-                    ):
-                        continue
-                    operation = copy.deepcopy(path[method])
-                    operation.setdefault("parameters", [])
-                    operation_parameters_ids = set(
-                        (parameter["name"], parameter["in"])
-                        for parameter in operation["parameters"]
-                    )
-                    operation["parameters"] = [
-                        parameter
-                        for parameter in common_parameters
-                        if (parameter["name"], parameter["in"])
-                        not in operation_parameters_ids
-                    ] + operation["parameters"]
-
+                for endpoint, method, operation in self._iter_path_operations(
+                    endpoint, paths[endpoint], allowed_methods
+                ):
                     tag = (
                         operation.get("tags", [""])[0] if operation.get("tags") else ""
                     )
@@ -461,37 +475,17 @@ class HttpdomainRenderer(abc.RestructuredTextRenderer):
                     yield ""
         else:
             for endpoint in paths_to_render:
-                path = paths[endpoint]
-                common_parameters = path.get("parameters", [])
-
-                for method in _iterinorder(path, self._http_methods_order):
-                    if method.lower() not in _HTTP_METHODS:
-                        continue
-                    if (
-                        allowed_methods is not None
-                        and method.lower() not in allowed_methods
-                    ):
-                        continue
-                    operation = copy.deepcopy(path[method])
-                    operation.setdefault("parameters", [])
-                    operation_parameters_ids = set(
-                        (parameter["name"], parameter["in"])
-                        for parameter in operation["parameters"]
-                    )
-                    operation["parameters"] = [
-                        parameter
-                        for parameter in common_parameters
-                        if (parameter["name"], parameter["in"])
-                        not in operation_parameters_ids
-                    ] + operation["parameters"]
-
+                for endpoint, method, operation in self._iter_path_operations(
+                    endpoint, paths[endpoint], allowed_methods
+                ):
                     yield from self.render_operation(endpoint, method, operation)
                     yield ""
 
-    def render_operation(self, endpoint, method, operation):
+    def render_operation(self, endpoint, method, operation, *, outbound=False):
         """Render OAS operation item."""
 
-        yield f".. http:{method}:: {endpoint}"
+        directive_method = "openapi-" + method if outbound else method
+        yield f".. http:{directive_method}:: {endpoint}"
 
         if operation.get("deprecated"):
             yield "   :deprecated:"
@@ -513,6 +507,28 @@ class HttpdomainRenderer(abc.RestructuredTextRenderer):
                 self.render_request_body(operation["requestBody"], endpoint, method)
             )
         yield from indented(self.render_responses(operation.get("responses", {})))
+        for name, callback in operation.get("callbacks", {}).items():
+            yield ""
+            yield f"   .. admonition:: Callback: {name}"
+            yield ""
+            yield "      The API provider sends this request to the callback URL."
+            yield ""
+            for expression, path in callback.items():
+                # Callback Objects support scalar vendor-extension metadata.
+                if not isinstance(expression, str) or expression.startswith("x-"):
+                    continue
+                for (
+                    endpoint,
+                    callback_method,
+                    callback_operation,
+                ) in self._iter_path_operations(expression, path):
+                    yield from indented(
+                        self.render_operation(
+                            endpoint, callback_method, callback_operation, outbound=True
+                        ),
+                        6,
+                    )
+                    yield ""
 
     def render_parameters(self, parameters):
         """Render OAS operation's parameters."""

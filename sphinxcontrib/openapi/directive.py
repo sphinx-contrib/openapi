@@ -23,6 +23,26 @@ def _get_spec(abspath, encoding):
         return yaml.safe_load(stream)
 
 
+def create_outbound_directive(http_method):
+    """Create an HTTP description without URL targets or route registration."""
+    from sphinxcontrib.httpdomain import HTTPResource
+
+    class _OutboundResource(HTTPResource):
+        method = http_method
+
+        def run(self):
+            self.options['noindex'] = None
+            return super().run()
+
+        def add_target_and_index(self, name_cls, sig, signode):
+            # A callback expression or webhook destination is not an incoming
+            # API route. Even noindex resources acquire anchors in some
+            # httpdomain versions, so explicitly suppress those as well.
+            pass
+
+    return _OutboundResource
+
+
 def create_directive_from_renderer(renderer_cls):
     """Create rendering directive from a renderer class."""
 
