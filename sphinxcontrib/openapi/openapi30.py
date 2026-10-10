@@ -304,8 +304,14 @@ def _httpresource(endpoint, method, properties, convert, render_examples,
         request_content = properties.get('requestBody', {}).get('content', {})
         if request_content and 'application/json' in request_content:
             schema = request_content['application/json']['schema']
-            req_properties = json.dumps(schema['properties'], indent=2,
-                                        separators=(',', ':'))
+            if schema['type'] == 'object':
+                # if it's an object, focus on the properties of that object
+                req_properties = json.dumps(schema['properties'], indent=2,
+                                            separators=(',', ':'))
+            else:
+                # if it's another type, dump the whole thing
+                req_properties = json.dumps(schema, indent=2,
+                                            separators=(',', ':'))
             yield '{indent}**Request body:**'.format(**locals())
             yield ''
             yield '{indent}.. sourcecode:: json'.format(**locals())

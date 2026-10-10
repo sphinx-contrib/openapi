@@ -1742,6 +1742,33 @@ class TestOpenApi3HttpDomain(object):
                   ok
         ''').lstrip()
 
+    def test_request_body_non_object(self):
+        renderer = renderers.HttpdomainOldRenderer(None, {'request': True})
+        text = '\n'.join(renderer.render_restructuredtext_markup({
+            'openapi': '3.0.0',
+            'paths': {
+                '/things': {
+                    'post': {
+                        'summary': 'Create Thing',
+                        'requestBody': {
+                            'content': {
+                                'application/json': {
+                                    'schema': {'type': 'string'},
+                                },
+                            },
+                        },
+                        'responses': {
+                            '200': {
+                                'description': 'A thing created.',
+                            },
+                        },
+                    },
+                },
+            },
+        }))
+        assert '   **Request body:**' in text
+        assert '"type":"string"' in text
+
 
 class TestOpenApi31HttpDomain(object):
 
