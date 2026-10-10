@@ -275,6 +275,10 @@ class HttpdomainRenderer(abc.RestructuredTextRenderer):
             # OpenAPI permits numeric status codes, uppercase ranges 1XX–5XX,
             # and the lowercase special value "default". Preserve their case.
             self._response_examples_for = {str(x) for x in response_examples_for}
+        elif options.get("examples"):
+            # The legacy flag renders examples for every response. An explicit
+            # response-examples-for option still takes precedence.
+            self._response_examples_for = None
         else:
             self._response_examples_for = {"200", "201", "202", "2XX"}
 
@@ -295,10 +299,18 @@ class HttpdomainRenderer(abc.RestructuredTextRenderer):
             _to_list(options.get("response-example-preference"))
             or self._example_preference
         )
+        self._render_examples = bool(options.get("examples", True))
         self._generate_example_from_schema = bool(
-            options.get("generate-examples-from-schemas")
+            options.get(
+                "generate-examples-from-schemas", options.get("examples", False)
+            )
         )
-        self._json_schema_description = "no-json-schema-description" not in options
+        self._json_schema_description = not options.get(
+            "no-json-schema-description", False
+        )
+        self._request_json_schema_description = (
+            self._json_schema_description and options.get("request", True)
+        )
 
     def render_restructuredtext_markup(self, spec):
         """Spec render entry point."""
@@ -489,7 +501,7 @@ class HttpdomainRenderer(abc.RestructuredTextRenderer):
     def render_request_body(self, request_body, endpoint, method):
         """Render OAS operation's requestBody."""
 
-        if self._json_schema_description:
+        if self._request_json_schema_description:
             for content_type, content in request_body["content"].items():
                 if _is_json_mimetype(content_type) and content.get("schema"):
                     yield from self.render_json_schema_description(
@@ -503,6 +515,9 @@ class HttpdomainRenderer(abc.RestructuredTextRenderer):
 
     def render_request_body_example(self, request_body, endpoint, method):
         """Render OAS operation's requestBody's example."""
+
+        if not self._render_examples:
+            return
 
         content_type, example = next(
             _iterexamples(
@@ -555,7 +570,14 @@ class HttpdomainRenderer(abc.RestructuredTextRenderer):
             self._convert_markup(response["description"]).strip().splitlines()
         )
 
-        if "content" in response and status_code in self._response_examples_for:
+        if (
+            self._render_examples
+            and "content" in response
+            and (
+                self._response_examples_for is None
+                or status_code in self._response_examples_for
+            )
+        ):
             yield ""
             yield from indented(
                 self.render_response_example(response["content"], status_code)
@@ -592,6 +614,9 @@ class HttpdomainRenderer(abc.RestructuredTextRenderer):
                     yield f":resheadertype {header_name}: {markers}"
 
     def render_response_example(self, media_type, status_code):
+        if not self._render_examples:
+            return
+
         # OpenAPI 3.0 spec may contain more than one response media type, and
         # each media type may contain more than one example. Rendering all
         # invariants normally is not an option because the result will be hard

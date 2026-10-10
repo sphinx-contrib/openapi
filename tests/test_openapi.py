@@ -2013,6 +2013,26 @@ def test_openapi3_examples(tmpdir, run_sphinx, render_examples):
         == render_examples
 
 
+@pytest.mark.parametrize('version', ['v2.0', 'v3.0'])
+@pytest.mark.parametrize('render_examples', [False, True])
+def test_openapi_examples_compatibility(
+        tmpdir, run_sphinx, get_testspec, version, render_examples):
+    """The new renderer honors legacy example flags in real directives."""
+    spec = get_testspec(version, 'petstore.yaml', resolve_refs=False)
+    tmpdir.join('src', 'test-spec.json').write_text(
+        json.dumps(spec), encoding='utf-8')
+    run_sphinx(
+        'test-spec.json',
+        options={'examples': render_examples},
+        renderer='httpdomain',
+    )
+
+    rendered_html = tmpdir.join('out', 'index.html').read_text('utf-8')
+    assert ('highlight-http' in rendered_html) == render_examples
+    # Schema descriptions remain available when examples are disabled.
+    assert 'Response JSON Array' in rendered_html
+
+
 class TestConvertJsonSchema(object):
     schema = {
         'type': 'object',

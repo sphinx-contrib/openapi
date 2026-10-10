@@ -556,6 +556,123 @@ def test_oas3_response_example_2xx(testrenderer, oas_fragment):
         """)
 
 
+@pytest.mark.parametrize("version", ["3.0.3", "3.1.0"])
+@pytest.mark.parametrize("provided_example", [False, True])
+@pytest.mark.parametrize(
+    "options, generate, render_examples, response_codes",
+    [
+        ({}, False, True, ["200"]),
+        ({"examples": True}, True, True, ["200", "400", "000"]),
+        ({"examples": False}, False, False, []),
+        ({"generate-examples-from-schemas": True}, True, True, ["200"]),
+        (
+            {"examples": True, "generate-examples-from-schemas": False},
+            False,
+            True,
+            ["200", "400", "000"],
+        ),
+        ({"examples": False, "generate-examples-from-schemas": True}, True, False, []),
+        ({"examples": True, "response-examples-for": "400"}, True, True, ["400"]),
+        ({"examples": True, "response-examples-for": []}, True, True, []),
+    ],
+)
+def test_legacy_examples(
+    fakestate,
+    version,
+    provided_example,
+    options,
+    generate,
+    render_examples,
+    response_codes,
+):
+    """Legacy example flags control generation and rendering of both bodies."""
+
+    content = {
+        "application/json": {
+            "schema": {"type": "object", "properties": {"name": {"type": "string"}}}
+        }
+    }
+    if provided_example:
+        content["application/json"]["example"] = {"name": "A supplied example"}
+    spec = make_spec(
+        version,
+        {
+            "post": {
+                "requestBody": {"content": copy.deepcopy(content)},
+                "responses": {
+                    status: {
+                        "description": "A response.",
+                        "content": copy.deepcopy(content),
+                    }
+                    for status in ["200", "400", "default"]
+                },
+            }
+        },
+    )
+    renderer = renderers.HttpdomainRenderer(fakestate, options)
+    markup = textify(renderer.render_restructuredtext_markup(spec))
+    examples_expected = render_examples and (provided_example or generate)
+    assert ("POST /resources HTTP/1.1" in markup) == examples_expected
+    expected_codes = response_codes if examples_expected else []
+    assert [
+        line.split()[1]
+        for line in markup.splitlines()
+        if line.strip().startswith("HTTP/1.1")
+    ] == expected_codes
+    assert markup.count(".. sourcecode:: http") == (
+        1 + len(expected_codes) if examples_expected else 0
+    )
+    # Disabling examples must not suppress schema descriptions.
+    assert ":reqjson name:" in markup
+    assert ":resjson name:" in markup
+    if examples_expected:
+        expected_value = "A supplied example" if provided_example else "string"
+        assert f'"name": "{expected_value}"' in markup
+
+
+@pytest.mark.parametrize(
+    "options, request_hints, response_hints",
+    [
+        ({}, True, True),
+        ({"request": True}, True, True),
+        ({"request": False}, False, True),
+        ({"no-json-schema-description": True}, False, False),
+        ({"no-json-schema-description": False}, True, True),
+        ({"request": True, "no-json-schema-description": True}, False, False),
+        ({"request": False, "no-json-schema-description": False}, False, True),
+    ],
+)
+def test_legacy_request(fakestate, options, request_hints, response_hints):
+    """The request flag controls request hints independently of examples."""
+
+    content = {
+        "application/json": {
+            "schema": {"type": "object", "properties": {"name": {"type": "string"}}},
+            "example": {"name": "A supplied example"},
+        }
+    }
+    spec = make_spec(
+        "3.0.3",
+        {
+            "post": {
+                "requestBody": {"content": copy.deepcopy(content)},
+                "responses": {
+                    "200": {
+                        "description": "A response.",
+                        "content": copy.deepcopy(content),
+                    }
+                },
+            }
+        },
+    )
+    renderer = renderers.HttpdomainRenderer(fakestate, options)
+    markup = textify(renderer.render_restructuredtext_markup(spec))
+    assert (":reqjson name:" in markup) == request_hints
+    assert (":resjson name:" in markup) == response_hints
+    assert "POST /resources HTTP/1.1" in markup
+    assert "HTTP/1.1 200 OK" in markup
+
+
 def make_spec(version, path, endpoint="/resources"):
     spec = {
         "info": {"title": "An example API", "version": "1.0"},

@@ -104,6 +104,8 @@ The following options take a value.
 ``response-examples-for``
   The response codes to render samples for.
 
+  An explicit value takes precedence over the ``examples`` flag.
+
   :Type: A whitespace-delimited sequence of strings, with each string corresponding to an `HTTP status code <https://spec.openapis.org/oas/v3.1.0#http-status-codes>`__ that response examples should be rendered for.
   :Default: ``["200", "201", "202", "2XX"]``
 
@@ -131,17 +133,35 @@ The following options take a value.
   :Type: A whitespace-delimited sequence of strings, with each string corresponding to a `supported media type <https://spec.openapis.org/oas/v3.1.0#media-types>`__.
   :Default: Defaults to the value of ``example-preference``, or ``None``
 
-The following options are boolean flags.
+The following options are boolean flags. They can be passed without a value to enable them, or with an explicit ``true`` or ``false`` value.
+
+``examples``
+
+  Controls rendering of request and response examples. If enabled, examples are generated from schemas when not supplied in the spec, and examples are rendered for all response codes unless ``response-examples-for`` is set.
+  If disabled, neither supplied nor generated examples are rendered.
+
+  :Type: Flag.
+  :Default: Supplied examples are rendered, but examples are not generated from schemas.
+
+``request``
+
+  Controls rendering of request JSON schema hints, independently of examples and response schema hints.
+  Unlike the old renderer, request structure is described using HTTP domain fields rather than a raw JSON schema dump.
+  ``no-json-schema-description`` takes precedence over this option.
+
+  :Type: Flag.
+  :Default: Enabled.
 
 ``generate-examples-from-schemas``
 
-  Whether examples should be generated from the schema if they are not provided in the spec. If unset, examples will not be generated.
+  Whether examples should be generated from the schema if they are not provided in the spec. If unset, examples will only be generated when ``examples`` is enabled.
+  An explicit value overrides the generation setting implied by ``examples``, but ``examples: false`` always suppresses rendering.
 
   :Type: Flag.
 
 ``no-json-schema-description``
 
-  Whether to disable rendering of JSON schema hints.
+  Whether to disable rendering of both request and response JSON schema hints. An explicit ``false`` value leaves schema hints enabled.
 
   :Type: Flag.
 
