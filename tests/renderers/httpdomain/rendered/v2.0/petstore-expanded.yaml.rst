@@ -18,7 +18,7 @@
    :statuscode 200:
       pet response
 
-   :statuscode default:
+   :response default:
       unexpected error
 
 .. http:post:: /pets
@@ -41,7 +41,7 @@
    :statuscode 200:
       pet response
 
-   :statuscode default:
+   :response default:
       unexpected error
 
 .. http:get:: /pets/{id}
@@ -61,7 +61,7 @@
    :statuscode 200:
       pet response
 
-   :statuscode default:
+   :response default:
       unexpected error
 
 .. http:delete:: /pets/{id}
@@ -73,5 +73,5 @@
    :paramtype id: integer:int64, required
    :statuscode 204:
       pet deleted
-   :statuscode default:
+   :response default:
       unexpected error

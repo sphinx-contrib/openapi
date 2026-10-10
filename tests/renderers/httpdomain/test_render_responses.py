@@ -60,7 +60,7 @@ def test_render_responses_default_example(fakestate, oas_fragment):
                         result: error
                 """)))
     assert markup == textwrap.dedent("""\
-        :statuscode default:
+        :response default:
            A fallback response.
 
            .. sourcecode:: http

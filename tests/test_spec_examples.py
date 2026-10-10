@@ -61,7 +61,9 @@ def assert_rendered_operations(app, specfile, render_examples=None):
 ])
 def test_openapi2_success(tmpdir, run_sphinx, spec):
     py.path.local(spec).copy(tmpdir.join("src", "test-spec.yml"))
-    app = run_sphinx("test-spec.yml", renderer="httpdomain", return_app=True)
+    app = run_sphinx(
+        "test-spec.yml", renderer="httpdomain", return_app=True, warningiserror=True,
+    )
     assert_rendered_operations(app, os.path.abspath(spec))
 
 
@@ -75,8 +77,7 @@ def test_openapi30_success(tmpdir, run_sphinx, spec, render_examples, render_req
     py.path.local(spec).copy(tmpdir.join("src", "test-spec.yml"))
     app = run_sphinx("test-spec.yml", options={
         "examples": render_examples, "request": render_request, "group": group_paths,
-    }, renderer="httpdomain", return_app=True,
-        warningiserror=os.path.basename(spec) == "callback-example.yaml")
+    }, renderer="httpdomain", return_app=True, warningiserror=True)
     doctree = assert_rendered_operations(app, os.path.abspath(spec), render_examples)
     if os.path.basename(spec) == "callback-example.yaml":
         text = doctree.astext()
@@ -95,8 +96,7 @@ def test_openapi31_success(tmpdir, run_sphinx, spec, render_examples, render_req
     py.path.local(spec).copy(tmpdir.join("src", "test-spec.yml"))
     app = run_sphinx("test-spec.yml", options={
         "examples": render_examples, "request": render_request,
-    }, renderer="httpdomain", return_app=True,
-        warningiserror=os.path.basename(spec) == "webhook-example.yaml")
+    }, renderer="httpdomain", return_app=True, warningiserror=True)
     doctree = assert_rendered_operations(app, os.path.abspath(spec), render_examples)
     if os.path.basename(spec) == "webhook-example.yaml":
         text = doctree.astext()
@@ -148,3 +148,22 @@ def test_outbound_operations_do_not_register_routes(tmpdir, run_sphinx, group):
     assert "Callback: onEvent" in html
     assert "Webhook: firstEvent" in html
     assert "Webhook: secondEvent" in html
+
+
+@pytest.mark.parametrize("status", ["default", "1XX", "2XX", "3XX", "4XX", "5XX"])
+def test_response_fallback_and_range_fields(tmpdir, run_sphinx, status):
+    """OpenAPI response keys are preserved without invoking numeric HTTP roles."""
+    spec = {
+        "openapi": "3.1.0", "info": {"title": "Responses", "version": "1"},
+        "paths": {"/test": {"get": {"responses": {
+            status: {"description": "A fallback or range response"},
+        }}}},
+    }
+    specfile = tmpdir.join("src", "responses.yaml")
+    specfile.write_text(yaml.safe_dump(spec), encoding="utf-8")
+    app = run_sphinx(
+        "responses.yaml", renderer="httpdomain", return_app=True, warningiserror=True,
+    )
+    doctree = assert_rendered_operations(app, str(specfile))
+    assert f"Response {status}" in doctree.astext()
+    assert "A fallback or range response" in doctree.astext()

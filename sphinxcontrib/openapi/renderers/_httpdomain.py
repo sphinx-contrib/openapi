@@ -7,6 +7,7 @@ import functools
 import http.client
 import json
 import re
+from urllib.parse import urlencode
 
 import deepmerge
 import docutils.parsers.rst.directives as directives
@@ -138,6 +139,16 @@ def _iterexamples(media_types, example_preference, examples_from_schemas):
             else:
                 continue
 
+        schema = media_type.get("schema")
+        if isinstance(schema, dict):
+            schema_types = schema.get("type", [])
+            if isinstance(schema_types, str):
+                schema_types = [schema_types]
+            if "string" in schema_types:
+                # A declared string schema makes these JSON instance values,
+                # not legacy preformatted structured payloads. Fetched content
+                # retains its explicit verbatim marker.
+                example.setdefault("_serialize_json", True)
         yield content_type, example
 
 
@@ -188,6 +199,23 @@ def _format_example(content_type, example):
     """Serialize instance values while preserving legacy preformatted payloads."""
 
     value = example["value"]
+    mimetype = content_type.split(";", 1)[0].strip().lower()
+    if mimetype == "application/x-www-form-urlencoded" and isinstance(value, dict):
+
+        def form_value(item):
+            if isinstance(item, str):
+                return item
+            return json.dumps(item, default=str)
+
+        fields = {
+            name: (
+                [form_value(item) for item in field]
+                if isinstance(field, list)
+                else form_value(field)
+            )
+            for name, field in value.items()
+        }
+        return urlencode(fields, doseq=True)
     # Generated and schema-level plural examples are literal values. Legacy
     # nonempty strings may contain preformatted payloads, but an empty string
     # cannot be preformatted JSON and must be quoted unless fetched verbatim.
@@ -503,6 +531,10 @@ class HttpdomainRenderer(abc.RestructuredTextRenderer):
 
         yield from indented(self.render_parameters(operation.get("parameters", [])))
         if "requestBody" in operation:
+            if operation.get("parameters"):
+                # The body can begin with a literal block rather than more
+                # fields, particularly for form data or primitive schemas.
+                yield ""
             yield from indented(
                 self.render_request_body(operation["requestBody"], endpoint, method)
             )
@@ -637,7 +669,15 @@ class HttpdomainRenderer(abc.RestructuredTextRenderer):
     def render_response(self, status_code, response):
         """Render OAS operation's response."""
 
-        yield f":statuscode {status_code}:"
+        status_code = str(status_code)
+        # httpdomain's statuscode field creates numeric HTTP status roles.
+        # OpenAPI's fallback and range keys are not individual status codes.
+        field = (
+            "response"
+            if status_code == "default" or re.fullmatch(r"[1-5]XX", status_code)
+            else "statuscode"
+        )
+        yield f":{field} {status_code}:"
         yield from indented(
             self._convert_markup(response["description"]).strip().splitlines()
         )

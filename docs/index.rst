@@ -121,6 +121,7 @@ The following options take a value.
   The response codes to render samples for.
 
   An explicit value takes precedence over the ``examples`` flag.
+  Numeric responses use HTTP-domain status-code fields; OpenAPI ``default`` and ``1XX``–``5XX`` responses use plain response fields because they do not identify a single HTTP status code.
 
   :Type: A whitespace-delimited sequence of strings, with each string corresponding to an `HTTP status code <https://spec.openapis.org/oas/v3.1.0#http-status-codes>`__ that response examples should be rendered for.
   :Default: ``["200", "201", "202", "2XX"]``
@@ -162,7 +163,9 @@ The following options are boolean flags. They can be passed without a value to e
   Supplied schema examples do not require ``generate-examples-from-schemas`` to be enabled.
 
   For JSON media types, generated examples and schema-level ``examples`` entries are JSON-encoded, including strings.
-  Legacy nonempty string examples and fetched external payloads remain verbatim.
+  Examples with an explicitly declared string type are JSON-encoded too.
+  Legacy nonempty strings for untyped or structured schemas, and fetched external payloads, remain verbatim.
+  Object-valued examples for ``application/x-www-form-urlencoded`` use default form encoding, rather than a JSON body.
 
   :Type: Flag.
   :Default: Supplied examples are rendered, but examples are not generated from schemas.

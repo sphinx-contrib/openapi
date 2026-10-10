@@ -19,6 +19,23 @@ def textify(generator):
     return "\n".join(generator)
 
 
+@pytest.mark.parametrize("source", ["example", "examples", "schema/example"])
+def test_render_response_declared_string_example(testrenderer, source):
+    """A string instance is quoted for JSON even with legacy example keywords."""
+    media_type = {"schema": {"type": "string"}}
+    if source == "examples":
+        media_type["examples"] = {"first": {"value": "."}}
+    elif source == "example":
+        media_type["example"] = "."
+    else:
+        media_type["schema"]["example"] = "."
+    markup = textify(
+        testrenderer.render_response_example({"application/json": media_type}, "200")
+    )
+    payload = textwrap.dedent(markup.split("Content-Type: application/json\n\n")[1])
+    assert json.loads(payload) == "."
+
+
 @pytest.mark.parametrize("value", [0, 0.0, False, None, "", [], {}])
 @pytest.mark.parametrize(
     "source", ["example", "examples", "schema/example", "schema/examples"]

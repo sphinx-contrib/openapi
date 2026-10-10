@@ -13,6 +13,56 @@ def textify(generator):
     return "\n".join(generator)
 
 
+@pytest.mark.parametrize("source", ["example", "examples", "schema/example"])
+def test_render_request_body_declared_string_example(testrenderer, source):
+    """A string instance is quoted for JSON even with legacy example keywords."""
+    media_type = {"schema": {"type": ["string", "null"]}}
+    if source == "examples":
+        media_type["examples"] = {"first": {"value": "."}}
+    elif source == "example":
+        media_type["example"] = "."
+    else:
+        media_type["schema"]["example"] = "."
+    markup = textify(
+        testrenderer.render_request_body_example(
+            {"content": {"application/json": media_type}}, "/resources", "POST"
+        )
+    )
+    payload = textwrap.dedent(markup.split("Content-Type: application/json\n\n")[1])
+    assert json.loads(payload) == "."
+
+
+def test_render_request_body_form_example(fakestate):
+    """Generated form values use form encoding, including primitive arrays."""
+    renderer = renderers.HttpdomainRenderer(
+        fakestate, {"generate-examples-from-schemas": True}
+    )
+    markup = textify(
+        renderer.render_request_body_example(
+            {
+                "content": {
+                    "application/x-www-form-urlencoded": {
+                        "schema": {
+                            "type": "object",
+                            "properties": {
+                                "term": {"type": "string", "example": "a b&c"},
+                                "enabled": {"type": "boolean", "example": False},
+                                "tags": {
+                                    "type": "array",
+                                    "items": {"type": "integer", "example": 0},
+                                },
+                            },
+                        }
+                    },
+                }
+            },
+            "/resources",
+            "POST",
+        )
+    )
+    assert markup.endswith("   term=a+b%26c&enabled=false&tags=0&tags=0")
+
+
 @pytest.mark.parametrize("value", [0, 0.0, False, None, "", [], {}])
 @pytest.mark.parametrize(
     "source", ["example", "examples", "schema/example", "schema/examples"]
