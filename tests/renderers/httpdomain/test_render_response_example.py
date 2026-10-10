@@ -588,3 +588,28 @@ def test_render_response_status_code_default(testrenderer, oas_fragment):
            foo,baz
            bar,42
         """.rstrip())
+
+
+def test_render_response_example_with_date_object(testrenderer, oas_fragment):
+    """Path response's example handles date objects parsed from YAML."""
+
+    markup = textify(
+        testrenderer.render_response_example(
+            oas_fragment("""
+                application/json:
+                  example:
+                    date: 2024-01-15
+                """),
+            "200",
+        )
+    )
+    assert markup == textwrap.dedent("""\
+        .. sourcecode:: http
+
+           HTTP/1.1 200 OK
+           Content-Type: application/json
+
+           {
+             "date": "2024-01-15"
+           }
+        """.rstrip())

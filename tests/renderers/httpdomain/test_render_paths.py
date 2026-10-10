@@ -386,3 +386,24 @@ def test_render_paths_methods_order_insensitive(fakestate, oas_fragment):
            :statuscode 201:
               An evidence created.
         """)
+
+
+def test_render_paths_vendor_extensions_ignored(testrenderer, oas_fragment):
+    """Vendor extensions on path items are not treated as operations."""
+
+    markup = textify(testrenderer.render_paths(oas_fragment("""
+                /resource:
+                  x-codegen-name: customName
+                  x-amazon-apigateway-any-method:
+                    some: config
+                  get:
+                    responses:
+                      '200':
+                        description: ok
+                """)))
+    assert markup == textwrap.dedent("""\
+        .. http:get:: /resource
+
+           :statuscode 200:
+              ok
+        """)

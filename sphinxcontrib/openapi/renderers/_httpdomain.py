@@ -135,7 +135,7 @@ def _get_markers_from_object(oas_object, schema):
         elif schema.get("enum"):
             schema_type = f"{schema_type}:enum"
         if isinstance(schema_type, list):
-            markers = schema_type
+            markers = list(schema_type)
         else:
             markers.append(schema_type)
     elif schema.get("enum"):
@@ -197,6 +197,17 @@ _merge_mappings = deepmerge.Merger(
 ).merge
 
 
+_HTTP_METHODS = {"get", "put", "post", "delete", "options", "head", "patch", "trace"}
+
+
+def _to_list(val):
+    if val is None:
+        return None
+    if isinstance(val, str):
+        return val.split()
+    return list(val)
+
+
 class HttpdomainRenderer(abc.RestructuredTextRenderer):
     """Render OpenAPI v3 using `sphinxcontrib-httpdomain` extension."""
 
@@ -225,24 +236,33 @@ class HttpdomainRenderer(abc.RestructuredTextRenderer):
         self._convert_markup = self._markup_converters[
             options.get("markup", "commonmark")
         ]
-        self._http_methods_order = [
-            http_method.lower() for http_method in options.get("http-methods-order", [])
-        ]
-        self._response_examples_for = options.get(
-            "response-examples-for", self._response_examples_for
+        methods_order = _to_list(options.get("http-methods-order")) or []
+        self._http_methods_order = [m.lower() for m in methods_order]
+
+        response_examples_for = _to_list(options.get("response-examples-for"))
+        if response_examples_for is not None:
+            # OpenAPI permits numeric status codes, uppercase ranges 1XX–5XX,
+            # and the lowercase special value "default". Preserve their case.
+            self._response_examples_for = {str(x) for x in response_examples_for}
+        else:
+            self._response_examples_for = {"200", "201", "202", "2XX"}
+
+        req_params_order = _to_list(options.get("request-parameters-order"))
+        if req_params_order is not None:
+            self._request_parameters_order = [
+                parameter_type.lower() for parameter_type in req_params_order
+            ]
+        else:
+            self._request_parameters_order = ["header", "path", "query", "cookie"]
+
+        self._example_preference = _to_list(options.get("example-preference"))
+        self._request_example_preference = (
+            _to_list(options.get("request-example-preference"))
+            or self._example_preference
         )
-        self._request_parameters_order = [
-            parameter_type.lower()
-            for parameter_type in options.get(
-                "request-parameters-order", self._request_parameters_order
-            )
-        ]
-        self._example_preference = options.get("example-preference")
-        self._request_example_preference = options.get(
-            "request-example-preference", self._example_preference
-        )
-        self._response_example_preference = options.get(
-            "response-example-preference", self._example_preference
+        self._response_example_preference = (
+            _to_list(options.get("response-example-preference"))
+            or self._example_preference
         )
         self._generate_example_from_schema = "generate-examples-from-schemas" in options
         self._json_schema_description = "no-json-schema-description" not in options
@@ -269,6 +289,8 @@ class HttpdomainRenderer(abc.RestructuredTextRenderer):
                 path.pop(key, None)
 
             for method in _iterinorder(path, self._http_methods_order):
+                if method.lower() not in _HTTP_METHODS:
+                    continue
                 operation = path[method]
                 operation.setdefault("parameters", [])
                 operation_parameters_ids = set(
@@ -309,7 +331,7 @@ class HttpdomainRenderer(abc.RestructuredTextRenderer):
             yield from indented(
                 self.render_request_body(operation["requestBody"], endpoint, method)
             )
-        yield from indented(self.render_responses(operation["responses"]))
+        yield from indented(self.render_responses(operation.get("responses", {})))
 
     def render_parameters(self, parameters):
         """Render OAS operation's parameters."""
@@ -385,7 +407,7 @@ class HttpdomainRenderer(abc.RestructuredTextRenderer):
             example = example["value"]
 
             if not isinstance(example, str):
-                example = json.dumps(example, indent=2)
+                example = json.dumps(example, indent=2, default=str)
 
             yield ".. sourcecode:: http"
             yield ""
@@ -480,7 +502,7 @@ class HttpdomainRenderer(abc.RestructuredTextRenderer):
             example = example["value"]
 
             if not isinstance(example, str):
-                example = json.dumps(example, indent=2)
+                example = json.dumps(example, indent=2, default=str)
 
             # According to OpenAPI v3 spec, status code may be a special value
             # - "default". It's not quite clear what to render in this case.
@@ -493,11 +515,10 @@ class HttpdomainRenderer(abc.RestructuredTextRenderer):
                 status_code = "000"
                 status_text = "Reason-Phrase"
             else:
-                # According to OpenAPI v3 spec, status code may define a range
-                # of response codes. Since we're talking about rendered example
-                # here, we may show either code from range, but for the sake of
-                # simplicity let's pick the first one.
-                status_code = status_code.replace("XX", "00")
+                # OpenAPI permits numeric status codes and uppercase ranges
+                # 1XX–5XX here; the special value "default" is handled above.
+                # For a range, show its first code in the rendered example.
+                status_code = str(status_code).replace("XX", "00")
                 status_text = http.client.responses.get(int(status_code), "-")
 
             yield ".. sourcecode:: http"
