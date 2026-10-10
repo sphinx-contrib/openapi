@@ -1,6 +1,7 @@
 """OpenAPI spec renderer: render_restructuredtext_markup."""
 
 import copy
+import json
 import textwrap
 
 import pytest
@@ -595,6 +596,156 @@ def test_oas3_response_example_2xx(testrenderer, oas_fragment):
            :statuscode 404:
               resource not found
         """)
+
+
+def test_oas31_issue112_examples(fakestate, get_testspec):
+    """The in-tree nullable schemas render with schema generation enabled."""
+
+    renderer = renderers.HttpdomainRenderer(
+        fakestate, {"generate-examples-from-schemas": True}
+    )
+    markup = textify(
+        renderer.render_restructuredtext_markup(get_testspec("v3.1", "issue-112.yaml"))
+    )
+    assert markup.count(".. sourcecode:: http") == 2
+    assert '"bio": "string"' in markup
+    assert '"deleted_at": "2020-01-01"' in markup
+    assert ":resjsonobj bio: string, null" in markup
+
+
+@pytest.mark.parametrize(
+    "schema, expected",
+    [
+        (True, 1),
+        ({"type": "null"}, None),
+        ({"type": ["string", "null"]}, "string"),
+        (
+            {"type": ["object", "null"], "properties": {"name": {"type": "string"}}},
+            {"name": "string"},
+        ),
+        ({"type": ["array", "null"]}, ["string", 1]),
+        ({"type": "array"}, ["string", 1]),
+        ({"type": "array", "items": True}, ["string", 1]),
+        ({"type": "array", "items": False}, []),
+    ],
+)
+def test_oas31_schema_examples(fakestate, schema, expected):
+    """OAS 3.1 schema shapes work through example and description rendering."""
+
+    spec = make_spec(
+        "3.1.0",
+        {
+            "get": {
+                "responses": {
+                    "200": {
+                        "description": "A response.",
+                        "content": {"application/json": {"schema": schema}},
+                    }
+                }
+            }
+        },
+    )
+    renderer = renderers.HttpdomainRenderer(
+        fakestate, {"generate-examples-from-schemas": True}
+    )
+    markup = textify(renderer.render_restructuredtext_markup(spec))
+    assert "HTTP/1.1 200 OK" in markup
+    body = markup.split("Content-Type: application/json\n\n")[1]
+    # String examples use the renderer's existing verbatim serialization.
+    if isinstance(expected, str):
+        assert body.strip() == expected
+    else:
+        assert json.loads(textwrap.dedent(body)) == expected
+
+
+@pytest.mark.parametrize("generate_examples", [False, True])
+def test_oas31_false_schema(fakestate, generate_examples):
+    """A false schema is valid, but cannot have a generated example."""
+
+    spec = make_spec(
+        "3.1.0",
+        {
+            "post": {
+                "requestBody": {"content": {"application/json": {"schema": False}}},
+                "responses": {
+                    "200": {
+                        "description": "A response.",
+                        "content": {"application/json": {"schema": False}},
+                    }
+                },
+            }
+        },
+    )
+    renderer = renderers.HttpdomainRenderer(
+        fakestate, {"generate-examples-from-schemas": generate_examples}
+    )
+    markup = textify(renderer.render_restructuredtext_markup(spec))
+    assert ":statuscode 200:" in markup
+    assert ".. sourcecode::" not in markup
+
+
+def test_oas31_false_schema_media_type_fallback(fakestate):
+    """If one media type forbids a body, try the next for a generated example."""
+
+    spec = make_spec(
+        "3.1.0",
+        {
+            "get": {
+                "responses": {
+                    "200": {
+                        "description": "A response.",
+                        "content": {
+                            "application/json": {"schema": False},
+                            "application/problem+json": {"schema": {"type": "integer"}},
+                        },
+                    }
+                }
+            }
+        },
+    )
+    renderer = renderers.HttpdomainRenderer(
+        fakestate, {"generate-examples-from-schemas": True}
+    )
+    markup = textify(renderer.render_restructuredtext_markup(spec))
+    assert "Content-Type: application/problem+json" in markup
+    assert "Content-Type: application/json" not in markup
+
+
+def test_oas31_boolean_parameter_schemas(fakestate):
+    """Boolean parameter and header schemas do not break type markers."""
+
+    spec = make_spec(
+        "3.1.0",
+        {
+            "get": {
+                "parameters": [
+                    {
+                        "name": "anything",
+                        "in": "query",
+                        "required": True,
+                        "schema": True,
+                    },
+                    {"name": "forbidden", "in": "query", "schema": False},
+                ],
+                "responses": {
+                    "200": {
+                        "description": "A response.",
+                        "headers": {
+                            "X-Anything": {"schema": True, "required": True},
+                            "X-Forbidden": {"schema": False},
+                        },
+                    }
+                },
+            }
+        },
+    )
+    markup = textify(
+        renderers.HttpdomainRenderer(fakestate, {}).render_restructuredtext_markup(spec)
+    )
+    assert ":queryparamtype anything: required" in markup
+    assert ":queryparam forbidden:" in markup
+    assert ":resheadertype X-Anything: required" in markup
+    assert ":resheader X-Forbidden:" in markup
 
 
 @pytest.mark.parametrize("version", ["3.0.3", "3.1.0"])

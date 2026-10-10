@@ -80,4 +80,4 @@ paths:
                     anyOf:
                       - type: string
                         format: date
-                      - type: null
+                      - type: "null"

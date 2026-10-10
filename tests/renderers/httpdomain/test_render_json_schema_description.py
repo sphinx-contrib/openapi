@@ -11,6 +11,110 @@ def textify(generator):
     return "\n".join(generator)
 
 
+@pytest.mark.parametrize("req_or_res", ["req", "res"])
+@pytest.mark.parametrize(
+    "schema",
+    [
+        True,
+        False,
+        {"type": "array"},
+        {"type": "array", "items": True},
+        {"type": "array", "items": False},
+        {"type": ["string", "null"]},
+        {"type": ["array", "null"], "items": True},
+        {"allOf": [False, {"type": "object"}]},
+    ],
+)
+def test_openapi31_schema_without_fields(testrenderer, schema, req_or_res):
+    """Schemas without describable object fields do not crash rendering."""
+
+    assert (
+        textify(testrenderer.render_json_schema_description(schema, req_or_res)) == ""
+    )
+
+
+@pytest.mark.parametrize("req_or_res", ["req", "res"])
+@pytest.mark.parametrize(
+    "schema",
+    [
+        {"type": ["object", "null"], "properties": {"name": {"type": "string"}}},
+        {
+            "type": "object",
+            "properties": {
+                "name": {"type": "string"},
+                "anything": True,
+                "forbidden": False,
+            },
+        },
+        {
+            "oneOf": [
+                False,
+                {"type": "object", "properties": {"name": {"type": "string"}}},
+            ]
+        },
+        {
+            "anyOf": [
+                False,
+                {"type": "object", "properties": {"name": {"type": "string"}}},
+            ]
+        },
+        {
+            "allOf": [
+                True,
+                {"type": "object", "properties": {"name": {"type": "string"}}},
+            ]
+        },
+    ],
+)
+def test_openapi31_object_fields(testrenderer, schema, req_or_res):
+    """Nullable and boolean subschemas preserve describable object fields."""
+
+    markup = textify(testrenderer.render_json_schema_description(schema, req_or_res))
+    assert markup == f":{req_or_res}json name:\n:{req_or_res}jsonobj name: string"
+
+
+@pytest.mark.parametrize("req_or_res", ["req", "res"])
+def test_openapi31_nullable_array_fields(testrenderer, req_or_res):
+    """Nullable root arrays can describe fields of nullable object items."""
+
+    schema = {
+        "type": ["null", "array"],
+        "items": {
+            "type": ["null", "object"],
+            "properties": {"name": {"type": "string"}},
+        },
+    }
+    markup = textify(testrenderer.render_json_schema_description(schema, req_or_res))
+    assert (
+        markup == f":{req_or_res}jsonarr name:\n:{req_or_res}jsonarrtype name: string"
+    )
+
+
+@pytest.mark.parametrize("req_or_res", ["req", "res"])
+def test_openapi31_nullable_field_markers(testrenderer, req_or_res):
+    """Type arrays are displayed as individual types, with applicable formats."""
+
+    schema = {
+        "type": "object",
+        "properties": {
+            "date": {"type": ["string", "null"], "format": "date"},
+            "data": {
+                "type": ["object", "null"],
+                "properties": {"name": {"type": "string"}},
+            },
+        },
+    }
+    markup = textify(testrenderer.render_json_schema_description(schema, req_or_res))
+    assert markup == textwrap.dedent(f"""\
+        :{req_or_res}json date:
+        :{req_or_res}jsonobj date: string:date, null
+        :{req_or_res}json data:
+        :{req_or_res}jsonobj data: object, null
+        :{req_or_res}json data.name:
+        :{req_or_res}jsonobj data.name: string
+        """.rstrip())
+
+
 @pytest.mark.parametrize(
     ["req_or_res", "directive", "typedirective"],
     [

@@ -1,7 +1,9 @@
+import copy
+
 import jsonschema
 import pytest
 
-from sphinxcontrib.openapi.schema_utils import example_from_schema
+from sphinxcontrib.openapi.schema_utils import NoExampleError, example_from_schema
 
 
 @pytest.mark.parametrize(
@@ -408,6 +410,114 @@ def test_composed_array_item_example(combining_keyword, first_schema, explicit_e
     example = example_from_schema(schema)
     assert example == [explicit_example, explicit_example]
     jsonschema.Draft202012Validator(schema).validate(example)
+
+
+@pytest.mark.parametrize(
+    "schema, expected",
+    [
+        (True, 1),
+        ({"oneOf": [True, False]}, 1),
+        ({"anyOf": [True, False]}, 1),
+        ({"type": "null"}, None),
+        ({"type": ["string", "null"]}, "string"),
+        ({"type": ["null", "string"], "minLength": 8}, "stringst"),
+        ({"type": ["null"]}, None),
+        (
+            {"type": ["string", "null"], "properties": {"name": {"type": "integer"}}},
+            "string",
+        ),
+        (
+            {"type": ["object", "null"], "properties": {"name": {"type": "string"}}},
+            {"name": "string"},
+        ),
+        ({"type": ["array", "null"], "items": {"type": "integer"}}, [1, 1]),
+        ({"type": ["string", "null"], "example": None}, None),
+        ({"type": ["string", "null"], "enum": [None, "name"]}, None),
+        (
+            {"type": "object", "properties": {"anything": True, "forbidden": False}},
+            {"anything": 1},
+        ),
+        ({"type": "array"}, ["string", 1]),
+        ({"type": "array", "items": True}, ["string", 1]),
+        ({"type": "array", "items": False}, []),
+        ({"type": "array", "items": False, "maxItems": 0}, []),
+        (
+            {
+                "type": "array",
+                "prefixItems": [{"type": "integer"}],
+                "items": False,
+                "minItems": 1,
+            },
+            [1],
+        ),
+        (
+            {"type": "array", "prefixItems": [{"type": "integer"}, {"type": "string"}]},
+            [1, "string"],
+        ),
+        (
+            {
+                "type": "array",
+                "prefixItems": [{"type": "integer"}],
+                "items": {"type": "string"},
+                "minItems": 3,
+            },
+            [1, "string", "string"],
+        ),
+        ({"type": "array", "prefixItems": [False]}, []),
+        ({"type": ["array", "null"], "items": False, "minItems": 1}, None),
+        ({"oneOf": [False, {"type": "string"}]}, "string"),
+        ({"anyOf": [False, {"type": "string"}]}, "string"),
+    ],
+)
+def test_openapi31_example(schema, expected):
+    """OAS 3.1 schemas produce examples satisfying their declared constraints."""
+
+    original_schema = copy.deepcopy(schema)
+    example = example_from_schema(schema)
+    assert example == expected
+    jsonschema.Draft202012Validator(schema).validate(example)
+    assert schema == original_schema
+
+
+def test_openapi31_issue112_examples(get_testspec):
+    """The in-tree nullable-schema reproducer supports example generation."""
+
+    spec = get_testspec("v3.1", "issue-112.yaml")
+    for path in spec["paths"].values():
+        schema = path["get"]["responses"]["200"]["content"]["application/json"][
+            "schema"
+        ]
+        jsonschema.Draft202012Validator.check_schema(schema)
+        jsonschema.Draft202012Validator(schema).validate(example_from_schema(schema))
+
+
+@pytest.mark.parametrize(
+    "schema",
+    [
+        False,
+        {"allOf": [False, {"type": "string"}]},
+        {"oneOf": [False]},
+        {"anyOf": [False]},
+        {"type": "array", "items": False, "minItems": 1},
+        {
+            "type": "array",
+            "prefixItems": [{"type": "integer"}],
+            "items": False,
+            "minItems": 2,
+        },
+        {"type": "array", "prefixItems": [False], "minItems": 1},
+        {
+            "type": "object",
+            "required": ["forbidden"],
+            "properties": {"forbidden": False},
+        },
+    ],
+)
+def test_openapi31_impossible_example(schema):
+    """False schemas must not be represented by an invalid example value."""
+
+    with pytest.raises(NoExampleError):
+        example_from_schema(schema)
 
 
 @pytest.mark.parametrize("combining_keyword", ["oneOf", "anyOf"])

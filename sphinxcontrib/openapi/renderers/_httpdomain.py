@@ -16,7 +16,7 @@ import sphinx_mdinclude
 
 from sphinxcontrib.openapi import _lib2to3 as lib2to3, utils
 from sphinxcontrib.openapi.renderers import abc
-from sphinxcontrib.openapi.schema_utils import example_from_schema
+from sphinxcontrib.openapi.schema_utils import NoExampleError, example_from_schema
 
 CaseInsensitiveDict = requests.structures.CaseInsensitiveDict
 
@@ -110,14 +110,19 @@ def _iterexamples(media_types, example_preference, examples_from_schemas):
             # Save example from "example" in "examples" compatible format. This
             # allows to treat all returned examples the same way.
             example = {"value": media_type["example"]}
-        elif media_type.get("schema", {}).get("example"):
+        elif isinstance(media_type.get("schema"), dict) and media_type["schema"].get(
+            "example"
+        ):
             # Save example from "schema" in "examples" compatible format. This
             # allows to treat all returned examples the same way.
             example = {"value": media_type["schema"]["example"]}
         elif "schema" in media_type and examples_from_schemas:
-            # Convert schema to example
-            example = {"value": example_from_schema(media_type["schema"])}
-            pass
+            # A valid OAS 3.1 schema can forbid all values. In that case there
+            # is no generated example to render; try another media type.
+            try:
+                example = {"value": example_from_schema(media_type["schema"])}
+            except NoExampleError:
+                continue
         else:
             continue
 
@@ -128,16 +133,17 @@ def _get_markers_from_object(oas_object, schema):
     """Retrieve a bunch of OAS object markers."""
 
     markers = []
+    if isinstance(schema, bool):
+        schema = {}
 
     schema_type = _get_schema_type(schema)
     if schema_type:
-        if schema.get("format"):
-            schema_type = f"{schema_type}:{schema['format']}"
-        elif schema.get("enum"):
-            schema_type = f"{schema_type}:enum"
-        if isinstance(schema_type, list):
-            markers = list(schema_type)
-        else:
+        schema_types = schema_type if isinstance(schema_type, list) else [schema_type]
+        for schema_type in schema_types:
+            if schema_type != "null" and schema.get("format"):
+                schema_type = f"{schema_type}:{schema['format']}"
+            elif schema_type != "null" and schema.get("enum"):
+                schema_type = f"{schema_type}:enum"
             markers.append(schema_type)
     elif schema.get("enum"):
         markers.append("enum")
@@ -174,6 +180,9 @@ def _is_2xx_status(status_code):
 def _get_schema_type(schema):
     """Retrieve schema type either by reading 'type' or guessing."""
 
+    if isinstance(schema, bool):
+        return None
+
     # There are a lot of OpenAPI specs out there that may lack 'type' property
     # in their schemas. I fount no explanations on what is expected behaviour
     # in this case neither in OpenAPI nor in JSON Schema specifications. Thus
@@ -188,6 +197,15 @@ def _get_schema_type(schema):
             schema_type = None
     else:
         schema_type = schema["type"]
+    return schema_type
+
+
+def _get_single_schema_type(schema):
+    """Choose a concrete type to traverse while retaining all types in markers."""
+
+    schema_type = _get_schema_type(schema)
+    if isinstance(schema_type, list):
+        return next((t for t in schema_type if t != "null"), "null")
     return schema_type
 
 
@@ -667,20 +685,22 @@ class HttpdomainRenderer(abc.RestructuredTextRenderer):
         """Render JSON schema's description."""
 
         def _resolve_combining_schema(schema):
-            if "oneOf" in schema:
-                # The part with merging is a vague one since I only found a
-                # single 'oneOf' example where such merging was assumed, and no
-                # explanations in the spec itself.
-                merged_schema = schema.copy()
-                merged_schema.update(merged_schema.pop("oneOf")[0])
-                return merged_schema
+            if isinstance(schema, bool):
+                return {}
 
-            elif "anyOf" in schema:
-                # The part with merging is a vague one since I only found a
-                # single 'oneOf' example where such merging was assumed, and no
-                # explanations in the spec itself.
+            if "oneOf" in schema or "anyOf" in schema:
                 merged_schema = schema.copy()
-                merged_schema.update(merged_schema.pop("anyOf")[0])
+                keyword = "oneOf" if "oneOf" in schema else "anyOf"
+                # Keep the existing first-variant description policy, but skip
+                # False alternatives: they cannot describe any value.
+                first = next(
+                    (item for item in merged_schema.pop(keyword) if item is not False),
+                    False,
+                )
+                if first is False:
+                    return {}
+                if first is not True:
+                    merged_schema.update(first)
                 return merged_schema
 
             elif "allOf" in schema:
@@ -691,6 +711,10 @@ class HttpdomainRenderer(abc.RestructuredTextRenderer):
                 # object type.
                 merged_schema = schema.copy()
                 for item in merged_schema.pop("allOf"):
+                    if item is False:
+                        return {}
+                    if item is True:
+                        continue
                     merged_schema = _merge_mappings(merged_schema, copy.deepcopy(item))
                 return merged_schema
 
@@ -701,7 +725,9 @@ class HttpdomainRenderer(abc.RestructuredTextRenderer):
             return schema
 
         def _traverse_schema(schema, name, is_required=False):
-            schema_type = _get_schema_type(schema)
+            if isinstance(schema, bool):
+                return
+            schema_type = _get_single_schema_type(schema)
 
             if {"oneOf", "anyOf", "allOf"} & schema.keys():
                 # Since an item can represented by either or any schema from
@@ -733,7 +759,7 @@ class HttpdomainRenderer(abc.RestructuredTextRenderer):
                     )
 
             elif schema_type == "array":
-                yield from _traverse_schema(schema["items"], f"{name}[]")
+                yield from _traverse_schema(schema.get("items", {}), f"{name}[]")
 
             elif "enum" in schema:
                 yield name, schema, is_required
@@ -742,7 +768,7 @@ class HttpdomainRenderer(abc.RestructuredTextRenderer):
                 yield name, schema, is_required
 
         schema = _resolve_combining_schema(schema)
-        schema_type = _get_schema_type(schema)
+        schema_type = _get_single_schema_type(schema)
 
         # On root level, httpdomain supports only 'object' and 'array' response
         # types. If it's something else, let's do not even try to render it.
@@ -772,11 +798,11 @@ class HttpdomainRenderer(abc.RestructuredTextRenderer):
         # we're about to render is an array, there's no need to render that
         # array in the first place.
         if schema_type == "array":
-            schema = schema["items"]
+            schema = schema.get("items", {})
 
             # Even if a root element is an array, items it contain must not be
             # of a primitive types.
-            if _get_schema_type(schema) not in {"object", "array"}:
+            if _get_single_schema_type(schema) not in {"object", "array"}:
                 return
 
         for name, schema, is_required in _traverse_schema(schema, ""):

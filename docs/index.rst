@@ -157,6 +157,12 @@ The following options are boolean flags. They can be passed without a value to e
   Whether examples should be generated from the schema if they are not provided in the spec. If unset, examples will only be generated when ``examples`` is enabled.
   An explicit value overrides the generation setting implied by ``examples``, but ``examples: false`` always suppresses rendering.
 
+  Generation is best effort, not a full JSON Schema constraint solver.
+  For OpenAPI 3.1 type arrays, a non-null type is preferred when possible.
+  Boolean ``true`` schemas allow any value; ``false`` schemas cannot have an example.
+  If a schema cannot contribute an example, generation is skipped for that media type.
+  Arrays may omit ``items``, and ``prefixItems`` constrains initial positions independently of ``items``.
+
   :Type: Flag.
 
 ``no-json-schema-description``
