@@ -220,6 +220,12 @@ def _flag_or_bool(argument):
     raise ValueError(f"Invalid boolean value: {argument}")
 
 
+def _header(title):
+    yield title
+    yield "=" * len(title)
+    yield ""
+
+
 class HttpdomainRenderer(abc.RestructuredTextRenderer):
     """Render OpenAPI v3 using `sphinxcontrib-httpdomain` extension."""
 
@@ -245,6 +251,7 @@ class HttpdomainRenderer(abc.RestructuredTextRenderer):
         "include": _split_option,
         "exclude": _split_option,
         "methods": _split_option,
+        "group": _flag_or_bool,
         "request": _flag_or_bool,
         "examples": _flag_or_bool,
     }
@@ -299,9 +306,9 @@ class HttpdomainRenderer(abc.RestructuredTextRenderer):
 
         if spec.get("swagger") == "2.0":
             spec = lib2to3.convert(spec)
-        yield from self.render_paths(spec.get("paths", {}))
+        yield from self.render_paths(spec.get("paths", {}), spec=spec)
 
-    def render_paths(self, paths):
+    def render_paths(self, paths, spec=None):
         """Render OAS paths item."""
 
         if "paths" in self._options:
@@ -335,33 +342,79 @@ class HttpdomainRenderer(abc.RestructuredTextRenderer):
         if "methods" in self._options:
             allowed_methods = {m.lower() for m in _to_list(self._options["methods"])}
 
-        for endpoint in paths_to_render:
-            path = paths[endpoint]
-            common_parameters = path.get("parameters", [])
+        if self._options.get("group"):
+            tags_order = (
+                [x["name"] for x in (spec.get("tags") or []) if "name" in x]
+                if spec
+                else []
+            )
+            groups = collections.OrderedDict([(t, []) for t in tags_order])
 
-            for method in _iterinorder(path, self._http_methods_order):
-                if method.lower() not in _HTTP_METHODS:
-                    continue
-                if (
-                    allowed_methods is not None
-                    and method.lower() not in allowed_methods
-                ):
-                    continue
-                operation = copy.deepcopy(path[method])
-                operation.setdefault("parameters", [])
-                operation_parameters_ids = set(
-                    (parameter["name"], parameter["in"])
-                    for parameter in operation["parameters"]
-                )
-                operation["parameters"] = [
-                    parameter
-                    for parameter in common_parameters
-                    if (parameter["name"], parameter["in"])
-                    not in operation_parameters_ids
-                ] + operation["parameters"]
+            for endpoint in paths_to_render:
+                path = paths[endpoint]
+                common_parameters = path.get("parameters", [])
 
-                yield from self.render_operation(endpoint, method, operation)
-                yield ""
+                for method in _iterinorder(path, self._http_methods_order):
+                    if method.lower() not in _HTTP_METHODS:
+                        continue
+                    if (
+                        allowed_methods is not None
+                        and method.lower() not in allowed_methods
+                    ):
+                        continue
+                    operation = copy.deepcopy(path[method])
+                    operation.setdefault("parameters", [])
+                    operation_parameters_ids = set(
+                        (parameter["name"], parameter["in"])
+                        for parameter in operation["parameters"]
+                    )
+                    operation["parameters"] = [
+                        parameter
+                        for parameter in common_parameters
+                        if (parameter["name"], parameter["in"])
+                        not in operation_parameters_ids
+                    ] + operation["parameters"]
+
+                    tag = (
+                        operation.get("tags", [""])[0] if operation.get("tags") else ""
+                    )
+                    groups.setdefault(tag, []).append((endpoint, method, operation))
+
+            for tag, operations in groups.items():
+                if not operations:
+                    continue
+                yield from _header(tag if tag else "default")
+                for endpoint, method, operation in operations:
+                    yield from self.render_operation(endpoint, method, operation)
+                    yield ""
+        else:
+            for endpoint in paths_to_render:
+                path = paths[endpoint]
+                common_parameters = path.get("parameters", [])
+
+                for method in _iterinorder(path, self._http_methods_order):
+                    if method.lower() not in _HTTP_METHODS:
+                        continue
+                    if (
+                        allowed_methods is not None
+                        and method.lower() not in allowed_methods
+                    ):
+                        continue
+                    operation = copy.deepcopy(path[method])
+                    operation.setdefault("parameters", [])
+                    operation_parameters_ids = set(
+                        (parameter["name"], parameter["in"])
+                        for parameter in operation["parameters"]
+                    )
+                    operation["parameters"] = [
+                        parameter
+                        for parameter in common_parameters
+                        if (parameter["name"], parameter["in"])
+                        not in operation_parameters_ids
+                    ] + operation["parameters"]
+
+                    yield from self.render_operation(endpoint, method, operation)
+                    yield ""
 
     def render_operation(self, endpoint, method, operation):
         """Render OAS operation item."""

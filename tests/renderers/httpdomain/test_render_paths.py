@@ -488,3 +488,61 @@ def test_render_paths_filtering_methods(fakestate, oas_fragment):
            :statuscode 200:
               get response
         """)
+
+
+def test_render_paths_group(fakestate, oas_fragment):
+    """Endpoints can be grouped by tags with headers."""
+
+    testrenderer = renderers.HttpdomainRenderer(fakestate, {"group": True})
+    spec = oas_fragment("""
+        tags:
+          - name: pets
+          - name: users
+        paths:
+          /pets:
+            get:
+              tags:
+                - pets
+              responses:
+                '200':
+                  description: list pets
+          /users:
+            get:
+              tags:
+                - users
+              responses:
+                '200':
+                  description: list users
+          /un-tagged:
+            get:
+              responses:
+                '200':
+                  description: un-tagged
+    """)
+
+    markup = textify(testrenderer.render_paths(spec["paths"], spec=spec))
+    assert markup == textwrap.dedent("""\
+        pets
+        ====
+
+        .. http:get:: /pets
+
+           :statuscode 200:
+              list pets
+
+        users
+        =====
+
+        .. http:get:: /users
+
+           :statuscode 200:
+              list users
+
+        default
+        =======
+
+        .. http:get:: /un-tagged
+
+           :statuscode 200:
+              un-tagged
+        """)
