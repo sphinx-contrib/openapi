@@ -407,3 +407,84 @@ def test_render_paths_vendor_extensions_ignored(testrenderer, oas_fragment):
            :statuscode 200:
               ok
         """)
+
+
+def test_render_paths_filtering_paths(fakestate, oas_fragment):
+    """Paths can be filtered using 'paths' option."""
+
+    testrenderer = renderers.HttpdomainRenderer(fakestate, {"paths": ["/resource_a"]})
+
+    markup = textify(testrenderer.render_paths(oas_fragment("""
+                /resource_a:
+                  get:
+                    responses:
+                      '200':
+                        description: resource a
+                /resource_b:
+                  post:
+                    responses:
+                      '404':
+                        description: resource b
+                """)))
+    assert markup == textwrap.dedent("""\
+        .. http:get:: /resource_a
+
+           :statuscode 200:
+              resource a
+        """)
+
+
+def test_render_paths_filtering_include_exclude(fakestate, oas_fragment):
+    """Paths can be filtered using 'include' and 'exclude' regexes."""
+
+    testrenderer = renderers.HttpdomainRenderer(
+        fakestate, {"include": [r"/api/.*"], "exclude": [r".*/private"]}
+    )
+
+    markup = textify(testrenderer.render_paths(oas_fragment("""
+                /api/public:
+                  get:
+                    responses:
+                      '200':
+                        description: public api
+                /api/private:
+                  get:
+                    responses:
+                      '200':
+                        description: private api
+                /other:
+                  get:
+                    responses:
+                      '200':
+                        description: other
+                """)))
+    assert markup == textwrap.dedent("""\
+        .. http:get:: /api/public
+
+           :statuscode 200:
+              public api
+        """)
+
+
+def test_render_paths_filtering_methods(fakestate, oas_fragment):
+    """Endpoints can be filtered by HTTP methods."""
+
+    testrenderer = renderers.HttpdomainRenderer(fakestate, {"methods": ["get"]})
+
+    markup = textify(testrenderer.render_paths(oas_fragment("""
+                /resource:
+                  get:
+                    responses:
+                      '200':
+                        description: get response
+                  post:
+                    responses:
+                      '201':
+                        description: post response
+                """)))
+    assert markup == textwrap.dedent("""\
+        .. http:get:: /resource
+
+           :statuscode 200:
+              get response
+        """)

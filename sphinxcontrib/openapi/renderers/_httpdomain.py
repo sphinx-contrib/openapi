@@ -6,6 +6,7 @@ import copy
 import functools
 import http.client
 import json
+import re
 
 import deepmerge
 import docutils.parsers.rst.directives as directives
@@ -240,6 +241,10 @@ class HttpdomainRenderer(abc.RestructuredTextRenderer):
         "response-example-preference": _split_option,
         "generate-examples-from-schemas": _flag_or_bool,
         "no-json-schema-description": _flag_or_bool,
+        "paths": _split_option,
+        "include": _split_option,
+        "exclude": _split_option,
+        "methods": _split_option,
         "request": _flag_or_bool,
         "examples": _flag_or_bool,
     }
@@ -299,20 +304,50 @@ class HttpdomainRenderer(abc.RestructuredTextRenderer):
     def render_paths(self, paths):
         """Render OAS paths item."""
 
-        for endpoint, path in paths.items():
-            common_parameters = path.pop("parameters", [])
+        if "paths" in self._options:
+            expected_paths = set(_to_list(self._options["paths"]))
+            if not expected_paths.issubset(paths):
+                raise ValueError(
+                    "One or more paths are not defined in the spec: %s."
+                    % (", ".join(sorted(expected_paths - set(paths))),)
+                )
+            paths_to_render = [p for p in paths if p in expected_paths]
+        elif "include" in self._options:
+            paths_to_render = []
+            for i in _to_list(self._options["include"]):
+                ir = re.compile(i)
+                for path in paths:
+                    if ir.match(path) and path not in paths_to_render:
+                        paths_to_render.append(path)
+        else:
+            paths_to_render = list(paths.keys())
 
-            # OpenAPI's path description may contain objects of different
-            # types. Since we're interested in rendering only objects of
-            # operation type, let's remove irrelevant one from the definition
-            # in order to simplify further code.
-            for key in {"summary", "description", "servers"}:
-                path.pop(key, None)
+        if "exclude" in self._options:
+            excluded = []
+            for e in _to_list(self._options["exclude"]):
+                er = re.compile(e)
+                for path in paths_to_render:
+                    if not er.match(path):
+                        excluded.append(path)
+            paths_to_render = excluded
+
+        allowed_methods = None
+        if "methods" in self._options:
+            allowed_methods = {m.lower() for m in _to_list(self._options["methods"])}
+
+        for endpoint in paths_to_render:
+            path = paths[endpoint]
+            common_parameters = path.get("parameters", [])
 
             for method in _iterinorder(path, self._http_methods_order):
                 if method.lower() not in _HTTP_METHODS:
                     continue
-                operation = path[method]
+                if (
+                    allowed_methods is not None
+                    and method.lower() not in allowed_methods
+                ):
+                    continue
+                operation = copy.deepcopy(path[method])
                 operation.setdefault("parameters", [])
                 operation_parameters_ids = set(
                     (parameter["name"], parameter["in"])
