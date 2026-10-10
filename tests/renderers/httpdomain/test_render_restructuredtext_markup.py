@@ -1,6 +1,9 @@
 """OpenAPI spec renderer: render_restructuredtext_markup."""
 
+import copy
 import textwrap
+
+import pytest
 
 from sphinxcontrib.openapi import renderers
 
@@ -551,3 +554,137 @@ def test_oas3_response_example_2xx(testrenderer, oas_fragment):
            :statuscode 404:
               resource not found
         """)
+
+
+def make_spec(version, path, endpoint="/resources"):
+    spec = {
+        "info": {"title": "An example API", "version": "1.0"},
+        "paths": {endpoint: path},
+    }
+    spec["swagger" if version == "2.0" else "openapi"] = version
+    return spec
+
+
+@pytest.mark.parametrize("group", [False, True])
+@pytest.mark.parametrize("version", ["3.0.3", "3.1.0"])
+@pytest.mark.parametrize(
+    "metadata",
+    [
+        {"summary": "A path summary"},
+        {"description": "A path description"},
+        {"servers": [{"url": "https://example.com"}]},
+        {"x-codegen-name": "customName"},
+        {"x-amazon-apigateway-any-method": {"some": "config"}},
+    ],
+)
+def test_path_metadata(fakestate, version, group, metadata):
+    """Path metadata is not normalized or rendered as an operation."""
+
+    path = {
+        **metadata,
+        "get": {"responses": {"200": {"description": "A response."}}},
+    }
+    original_metadata = copy.deepcopy(metadata)
+    renderer = renderers.HttpdomainRenderer(fakestate, {"group": group})
+    markup = "\n".join(
+        renderer.render_restructuredtext_markup(make_spec(version, path))
+    )
+    assert {key: path[key] for key in metadata} == original_metadata
+    expected = textwrap.dedent("""\
+        .. http:get:: /resources
+
+           :statuscode 200:
+              A response.
+        """)
+    if group:
+        expected = "default\n=======\n\n" + expected
+    assert markup == expected
+
+
+@pytest.mark.parametrize("group", [False, True])
+@pytest.mark.parametrize("version", ["2.0", "3.0.3", "3.1.0"])
+def test_parameter_overrides(fakestate, version, group):
+    """Operations override parameters by both name and location."""
+
+    def parameter(name, location, schema_type, description):
+        result = {"name": name, "in": location, "description": description}
+        schema = {"type": schema_type}
+        if version == "2.0":
+            result.update(schema)
+        else:
+            result["schema"] = schema
+        if location == "path":
+            result["required"] = True
+        return result
+
+    path = {
+        "parameters": [
+            parameter("id", "path", "string", "An inherited path parameter."),
+            parameter("q", "query", "string", "An inherited query parameter."),
+            parameter("q", "header", "string", "An inherited header parameter."),
+        ],
+        "get": {
+            "parameters": [
+                parameter("q", "query", "integer", "An overridden query parameter.")
+            ],
+            "responses": {"200": {"description": "A response."}},
+        },
+        "post": {"responses": {"201": {"description": "Another response."}}},
+    }
+    spec = make_spec(version, path, endpoint="/resources/{id}")
+    # Exercise reference resolution before parameter identity is inspected.
+    shared = path["parameters"][1]
+    if version == "2.0":
+        spec["parameters"] = {"query": shared}
+        path["parameters"][1] = {"$ref": "#/parameters/query"}
+    else:
+        spec["components"] = {"parameters": {"query": shared}}
+        path["parameters"][1] = {"$ref": "#/components/parameters/query"}
+
+    renderer = renderers.HttpdomainRenderer(fakestate, {"group": group})
+    markup = "\n".join(renderer.render_restructuredtext_markup(spec))
+    get_markup, post_markup = markup.split(".. http:post::")
+    for operation_markup in (get_markup, post_markup):
+        assert operation_markup.count(":param id:") == 1
+        assert ":paramtype id: string, required" in operation_markup
+        assert operation_markup.count(":reqheader q:") == 1
+        assert "An inherited header parameter." in operation_markup
+        assert operation_markup.count(":queryparam q:") == 1
+    assert ":queryparamtype q: integer" in get_markup
+    assert "An overridden query parameter." in get_markup
+    assert "An inherited query parameter." not in get_markup
+    assert ":queryparamtype q: string" in post_markup
+    assert "An inherited query parameter." in post_markup
+    assert "An overridden query parameter." not in post_markup
+    # Reusing a spec must not accumulate inherited parameters.
+    assert "\n".join(renderer.render_restructuredtext_markup(spec)) == markup
+
+
+@pytest.mark.parametrize("group", [False, True])
+def test_oas2_inherited_request_body(fakestate, group):
+    """Swagger body parameters must be inherited before conversion to OAS 3."""
+
+    spec = make_spec(
+        "2.0",
+        {
+            "x-codegen-name": "customName",
+            "parameters": [
+                {
+                    "name": "body",
+                    "in": "body",
+                    "required": True,
+                    "schema": {
+                        "type": "object",
+                        "example": {"name": "An inherited body"},
+                    },
+                }
+            ],
+            "post": {"responses": {"201": {"description": "A response."}}},
+        },
+    )
+    spec["consumes"] = ["application/json"]
+    renderer = renderers.HttpdomainRenderer(fakestate, {"group": group})
+    markup = "\n".join(renderer.render_restructuredtext_markup(copy.deepcopy(spec)))
+    assert "POST /resources HTTP/1.1" in markup
+    assert '"name": "An inherited body"' in markup
+    assert ":statuscode 201:" in markup

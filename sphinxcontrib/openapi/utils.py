@@ -104,9 +104,26 @@ def normalize_spec(spec, **options):
     # endpoints definitions.
     for endpoint in spec.get('paths', {}).values():
         parameters = endpoint.pop('parameters', [])
-        for method in endpoint.values():
-            method.setdefault('parameters', [])
-            method['parameters'].extend(parameters)
+        for method, operation in endpoint.items():
+            # Path Items also contain metadata and vendor extensions, which
+            # must not be treated as Operation Objects.
+            if method.lower() not in {
+                'get', 'put', 'post', 'delete', 'options', 'head', 'patch', 'trace'
+            }:
+                continue
+
+            operation_parameters = operation.setdefault('parameters', [])
+            # OpenAPI identifies parameters by (name, in). An operation may
+            # override a path-level parameter, but cannot remove it.
+            operation_parameters_ids = {
+                (parameter['name'], parameter['in'])
+                for parameter in operation_parameters
+            }
+            operation_parameters.extend(
+                parameter for parameter in parameters
+                if (parameter['name'], parameter['in'])
+                not in operation_parameters_ids
+            )
 
 
 def get_text_converter(options):
