@@ -209,8 +209,21 @@ def _get_single_schema_type(schema):
     return schema_type
 
 
+def _merge_schema_lists(merger, path, base, nxt):
+    # allOf is conjunctive: every required property and nested allOf constraint
+    # remains applicable. Other lists retain the existing override policy.
+    if path and path[-1] == "required":
+        return list(dict.fromkeys(base + nxt))
+    if path and path[-1] == "allOf":
+        return base + nxt
+    return nxt
+
+
 _merge_mappings = deepmerge.Merger(
-    [(collections.abc.Mapping, deepmerge.strategy.dict.DictStrategies("merge"))],
+    [
+        (collections.abc.Mapping, deepmerge.strategy.dict.DictStrategies("merge")),
+        (list, [_merge_schema_lists]),
+    ],
     ["override"],
     ["override"],
 ).merge
@@ -686,7 +699,7 @@ class HttpdomainRenderer(abc.RestructuredTextRenderer):
 
         def _resolve_combining_schema(schema):
             if isinstance(schema, bool):
-                return {}
+                return schema
 
             if "oneOf" in schema or "anyOf" in schema:
                 merged_schema = schema.copy()
@@ -698,7 +711,7 @@ class HttpdomainRenderer(abc.RestructuredTextRenderer):
                     False,
                 )
                 if first is False:
-                    return {}
+                    return False
                 if first is not True:
                     merged_schema.update(first)
                 return merged_schema
@@ -709,13 +722,14 @@ class HttpdomainRenderer(abc.RestructuredTextRenderer):
                 # sequentially. Please note, the only way the end result will
                 # ever make sense is when all schemas from the array are of
                 # object type.
-                merged_schema = schema.copy()
+                merged_schema = copy.deepcopy(schema)
                 for item in merged_schema.pop("allOf"):
+                    item = _resolve_combining_schema(item)
                     if item is False:
-                        return {}
+                        return False
                     if item is True:
                         continue
-                    merged_schema = _merge_mappings(merged_schema, copy.deepcopy(item))
+                    merged_schema = _merge_mappings(merged_schema, item)
                 return merged_schema
 
             elif "not" in schema:
@@ -737,7 +751,9 @@ class HttpdomainRenderer(abc.RestructuredTextRenderer):
                 # only a single schema variant and leave the rest out. This is
                 # by design and it was decided so in order to keep produced
                 # description clear and simple.
-                yield from _traverse_schema(_resolve_combining_schema(schema), name)
+                yield from _traverse_schema(
+                    _resolve_combining_schema(schema), name, is_required=is_required
+                )
 
             elif "not" in schema:
                 yield name, {}, is_required
@@ -759,7 +775,9 @@ class HttpdomainRenderer(abc.RestructuredTextRenderer):
                     )
 
             elif schema_type == "array":
-                yield from _traverse_schema(schema.get("items", {}), f"{name}[]")
+                yield from _traverse_schema(
+                    schema.get("items", {}), f"{name}[]", is_required=is_required
+                )
 
             elif "enum" in schema:
                 yield name, schema, is_required
@@ -798,7 +816,7 @@ class HttpdomainRenderer(abc.RestructuredTextRenderer):
         # we're about to render is an array, there's no need to render that
         # array in the first place.
         if schema_type == "array":
-            schema = schema.get("items", {})
+            schema = _resolve_combining_schema(schema.get("items", {}))
 
             # Even if a root element is an array, items it contain must not be
             # of a primitive types.

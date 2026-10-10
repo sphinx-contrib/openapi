@@ -598,6 +598,22 @@ def test_oas3_response_example_2xx(testrenderer, oas_fragment):
         """)
 
 
+@pytest.mark.parametrize("version", ["v2.0", "v3.0"])
+def test_expanded_petstore_required_fields(testrenderer, get_testspec, version):
+    """The in-tree Pet schema requires both its inherited name and added id."""
+
+    markup = textify(
+        testrenderer.render_restructuredtext_markup(
+            get_testspec(version, "petstore-expanded.yaml")
+        )
+    )
+    assert markup.count(":resjsonobj name: string, required") == 2
+    assert markup.count(":resjsonobj id: integer:int64, required") == 2
+    assert ":resjsonarrtype name: string, required" in markup
+    assert ":resjsonarrtype id: integer:int64, required" in markup
+    assert ":reqjsonobj name: string, required" in markup
+
+
 def test_oas31_issue112_examples(fakestate, get_testspec):
     """The in-tree nullable schemas render with schema generation enabled."""
 

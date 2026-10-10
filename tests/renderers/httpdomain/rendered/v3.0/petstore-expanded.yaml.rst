@@ -11,6 +11,12 @@
    :queryparam limit:
       maximum number of results to return
    :queryparamtype limit: integer:int32
+   :resjsonarr name:
+   :resjsonarrtype name: string, required
+   :resjsonarr tag:
+   :resjsonarrtype tag: string
+   :resjsonarr id:
+   :resjsonarrtype id: integer:int64, required
 
    :statuscode 200:
       pet response
@@ -29,7 +35,7 @@
 
 
    :resjson name:
-   :resjsonobj name: string
+   :resjsonobj name: string, required
    :resjson tag:
    :resjsonobj tag: string
    :resjson id:
@@ -49,7 +55,7 @@
       ID of pet to fetch
    :paramtype id: integer:int64, required
    :resjson name:
-   :resjsonobj name: string
+   :resjsonobj name: string, required
    :resjson tag:
    :resjsonobj tag: string
    :resjson id:

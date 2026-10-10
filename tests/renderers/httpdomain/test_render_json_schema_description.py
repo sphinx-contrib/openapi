@@ -1,5 +1,6 @@
 """OpenAPI spec renderer: render_json_schema_description."""
 
+import copy
 import textwrap
 
 import pytest
@@ -9,6 +10,187 @@ from sphinxcontrib.openapi import renderers
 
 def textify(generator):
     return "\n".join(generator)
+
+
+@pytest.mark.parametrize("req_or_res", ["req", "res"])
+@pytest.mark.parametrize("reverse", [False, True])
+def test_all_of_required_constraints(testrenderer, oas_fragment, req_or_res, reverse):
+    """allOf accumulates required names at every object level without mutation."""
+
+    schema = oas_fragment("""
+        type: object
+        required: [own, profile]
+        properties:
+          own:
+            type: string
+          profile:
+            type: object
+            required: [first]
+            properties:
+              first:
+                type: string
+        allOf:
+          - required: [name, profile]
+            properties:
+              name:
+                type: [string, "null"]
+              profile:
+                required: [last]
+                properties:
+                  last:
+                    type: string
+          - required: [id, name]
+            properties:
+              id:
+                type: integer
+              name:
+                type: [string, "null"]
+        """)
+    if reverse:
+        schema["allOf"].reverse()
+    original_schema = copy.deepcopy(schema)
+    markup = textify(testrenderer.render_json_schema_description(schema, req_or_res))
+    for name, schema_type in [
+        ("own", "string"),
+        ("profile", "object"),
+        ("profile.first", "string"),
+        ("profile.last", "string"),
+        ("name", "string, null"),
+        ("id", "integer"),
+    ]:
+        assert f":{req_or_res}jsonobj {name}: {schema_type}, required" in markup
+    assert markup.count(", required") == 6
+    assert schema == original_schema
+    assert (
+        textify(testrenderer.render_json_schema_description(schema, req_or_res))
+        == markup
+    )
+
+
+@pytest.mark.parametrize("req_or_res", ["req", "res"])
+@pytest.mark.parametrize("as_array", [False, True])
+def test_nested_all_of_required_constraints(testrenderer, req_or_res, as_array):
+    """Nested conjunctions retain requirements, including within array items."""
+
+    schema = {
+        "allOf": [
+            {
+                "allOf": [
+                    {
+                        "type": "object",
+                        "required": ["first"],
+                        "properties": {"first": {"type": "string"}},
+                    }
+                ]
+            },
+            {
+                "allOf": [
+                    {
+                        "type": "object",
+                        "required": ["last"],
+                        "properties": {"last": {"type": "string"}},
+                    }
+                ]
+            },
+        ]
+    }
+    if as_array:
+        schema = {"type": "array", "items": schema}
+    markup = textify(testrenderer.render_json_schema_description(schema, req_or_res))
+    type_directive = "jsonarrtype" if as_array else "jsonobj"
+    assert f":{req_or_res}{type_directive} first: string, required" in markup
+    assert f":{req_or_res}{type_directive} last: string, required" in markup
+
+
+@pytest.mark.parametrize("req_or_res", ["req", "res"])
+@pytest.mark.parametrize("combining_keyword", ["allOf", "oneOf", "anyOf"])
+@pytest.mark.parametrize(
+    "field_schema, name, schema_type",
+    [
+        ({"type": "string"}, "field", "string"),
+        (
+            {"type": "object", "properties": {"name": {"type": "string"}}},
+            "field",
+            "object",
+        ),
+        ({"type": "array", "items": {"type": "string"}}, "field[]", "string"),
+    ],
+)
+def test_required_composed_property(
+    testrenderer, req_or_res, combining_keyword, field_schema, name, schema_type
+):
+    """A property's required marker survives composition and array traversal."""
+
+    schema = {
+        "type": "object",
+        "required": ["field"],
+        "properties": {
+            "field": {combining_keyword: [copy.deepcopy(field_schema)]},
+            "optional": {combining_keyword: [copy.deepcopy(field_schema)]},
+        },
+    }
+    markup = textify(testrenderer.render_json_schema_description(schema, req_or_res))
+    assert f":{req_or_res}jsonobj {name}: {schema_type}, required" in markup
+    optional_name = "optional[]" if name.endswith("[]") else "optional"
+    assert f":{req_or_res}jsonobj {optional_name}: {schema_type}" in markup
+    assert markup.count(", required") == 1
+
+
+@pytest.mark.parametrize("req_or_res", ["req", "res"])
+def test_all_of_nested_property_constraints(testrenderer, req_or_res):
+    """Conjunctions on the same nested property accumulate rather than replace."""
+
+    schema = {
+        "type": "object",
+        "required": ["profile"],
+        "allOf": [
+            {
+                "properties": {
+                    "profile": {
+                        "allOf": [
+                            {
+                                "type": "object",
+                                "required": ["first"],
+                                "properties": {"first": {"type": "string"}},
+                            }
+                        ]
+                    }
+                }
+            },
+            {
+                "properties": {
+                    "profile": {
+                        "allOf": [
+                            {
+                                "type": "object",
+                                "required": ["last"],
+                                "properties": {"last": {"type": "string"}},
+                            }
+                        ]
+                    }
+                }
+            },
+        ],
+    }
+    markup = textify(testrenderer.render_json_schema_description(schema, req_or_res))
+    assert f":{req_or_res}jsonobj profile: object, required" in markup
+    assert f":{req_or_res}jsonobj profile.first: string, required" in markup
+    assert f":{req_or_res}jsonobj profile.last: string, required" in markup
+
+
+@pytest.mark.parametrize("req_or_res", ["req", "res"])
+def test_nested_all_of_false_schema(testrenderer, req_or_res):
+    """Flattening nested allOf must retain the meaning of false subschemas."""
+
+    schema = {
+        "allOf": [
+            {"allOf": [False]},
+            {"type": "object", "properties": {"name": {"type": "string"}}},
+        ]
+    }
+    assert (
+        textify(testrenderer.render_json_schema_description(schema, req_or_res)) == ""
+    )
 
 
 @pytest.mark.parametrize("req_or_res", ["req", "res"])
@@ -1233,7 +1415,7 @@ def test_render_json_schema_description_all_of_shared_type(
                 properties:
                   some_key:
                     type: string
-                    alOf:
+                    allOf:
                       - minLength: 3
                       - maxLength: 5
                 """),
