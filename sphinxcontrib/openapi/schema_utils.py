@@ -139,35 +139,9 @@ def example_from_schema(schema):
         if items == {}:
             # Any-type arrays
             example_items.extend(_DEFAULT_EXAMPLES.values())
-        elif isinstance(items, dict) and "oneOf" in items:
-            # Mixed-type arrays
-            one_of = items["oneOf"]
-            if isinstance(one_of, (list, set)):
-                try:
-                    first = sorted(one_of)[0]
-                except TypeError:
-                    first = list(one_of)[0]
-            else:
-                first = one_of
-            if isinstance(first, str) and first in _DEFAULT_EXAMPLES:
-                example_items.append(_DEFAULT_EXAMPLES[first])
-            else:
-                example_items.append(example_from_schema(first))
-        elif isinstance(items, dict) and "anyOf" in items:
-            # Mixed-type arrays
-            any_of = items["anyOf"]
-            if isinstance(any_of, (list, set)):
-                try:
-                    first = sorted(any_of)[0]
-                except TypeError:
-                    first = list(any_of)[0]
-            else:
-                first = any_of
-            if isinstance(first, str) and first in _DEFAULT_EXAMPLES:
-                example_items.append(_DEFAULT_EXAMPLES[first])
-            else:
-                example_items.append(example_from_schema(first))
         else:
+            # Treat the whole item schema like any other schema, preserving
+            # explicit examples before considering oneOf/anyOf subschemas.
             example_items.append(example_from_schema(items))
 
         # Generate array containing example_items and satisfying min_length and max_length

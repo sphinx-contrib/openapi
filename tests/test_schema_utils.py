@@ -1,3 +1,4 @@
+import jsonschema
 import pytest
 
 from sphinxcontrib.openapi.schema_utils import example_from_schema
@@ -125,7 +126,7 @@ from sphinxcontrib.openapi.schema_utils import example_from_schema
                 "properties": {
                     "mixed_type_array": {
                         "type": "array",
-                        "items": {"oneOf": {"string", "integer"}},
+                        "items": {"oneOf": [{"type": "integer"}, {"type": "string"}]},
                     },
                     "any_type_array": {"type": "array", "items": {}},
                     "0_to_1_length_array": {
@@ -354,3 +355,73 @@ from sphinxcontrib.openapi.schema_utils import example_from_schema
 )
 def test_generate_example_from_schema(schema, expected):
     assert example_from_schema(schema) == expected
+
+
+@pytest.mark.parametrize("combining_keyword", ["oneOf", "anyOf"])
+@pytest.mark.parametrize(
+    "first_schema, expected_item",
+    [
+        ({"type": "string"}, "string"),
+        (
+            {"type": "object", "properties": {"name": {"type": "string"}}},
+            {"name": "string"},
+        ),
+        ({"type": "array", "items": {"type": "string"}}, ["string", "string"]),
+    ],
+)
+def test_composed_array_items(combining_keyword, first_schema, expected_item):
+    """Composed items use the first schema in declaration order."""
+
+    schema = {
+        "type": "array",
+        "items": {combining_keyword: [first_schema, {"type": "integer"}]},
+    }
+    example = example_from_schema(schema)
+    assert example == [expected_item, expected_item]
+    jsonschema.Draft202012Validator(schema).validate(example)
+
+
+@pytest.mark.parametrize("combining_keyword", ["oneOf", "anyOf"])
+@pytest.mark.parametrize(
+    "first_schema, explicit_example",
+    [
+        ({"type": "integer", "example": 7}, 42),
+        ({"type": "integer", "example": 7}, 0),
+        ({"type": "boolean", "example": True}, False),
+        ({"type": "string", "example": "branch"}, ""),
+        ({"type": "object", "example": {"name": "branch"}}, {}),
+        ({"type": "array", "items": {"type": "integer"}, "example": [7]}, []),
+        ({"type": "null"}, None),
+    ],
+)
+def test_composed_array_item_example(combining_keyword, first_schema, explicit_example):
+    """An item-level example takes precedence over composed subschemas."""
+
+    alternative = {"type": "integer" if first_schema["type"] == "string" else "string"}
+    schema = {
+        "type": "array",
+        "items": {
+            "example": explicit_example,
+            combining_keyword: [first_schema, alternative],
+        },
+    }
+    example = example_from_schema(schema)
+    assert example == [explicit_example, explicit_example]
+    jsonschema.Draft202012Validator(schema).validate(example)
+
+
+@pytest.mark.parametrize("combining_keyword", ["oneOf", "anyOf"])
+def test_composed_array_example(combining_keyword):
+    """An array-level example takes precedence over item examples."""
+
+    schema = {
+        "type": "array",
+        "example": [42],
+        "items": {
+            "example": 7,
+            combining_keyword: [{"type": "integer"}, {"type": "string"}],
+        },
+    }
+    example = example_from_schema(schema)
+    assert example == [42]
+    jsonschema.Draft202012Validator(schema).validate(example)

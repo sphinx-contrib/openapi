@@ -403,6 +403,47 @@ def test_oas3_generate_examples_from_schema(fakestate, oas_fragment):
         """)
 
 
+@pytest.mark.parametrize("version", ["3.0.3", "3.1.0"])
+@pytest.mark.parametrize("combining_keyword", ["oneOf", "anyOf"])
+def test_oas3_generate_array_item_examples(fakestate, version, combining_keyword):
+    """Generated request and response arrays preserve explicit item examples."""
+
+    content = {
+        "application/json": {
+            "schema": {
+                "type": "array",
+                "items": {
+                    "example": 42,
+                    combining_keyword: [{"type": "integer"}, {"type": "string"}],
+                },
+            }
+        }
+    }
+    spec = make_spec(
+        version,
+        {
+            "post": {
+                "requestBody": {"content": copy.deepcopy(content)},
+                "responses": {
+                    "200": {
+                        "description": "A response.",
+                        "content": copy.deepcopy(content),
+                    }
+                },
+            }
+        },
+    )
+    renderer = renderers.HttpdomainRenderer(
+        fakestate, {"generate-examples-from-schemas": True}
+    )
+    markup = textify(renderer.render_restructuredtext_markup(spec))
+    assert "POST /resources HTTP/1.1" in markup
+    assert "HTTP/1.1 200 OK" in markup
+    assert [
+        line.strip() for line in markup.splitlines() if line.strip() in {"42,", "42"}
+    ] == ["42,", "42", "42,", "42"]
+
+
 def test_oas3_generate_examples_from_schema_with_composed_property(
     fakestate, oas_fragment
 ):
