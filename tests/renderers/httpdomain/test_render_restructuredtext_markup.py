@@ -400,6 +400,62 @@ def test_oas3_generate_examples_from_schema(fakestate, oas_fragment):
         """)
 
 
+def test_oas3_generate_examples_from_schema_with_composed_property(
+    fakestate, oas_fragment
+):
+    """Schema of a property composed with 'allOf' can be used to generate an example."""
+
+    testrenderer = renderers.HttpdomainRenderer(
+        fakestate, {"generate-examples-from-schemas": True}
+    )
+    markup = textify(testrenderer.render_restructuredtext_markup(oas_fragment("""
+                openapi: 3.0.3
+                info:
+                  title: An example spec
+                  version: 1.0
+                paths:
+                  /test:
+                    get:
+                      description: an operation description
+                      responses:
+                        '200':
+                          content:
+                            application/json:
+                              schema:
+                                type: object
+                                properties:
+                                  status:
+                                    description: a property description
+                                    allOf:
+                                      - type: string
+                                        enum:
+                                          - PENDING
+                                          - RUNNING
+                          description: a response description
+                """)))
+    assert markup == textwrap.dedent("""\
+        .. http:get:: /test
+
+           an operation description
+
+           :resjson status:
+              a property description
+           :resjsonobj status: string:enum
+
+           :statuscode 200:
+              a response description
+
+              .. sourcecode:: http
+
+                 HTTP/1.1 200 OK
+                 Content-Type: application/json
+
+                 {
+                   "status": "PENDING"
+                 }
+        """)
+
+
 def test_oas3_request_body(testrenderer, oas_fragment):
     """Request body example is rendered."""
 

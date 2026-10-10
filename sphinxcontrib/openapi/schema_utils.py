@@ -21,6 +21,20 @@ _DEFAULT_STRING_EXAMPLES = {
 }
 
 
+# Keywords an example can possibly be derived from. A schema that has none of
+# them carries annotations only, and thus contributes no example. Please note,
+# '$ref' is absent because references are expected to be resolved before a
+# schema gets here, and 'default' because it's not consulted below.
+_EXAMPLE_KEYWORDS = frozenset(
+    ["example", "oneOf", "anyOf", "allOf", "enum", "type", "properties", "items"]
+)
+
+
+# Tells "no example has been found yet" apart from an example that is 'None',
+# which is what an explicit 'example: null' produces. Never returned.
+_NO_EXAMPLE = object()
+
+
 def example_from_schema(schema):
     """
     Generates an example request/response body from the provided schema.
@@ -62,8 +76,42 @@ def example_from_schema(schema):
     elif "allOf" in schema:
         # Combine schema examples
         example = {}
+
+        # Merging examples only makes sense for objects. If a subschema is of
+        # any other type, an instance of the composed schema is a value of that
+        # type, so the composed example is that value and there's nothing to
+        # merge it into. Every subschema is still visited, so that the outcome
+        # doesn't depend on their order, and an explicitly provided example wins
+        # over one derived from a type.
+        non_object_example = _NO_EXAMPLE
+        non_object_example_is_explicit = False
+
         for sub_schema in schema["allOf"]:
-            example.update(example_from_schema(sub_schema))
+            # OAS 3.1 allows a subschema to be a boolean, which carries no
+            # example to contribute.
+            if not isinstance(sub_schema, dict):
+                continue
+
+            # A subschema that carries annotations only, a lone 'description'
+            # being the common case, has no example to contribute either.
+            if not _EXAMPLE_KEYWORDS & sub_schema.keys():
+                continue
+
+            sub_example = example_from_schema(sub_schema)
+
+            if not isinstance(sub_example, dict):
+                is_explicit = "example" in sub_schema
+                if non_object_example is _NO_EXAMPLE or (
+                    is_explicit and not non_object_example_is_explicit
+                ):
+                    non_object_example = sub_example
+                    non_object_example_is_explicit = is_explicit
+                continue
+
+            example.update(sub_example)
+
+        if non_object_example is not _NO_EXAMPLE:
+            return non_object_example
         return example
 
     elif "enum" in schema:
