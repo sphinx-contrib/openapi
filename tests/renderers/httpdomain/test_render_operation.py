@@ -396,3 +396,14 @@ def test_render_operation_caseinsensitive_method(testrenderer, method, oas_fragm
            :statuscode 201:
               An evidence created.
         """.rstrip())
+
+
+def test_render_operation_format_compatibility(fakestate):
+    """'format: markdown' is translated to 'commonmark' and 'rst' to 'restructuredtext'."""
+    import sphinx_mdinclude
+
+    r_md = renderers.HttpdomainRenderer(fakestate, {"format": "markdown"})
+    assert r_md._convert_markup == sphinx_mdinclude.convert
+
+    r_rst = renderers.HttpdomainRenderer(fakestate, {"format": "rst"})
+    assert r_rst._convert_markup("plain") == "plain"

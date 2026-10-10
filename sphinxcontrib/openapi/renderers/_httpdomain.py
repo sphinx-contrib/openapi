@@ -208,6 +208,17 @@ def _to_list(val):
     return list(val)
 
 
+def _flag_or_bool(argument):
+    if argument is None:
+        return True
+    val = str(argument).strip().lower()
+    if val in ("true", "yes", "1"):
+        return True
+    if val in ("false", "no", "0"):
+        return False
+    raise ValueError(f"Invalid boolean value: {argument}")
+
+
 class HttpdomainRenderer(abc.RestructuredTextRenderer):
     """Render OpenAPI v3 using `sphinxcontrib-httpdomain` extension."""
 
@@ -220,22 +231,30 @@ class HttpdomainRenderer(abc.RestructuredTextRenderer):
 
     option_spec = {
         "markup": functools.partial(directives.choice, values=_markup_converters),
+        "format": str,
         "http-methods-order": _split_option,
         "response-examples-for": _split_option,
         "request-parameters-order": _split_option,
         "example-preference": _split_option,
         "request-example-preference": _split_option,
         "response-example-preference": _split_option,
-        "generate-examples-from-schemas": directives.flag,
-        "no-json-schema-description": directives.flag,
+        "generate-examples-from-schemas": _flag_or_bool,
+        "no-json-schema-description": _flag_or_bool,
+        "request": _flag_or_bool,
+        "examples": _flag_or_bool,
     }
 
     def __init__(self, state, options):
         super().__init__(state, options)
 
-        self._convert_markup = self._markup_converters[
-            options.get("markup", "commonmark")
-        ]
+        markup = options.get("markup")
+        if markup is None and "format" in options:
+            fmt = str(options["format"]).strip().lower()
+            if fmt == "markdown":
+                markup = "commonmark"
+            elif fmt in ("rst", "restructuredtext"):
+                markup = "restructuredtext"
+        self._convert_markup = self._markup_converters[markup or "commonmark"]
         methods_order = _to_list(options.get("http-methods-order")) or []
         self._http_methods_order = [m.lower() for m in methods_order]
 
@@ -264,7 +283,9 @@ class HttpdomainRenderer(abc.RestructuredTextRenderer):
             _to_list(options.get("response-example-preference"))
             or self._example_preference
         )
-        self._generate_example_from_schema = "generate-examples-from-schemas" in options
+        self._generate_example_from_schema = bool(
+            options.get("generate-examples-from-schemas")
+        )
         self._json_schema_description = "no-json-schema-description" not in options
 
     def render_restructuredtext_markup(self, spec):
