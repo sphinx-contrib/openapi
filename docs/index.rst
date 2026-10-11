@@ -4,21 +4,18 @@ sphinxcontrib-openapi
 
 .. hint::
 
-    Check out `sphinxcontrib-redoc`_ if you are interested in separate
-    three-panel OpenAPI spec rendering.
+    Check out `sphinxcontrib-redoc`_ if you are interested in separate three-panel OpenAPI spec rendering.
 
-**sphinxcontrib-openapi** is a `Sphinx`_ extension to generate APIs docs from
-`OpenAPI`_ (fka Swagger) spec. It depends on `sphinxcontrib-httpdomain`_ that
-provides an HTTP domain for describing RESTful HTTP APIs, so we don't need to
-reinvent the wheel.
+**sphinxcontrib-openapi** is a `Sphinx`_ extension to generate APIs docs from `OpenAPI`_ (fka Swagger) spec.
+It depends on `sphinxcontrib-httpdomain`_, which provides an HTTP domain for describing RESTful HTTP APIs so we don't need to reinvent the wheel.
 
 .. code:: bash
 
    pip install sphinxcontrib-openapi
 
 
-How To Use?
-===========
+Usage
+=====
 
 Consider you have the following OpenAPI spec saved at ``specs/openapi.yml``:
 
@@ -35,18 +32,129 @@ and it will be rendered into something like:
 
 .. openapi:: specs/openapi.yml
 
+The ``openapi`` directive uses the default renderer (configured by ``openapi_default_renderer``).
+In addition, each registered renderer can be invoked directly by suffixing the directive name with the renderer alias:
+
+.. code:: restructuredtext
+
+   .. openapi:httpdomain:: specs/openapi.yml
+
+or:
+
+.. code:: restructuredtext
+
+   .. openapi:httpdomain:old:: specs/openapi.yml
+
+
+Configuration
+=============
+
+The extension provides two configuration options.
+
+``openapi_renderers``
+  A mapping of renderer aliases to the classes.
+  Two renderer classes are provided but it is possible to define your own renderer class.
+  This allows you to add support for things like additional type formats or custom extensions (``x``-prefixed attributes).
+
+  :Type: A mapping of renderer aliases to the implementation class.
+  :Default: ``{'httpdomain': sphinxcontrib.openapi.renderers.HttpdomainRenderer, 'httpdomain:old': sphinxcontrib.openapi.renderers.HttpdomainOldRenderer}``
+
+``openapi_default_renderer``
+  The renderer to use for the generic ``openapi`` directive.
+  This must be one of the renderers defined in ``openapi_renderers``.
+
+  :Type: A string corresponding to the alias of a registered renderer.
+  :Default: ``'httpdomain:old'``
+
 
 Options
 =======
 
-The ``openapi`` directive supports the following options:
+The ``openapi`` directive supports different options depending on the renderer in use.
+
+Options for the ``httpdomain`` renderer
+---------------------------------------
+
+The following options take a value.
 
 ``encoding``
-  Encoding to be used to read an OpenAPI spec. If not passed, Sphinx's
-  source encoding will be used.
+  Encoding to be used to read an OpenAPI spec. If not passed, Sphinx's source encoding will be used.
+
+``markup``
+  The format to use when parsing markup.
+
+  :Type: One of ``commonmark``, ``restructuredtext``
+  :Default: ``commonmark``
+
+``http-methods-order``
+  The preferred order in which to output HTTP methods.
+
+  :Type: A whitespace-delimited sequence of HTTP methods.
+  :Default: ``None`` (methods are rendered in declaration order)
+
+  For example:
+
+  .. code:: restructuredtext
+
+     .. openapi:httpdomain:: specs/openapi.yml
+        :http-methods-order: head get
+
+  Would render the ``head`` method, followed by the ``get`` method, followed by the rest of the methods in their declared order.
+
+``response-examples-for``
+  The response codes to render samples for.
+
+  :Type: A whitespace-delimited sequence of strings, with each string corresponding to an `HTTP status code <https://spec.openapis.org/oas/v3.1.0#http-status-codes>`__ that response examples should be rendered for.
+  :Default: ``["200", "201", "202", "2XX"]``
+
+``request-parameters-order``
+  The preferred order in which to output parameters.
+
+  :Type: A whitespace-delimited sequence of strings, with each string corresponding to a `supported parameter type <https://spec.openapis.org/oas/v3.1.0#fixed-fields-9>`__.
+  :Default: ``["header", "path", "query", "cookie"]``
+
+``example-preference``
+  The preferred example format to render for requests and responses.
+
+  :Type: A whitespace-delimited sequence of strings, with each string corresponding to a `supported media type <https://spec.openapis.org/oas/v3.1.0#media-types>`__.
+  :Default: ``None``
+
+``request-example-preference``
+  The preferred example format to render for requests. This takes precedence over ``example-preference``.
+
+  :Type: A whitespace-delimited sequence of strings, with each string corresponding to a `supported media type <https://spec.openapis.org/oas/v3.1.0#media-types>`__.
+  :Default: Defaults to the value of ``example-preference``, or ``None``
+
+``response-example-preference``
+  The preferred example format to render for responses. This takes precedence over ``example-preference``.
+
+  :Type: A whitespace-delimited sequence of strings, with each string corresponding to a `supported media type <https://spec.openapis.org/oas/v3.1.0#media-types>`__.
+  :Default: Defaults to the value of ``example-preference``, or ``None``
+
+The following options are boolean flags.
+
+``generate-examples-from-schemas``
+
+  Whether examples should be generated from the schema if they are not provided in the spec. If unset, examples will not be generated.
+
+  :Type: Flag.
+
+``no-json-schema-description``
+
+  Whether to disable rendering of JSON schema hints.
+
+  :Type: Flag.
+
+Options for the ``httpdomain:old`` renderer
+-------------------------------------------
+
+The following options are supported when using the ``httpdomain:old`` renderer:
+
+``encoding``
+  Encoding to be used to read an OpenAPI spec. If not passed, Sphinx's source encoding will be used.
 
 ``paths``
-  A comma separated list of paths to filter the included OpenAPI spec by.
+  A whitespace-delimited list of paths to filter the included OpenAPI spec by.
   For example:
 
   .. code:: restructuredtext
@@ -57,25 +165,26 @@ The ``openapi`` directive supports the following options:
            /evidence
         :encoding: utf-8
 
-  Would only render the endpoints at ``/persons`` and ``/evidence``,
-  ignoring all others.
+  Would only render the endpoints at ``/persons`` and ``/evidence``, ignoring all others.
+
+``request``
+  If passed, the request body structure and schema will be rendered (OpenAPI 3.x only).
 
 ``examples``
-  If passed, both request and response examples will be rendered. Please
-  note, if examples are not provided in a spec, they will be generated
-  by internal logic based on a corresponding schema.
+  If passed, both request and response examples will be rendered.
+  Please note, if examples are not provided in a spec, they will be generated by internal logic based on a corresponding schema.
 
 ``group``
-  If passed, paths will be grouped by tags. If a path has no tag assigned, it
-  will be grouped in a ``default`` group.
+  If passed, paths will be grouped by tags.
+  If a path has no tag assigned, it will be grouped in a ``default`` group.
 
 ``format``
-  The format of text in the spec, either ``rst`` or ``markdown``. If
-  not supplied, ReStructured Text is assumed.
+  The format of text in the spec, either ``rst`` or ``markdown``.
+  If not supplied, reStructuredText is assumed.
 
 ``include``
-  A line separated list of regular expressions to filter the included openapi
-  spec by. For example:
+  A line separated list of regular expressions to filter the included OpenAPI spec by.
+  For example:
 
   .. code:: restructuredtext
 
@@ -87,8 +196,8 @@ The ``openapi`` directive supports the following options:
   Would render the endpoints at ``/evidence`` and ``/evidence/{pk}``
 
 ``exclude``
-  A line separated list of regular expressions to filter the included openapi
-  spec by (excluding matches). For example:
+  A line separated list of regular expressions to filter the included OpenAPI spec by (excluding matches).
+  For example:
 
   .. code:: restructuredtext
 
@@ -97,12 +206,11 @@ The ``openapi`` directive supports the following options:
            /evidence/{pk}
         :encoding: utf-8
 
-  Would render ``/persons`` and ``/evidence`` endpoints, but not
-  ``/evidence/{pk}`` endpoints
+  Would render ``/persons`` and ``/evidence`` endpoints, but not ``/evidence/{pk}`` endpoints
 
 ``methods``
-  A line separated list of http methods to filter included openapi
-  spec. For example:
+  A line separated list of HTTP methods to filter included OpenAPI spec.
+  For example:
 
   .. code:: restructuredtext
 
@@ -113,23 +221,10 @@ The ``openapi`` directive supports the following options:
             put
         :encoding: utf-8
 
-  Would render paths with get, post or put method
+  Would render paths with get, post or put method.
 
-``exclude``, ``include`` and ``paths`` can also be used together (``exclude``
-taking precedence over ``include`` and ``paths``)
-
-``http-methods-order``
-  A whitespace delimited list of HTTP methods to render first. For example:
-
-  .. code:: restructuredtext
-
-     .. openapi:: specs/openapi.yml
-        :http-methods-order:
-            head
-            get
-
-  Would render the ``head`` method, followed by the ``get`` method, followed by the rest of the methods in their declared ordered.
-
+``exclude``, ``include`` and ``paths`` can also be used together.
+When used together, ``exclude`` takes precedence over ``include`` and ``paths``.
 
 .. _Sphinx: https://www.sphinx-doc.org/en/master/
 .. _OpenAPI: https://github.com/OAI/OpenAPI-Specification
