@@ -30,6 +30,20 @@ def indented(generator, indent=3):
         yield item
 
 
+def _split_option(value):
+    """Parse a whitespace delimited option value into a list of tokens."""
+
+    # An option may be passed with no value at all, in which case docutils
+    # hands over 'None' instead of a string. Since every option parsed here
+    # takes one or more values, and since an empty one would silently turn
+    # 'response-examples-for' into "no examples at all", let's reject it. The
+    # 'ValueError' is turned into a directive error by docutils.
+    tokens = (value or "").split()
+    if not tokens:
+        raise ValueError("expected one or more whitespace delimited values")
+    return tokens
+
+
 def _iterinorder(iterable, order_by, key=lambda x: x, case_sensitive=False):
     """Iterate over iterable in a given order."""
 
@@ -195,12 +209,12 @@ class HttpdomainRenderer(abc.RestructuredTextRenderer):
 
     option_spec = {
         "markup": functools.partial(directives.choice, values=_markup_converters),
-        "http-methods-order": lambda s: s.split(),
-        "response-examples-for": None,
-        "request-parameters-order": None,
-        "example-preference": None,
-        "request-example-preference": None,
-        "response-example-preference": None,
+        "http-methods-order": _split_option,
+        "response-examples-for": _split_option,
+        "request-parameters-order": _split_option,
+        "example-preference": _split_option,
+        "request-example-preference": _split_option,
+        "response-example-preference": _split_option,
         "generate-examples-from-schemas": directives.flag,
         "no-json-schema-description": directives.flag,
     }
