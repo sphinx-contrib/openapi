@@ -2,6 +2,8 @@
 
 import textwrap
 
+import pytest
+
 from sphinxcontrib.openapi import renderers
 
 
@@ -385,4 +387,206 @@ def test_render_paths_methods_order_insensitive(fakestate, oas_fragment):
 
            :statuscode 201:
               An evidence created.
+        """)
+
+
+def test_render_paths_vendor_extensions_ignored(testrenderer, oas_fragment):
+    """Vendor extensions on path items are not treated as operations."""
+
+    markup = textify(testrenderer.render_paths(oas_fragment("""
+                /resource:
+                  x-codegen-name: customName
+                  x-amazon-apigateway-any-method:
+                    some: config
+                  get:
+                    responses:
+                      '200':
+                        description: ok
+                """)))
+    assert markup == textwrap.dedent("""\
+        .. http:get:: /resource
+
+           :statuscode 200:
+              ok
+        """)
+
+
+def test_render_paths_filtering_paths(fakestate, oas_fragment):
+    """Paths can be filtered using 'paths' option."""
+
+    testrenderer = renderers.HttpdomainRenderer(fakestate, {"paths": ["/resource_a"]})
+
+    markup = textify(testrenderer.render_paths(oas_fragment("""
+                /resource_a:
+                  get:
+                    responses:
+                      '200':
+                        description: resource a
+                /resource_b:
+                  post:
+                    responses:
+                      '404':
+                        description: resource b
+                """)))
+    assert markup == textwrap.dedent("""\
+        .. http:get:: /resource_a
+
+           :statuscode 200:
+              resource a
+        """)
+
+
+def test_render_paths_filtering_include_exclude(fakestate, oas_fragment):
+    """Paths can be filtered using 'include' and 'exclude' regexes."""
+
+    testrenderer = renderers.HttpdomainRenderer(
+        fakestate, {"include": [r"/api/.*"], "exclude": [r".*/private"]}
+    )
+
+    markup = textify(testrenderer.render_paths(oas_fragment("""
+                /api/public:
+                  get:
+                    responses:
+                      '200':
+                        description: public api
+                /api/private:
+                  get:
+                    responses:
+                      '200':
+                        description: private api
+                /other:
+                  get:
+                    responses:
+                      '200':
+                        description: other
+                """)))
+    assert markup == textwrap.dedent("""\
+        .. http:get:: /api/public
+
+           :statuscode 200:
+              public api
+        """)
+
+
+@pytest.mark.parametrize("group", [False, True])
+@pytest.mark.parametrize(
+    "selection",
+    [
+        {},
+        {"include": [r"/api/.*"]},
+        {"paths": ["/api/public", "/api/private", "/api/admin"]},
+    ],
+)
+@pytest.mark.parametrize(
+    "exclude, expected_paths",
+    [
+        ([r".*/private", r".*/admin"], ["/api/public"]),
+        ([r"/api/.*", r"/api/private"], []),
+        (
+            [r"/missing", r"/also-missing"],
+            ["/api/public", "/api/private", "/api/admin"],
+        ),
+        ([], ["/api/public", "/api/private", "/api/admin"]),
+    ],
+)
+def test_render_paths_filtering_multiple_exclusions(
+    fakestate, group, selection, exclude, expected_paths
+):
+    """Exclude any matching path once, preserving the remaining path order."""
+
+    paths = {
+        endpoint: {"get": {"responses": {"200": {"description": "A response."}}}}
+        for endpoint in ["/api/public", "/api/private", "/api/admin", "/other"]
+    }
+    testrenderer = renderers.HttpdomainRenderer(
+        fakestate, {**selection, "exclude": exclude, "group": group}
+    )
+    markup = textify(testrenderer.render_paths(paths))
+    expected_paths = list(expected_paths)
+    if not selection:
+        expected_paths.append("/other")
+    assert [line for line in markup.splitlines() if line.startswith(".. http:")] == [
+        f".. http:get:: {endpoint}" for endpoint in expected_paths
+    ]
+
+
+def test_render_paths_filtering_methods(fakestate, oas_fragment):
+    """Endpoints can be filtered by HTTP methods."""
+
+    testrenderer = renderers.HttpdomainRenderer(fakestate, {"methods": ["get"]})
+
+    markup = textify(testrenderer.render_paths(oas_fragment("""
+                /resource:
+                  get:
+                    responses:
+                      '200':
+                        description: get response
+                  post:
+                    responses:
+                      '201':
+                        description: post response
+                """)))
+    assert markup == textwrap.dedent("""\
+        .. http:get:: /resource
+
+           :statuscode 200:
+              get response
+        """)
+
+
+def test_render_paths_group(fakestate, oas_fragment):
+    """Endpoints can be grouped by tags with headers."""
+
+    testrenderer = renderers.HttpdomainRenderer(fakestate, {"group": True})
+    spec = oas_fragment("""
+        tags:
+          - name: pets
+          - name: users
+        paths:
+          /pets:
+            get:
+              tags:
+                - pets
+              responses:
+                '200':
+                  description: list pets
+          /users:
+            get:
+              tags:
+                - users
+              responses:
+                '200':
+                  description: list users
+          /un-tagged:
+            get:
+              responses:
+                '200':
+                  description: un-tagged
+    """)
+
+    markup = textify(testrenderer.render_paths(spec["paths"], spec=spec))
+    assert markup == textwrap.dedent("""\
+        pets
+        ====
+
+        .. http:get:: /pets
+
+           :statuscode 200:
+              list pets
+
+        users
+        =====
+
+        .. http:get:: /users
+
+           :statuscode 200:
+              list users
+
+        default
+        =======
+
+        .. http:get:: /un-tagged
+
+           :statuscode 200:
+              un-tagged
         """)

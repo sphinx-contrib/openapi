@@ -29,7 +29,7 @@
    :statuscode 200:
       An array of products
 
-   :statuscode default:
+   :response default:
       Unexpected error
 
 .. http:get:: /estimates/price
@@ -79,7 +79,7 @@
    :statuscode 200:
       An array of price estimates by product
 
-   :statuscode default:
+   :response default:
       Unexpected error
 
 .. http:get:: /estimates/time
@@ -119,7 +119,7 @@
    :statuscode 200:
       An array of products
 
-   :statuscode default:
+   :response default:
       Unexpected error
 
 .. http:get:: /me
@@ -147,7 +147,7 @@
    :statuscode 200:
       Profile information for a user
 
-   :statuscode default:
+   :response default:
       Unexpected error
 
 .. http:get:: /history
@@ -184,5 +184,5 @@
    :statuscode 200:
       History information for the given user
 
-   :statuscode default:
+   :response default:
       Unexpected error

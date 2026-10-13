@@ -1,6 +1,10 @@
 """OpenAPI spec renderer: render_restructuredtext_markup."""
 
+import copy
+import json
 import textwrap
+
+import pytest
 
 from sphinxcontrib.openapi import renderers
 
@@ -400,6 +404,47 @@ def test_oas3_generate_examples_from_schema(fakestate, oas_fragment):
         """)
 
 
+@pytest.mark.parametrize("version", ["3.0.3", "3.1.0"])
+@pytest.mark.parametrize("combining_keyword", ["oneOf", "anyOf"])
+def test_oas3_generate_array_item_examples(fakestate, version, combining_keyword):
+    """Generated request and response arrays preserve explicit item examples."""
+
+    content = {
+        "application/json": {
+            "schema": {
+                "type": "array",
+                "items": {
+                    "example": 42,
+                    combining_keyword: [{"type": "integer"}, {"type": "string"}],
+                },
+            }
+        }
+    }
+    spec = make_spec(
+        version,
+        {
+            "post": {
+                "requestBody": {"content": copy.deepcopy(content)},
+                "responses": {
+                    "200": {
+                        "description": "A response.",
+                        "content": copy.deepcopy(content),
+                    }
+                },
+            }
+        },
+    )
+    renderer = renderers.HttpdomainRenderer(
+        fakestate, {"generate-examples-from-schemas": True}
+    )
+    markup = textify(renderer.render_restructuredtext_markup(spec))
+    assert "POST /resources HTTP/1.1" in markup
+    assert "HTTP/1.1 200 OK" in markup
+    assert [
+        line.strip() for line in markup.splitlines() if line.strip() in {"42,", "42"}
+    ] == ["42,", "42", "42,", "42"]
+
+
 def test_oas3_generate_examples_from_schema_with_composed_property(
     fakestate, oas_fragment
 ):
@@ -551,3 +596,557 @@ def test_oas3_response_example_2xx(testrenderer, oas_fragment):
            :statuscode 404:
               resource not found
         """)
+
+
+@pytest.mark.parametrize("version", ["v2.0", "v3.0"])
+def test_expanded_petstore_required_fields(testrenderer, get_testspec, version):
+    """The in-tree Pet schema requires both its inherited name and added id."""
+
+    markup = textify(
+        testrenderer.render_restructuredtext_markup(
+            get_testspec(version, "petstore-expanded.yaml")
+        )
+    )
+    assert markup.count(":resjsonobj name: string, required") == 2
+    assert markup.count(":resjsonobj id: integer:int64, required") == 2
+    assert ":resjsonarrtype name: string, required" in markup
+    assert ":resjsonarrtype id: integer:int64, required" in markup
+    assert ":reqjsonobj name: string, required" in markup
+
+
+def test_oas31_issue112_examples(fakestate, get_testspec):
+    """The in-tree nullable schemas render with schema generation enabled."""
+
+    renderer = renderers.HttpdomainRenderer(
+        fakestate, {"generate-examples-from-schemas": True}
+    )
+    markup = textify(
+        renderer.render_restructuredtext_markup(get_testspec("v3.1", "issue-112.yaml"))
+    )
+    assert markup.count(".. sourcecode:: http") == 2
+    assert '"bio": "string"' in markup
+    assert '"deleted_at": "2020-01-01"' in markup
+    assert ":resjsonobj bio: string, null" in markup
+
+
+@pytest.mark.parametrize(
+    "schema, expected",
+    [
+        (True, 1),
+        ({"type": "null"}, None),
+        ({"type": ["string", "null"]}, "string"),
+        (
+            {"type": ["object", "null"], "properties": {"name": {"type": "string"}}},
+            {"name": "string"},
+        ),
+        ({"type": ["array", "null"]}, ["string", 1]),
+        ({"type": "array"}, ["string", 1]),
+        ({"type": "array", "items": True}, ["string", 1]),
+        ({"type": "array", "items": False}, []),
+    ],
+)
+def test_oas31_schema_examples(fakestate, schema, expected):
+    """OAS 3.1 schema shapes work through example and description rendering."""
+
+    spec = make_spec(
+        "3.1.0",
+        {
+            "get": {
+                "responses": {
+                    "200": {
+                        "description": "A response.",
+                        "content": {"application/json": {"schema": schema}},
+                    }
+                }
+            }
+        },
+    )
+    renderer = renderers.HttpdomainRenderer(
+        fakestate, {"generate-examples-from-schemas": True}
+    )
+    markup = textify(renderer.render_restructuredtext_markup(spec))
+    assert "HTTP/1.1 200 OK" in markup
+    body = markup.split("Content-Type: application/json\n\n")[1]
+    assert json.loads(textwrap.dedent(body)) == expected
+
+
+@pytest.mark.parametrize("generate_examples", [False, True])
+def test_oas31_false_schema(fakestate, generate_examples):
+    """A false schema is valid, but cannot have a generated example."""
+
+    spec = make_spec(
+        "3.1.0",
+        {
+            "post": {
+                "requestBody": {"content": {"application/json": {"schema": False}}},
+                "responses": {
+                    "200": {
+                        "description": "A response.",
+                        "content": {"application/json": {"schema": False}},
+                    }
+                },
+            }
+        },
+    )
+    renderer = renderers.HttpdomainRenderer(
+        fakestate, {"generate-examples-from-schemas": generate_examples}
+    )
+    markup = textify(renderer.render_restructuredtext_markup(spec))
+    assert ":statuscode 200:" in markup
+    assert ".. sourcecode::" not in markup
+
+
+def test_oas31_false_schema_media_type_fallback(fakestate):
+    """If one media type forbids a body, try the next for a generated example."""
+
+    spec = make_spec(
+        "3.1.0",
+        {
+            "get": {
+                "responses": {
+                    "200": {
+                        "description": "A response.",
+                        "content": {
+                            "application/json": {"schema": False},
+                            "application/problem+json": {"schema": {"type": "integer"}},
+                        },
+                    }
+                }
+            }
+        },
+    )
+    renderer = renderers.HttpdomainRenderer(
+        fakestate, {"generate-examples-from-schemas": True}
+    )
+    markup = textify(renderer.render_restructuredtext_markup(spec))
+    assert "Content-Type: application/problem+json" in markup
+    assert "Content-Type: application/json" not in markup
+
+
+def test_oas31_boolean_parameter_schemas(fakestate):
+    """Boolean parameter and header schemas do not break type markers."""
+
+    spec = make_spec(
+        "3.1.0",
+        {
+            "get": {
+                "parameters": [
+                    {
+                        "name": "anything",
+                        "in": "query",
+                        "required": True,
+                        "schema": True,
+                    },
+                    {"name": "forbidden", "in": "query", "schema": False},
+                ],
+                "responses": {
+                    "200": {
+                        "description": "A response.",
+                        "headers": {
+                            "X-Anything": {"schema": True, "required": True},
+                            "X-Forbidden": {"schema": False},
+                        },
+                    }
+                },
+            }
+        },
+    )
+    markup = textify(
+        renderers.HttpdomainRenderer(fakestate, {}).render_restructuredtext_markup(spec)
+    )
+    assert ":queryparamtype anything: required" in markup
+    assert ":queryparam forbidden:" in markup
+    assert ":resheadertype X-Anything: required" in markup
+    assert ":resheader X-Forbidden:" in markup
+
+
+@pytest.mark.parametrize("version", ["3.0.3", "3.1.0"])
+@pytest.mark.parametrize("provided_example", [False, True])
+@pytest.mark.parametrize(
+    "options, generate, render_examples, response_codes",
+    [
+        ({}, False, True, ["200"]),
+        ({"examples": True}, True, True, ["200", "400", "000"]),
+        ({"examples": False}, False, False, []),
+        ({"generate-examples-from-schemas": True}, True, True, ["200"]),
+        (
+            {"examples": True, "generate-examples-from-schemas": False},
+            False,
+            True,
+            ["200", "400", "000"],
+        ),
+        ({"examples": False, "generate-examples-from-schemas": True}, True, False, []),
+        ({"examples": True, "response-examples-for": "400"}, True, True, ["400"]),
+        ({"examples": True, "response-examples-for": []}, True, True, []),
+    ],
+)
+def test_legacy_examples(
+    fakestate,
+    version,
+    provided_example,
+    options,
+    generate,
+    render_examples,
+    response_codes,
+):
+    """Legacy example flags control generation and rendering of both bodies."""
+
+    content = {
+        "application/json": {
+            "schema": {"type": "object", "properties": {"name": {"type": "string"}}}
+        }
+    }
+    if provided_example:
+        content["application/json"]["example"] = {"name": "A supplied example"}
+    spec = make_spec(
+        version,
+        {
+            "post": {
+                "requestBody": {"content": copy.deepcopy(content)},
+                "responses": {
+                    status: {
+                        "description": "A response.",
+                        "content": copy.deepcopy(content),
+                    }
+                    for status in ["200", "400", "default"]
+                },
+            }
+        },
+    )
+    renderer = renderers.HttpdomainRenderer(fakestate, options)
+    markup = textify(renderer.render_restructuredtext_markup(spec))
+    examples_expected = render_examples and (provided_example or generate)
+    assert ("POST /resources HTTP/1.1" in markup) == examples_expected
+    expected_codes = response_codes if examples_expected else []
+    assert [
+        line.split()[1]
+        for line in markup.splitlines()
+        if line.strip().startswith("HTTP/1.1")
+    ] == expected_codes
+    assert markup.count(".. sourcecode:: http") == (
+        1 + len(expected_codes) if examples_expected else 0
+    )
+    # Disabling examples must not suppress schema descriptions.
+    assert ":reqjson name:" in markup
+    assert ":resjson name:" in markup
+    if examples_expected:
+        expected_value = "A supplied example" if provided_example else "string"
+        assert f'"name": "{expected_value}"' in markup
+
+
+@pytest.mark.parametrize(
+    "options, request_hints, response_hints",
+    [
+        ({}, True, True),
+        ({"request": True}, True, True),
+        ({"request": False}, False, True),
+        ({"no-json-schema-description": True}, False, False),
+        ({"no-json-schema-description": False}, True, True),
+        ({"request": True, "no-json-schema-description": True}, False, False),
+        ({"request": False, "no-json-schema-description": False}, False, True),
+    ],
+)
+def test_legacy_request(fakestate, options, request_hints, response_hints):
+    """The request flag controls request hints independently of examples."""
+
+    content = {
+        "application/json": {
+            "schema": {"type": "object", "properties": {"name": {"type": "string"}}},
+            "example": {"name": "A supplied example"},
+        }
+    }
+    spec = make_spec(
+        "3.0.3",
+        {
+            "post": {
+                "requestBody": {"content": copy.deepcopy(content)},
+                "responses": {
+                    "200": {
+                        "description": "A response.",
+                        "content": copy.deepcopy(content),
+                    }
+                },
+            }
+        },
+    )
+    renderer = renderers.HttpdomainRenderer(fakestate, options)
+    markup = textify(renderer.render_restructuredtext_markup(spec))
+    assert (":reqjson name:" in markup) == request_hints
+    assert (":resjson name:" in markup) == response_hints
+    assert "POST /resources HTTP/1.1" in markup
+    assert "HTTP/1.1 200 OK" in markup
+
+
+def make_spec(version, path, endpoint="/resources"):
+    spec = {
+        "info": {"title": "An example API", "version": "1.0"},
+        "paths": {endpoint: path},
+    }
+    spec["swagger" if version == "2.0" else "openapi"] = version
+    return spec
+
+
+@pytest.mark.parametrize("group", [False, True])
+@pytest.mark.parametrize("version", ["3.0.3", "3.1.0"])
+@pytest.mark.parametrize(
+    "metadata",
+    [
+        {"summary": "A path summary"},
+        {"description": "A path description"},
+        {"servers": [{"url": "https://example.com"}]},
+        {"x-codegen-name": "customName"},
+        {"x-amazon-apigateway-any-method": {"some": "config"}},
+    ],
+)
+def test_path_metadata(fakestate, version, group, metadata):
+    """Path metadata is not normalized or rendered as an operation."""
+
+    path = {
+        **metadata,
+        "get": {"responses": {"200": {"description": "A response."}}},
+    }
+    original_metadata = copy.deepcopy(metadata)
+    renderer = renderers.HttpdomainRenderer(fakestate, {"group": group})
+    markup = "\n".join(
+        renderer.render_restructuredtext_markup(make_spec(version, path))
+    )
+    assert {key: path[key] for key in metadata} == original_metadata
+    expected = textwrap.dedent("""\
+        .. http:get:: /resources
+
+           :statuscode 200:
+              A response.
+        """)
+    if group:
+        expected = "default\n=======\n\n" + expected
+    assert markup == expected
+
+
+@pytest.mark.parametrize("group", [False, True])
+@pytest.mark.parametrize("version", ["2.0", "3.0.3", "3.1.0"])
+def test_parameter_overrides(fakestate, version, group):
+    """Operations override parameters by both name and location."""
+
+    def parameter(name, location, schema_type, description):
+        result = {"name": name, "in": location, "description": description}
+        schema = {"type": schema_type}
+        if version == "2.0":
+            result.update(schema)
+        else:
+            result["schema"] = schema
+        if location == "path":
+            result["required"] = True
+        return result
+
+    path = {
+        "parameters": [
+            parameter("id", "path", "string", "An inherited path parameter."),
+            parameter("q", "query", "string", "An inherited query parameter."),
+            parameter("q", "header", "string", "An inherited header parameter."),
+        ],
+        "get": {
+            "parameters": [
+                parameter("q", "query", "integer", "An overridden query parameter.")
+            ],
+            "responses": {"200": {"description": "A response."}},
+        },
+        "post": {"responses": {"201": {"description": "Another response."}}},
+    }
+    spec = make_spec(version, path, endpoint="/resources/{id}")
+    # Exercise reference resolution before parameter identity is inspected.
+    shared = path["parameters"][1]
+    if version == "2.0":
+        spec["parameters"] = {"query": shared}
+        path["parameters"][1] = {"$ref": "#/parameters/query"}
+    else:
+        spec["components"] = {"parameters": {"query": shared}}
+        path["parameters"][1] = {"$ref": "#/components/parameters/query"}
+
+    renderer = renderers.HttpdomainRenderer(fakestate, {"group": group})
+    markup = "\n".join(renderer.render_restructuredtext_markup(spec))
+    get_markup, post_markup = markup.split(".. http:post::")
+    for operation_markup in (get_markup, post_markup):
+        assert operation_markup.count(":param id:") == 1
+        assert ":paramtype id: string, required" in operation_markup
+        assert operation_markup.count(":reqheader q:") == 1
+        assert "An inherited header parameter." in operation_markup
+        assert operation_markup.count(":queryparam q:") == 1
+    assert ":queryparamtype q: integer" in get_markup
+    assert "An overridden query parameter." in get_markup
+    assert "An inherited query parameter." not in get_markup
+    assert ":queryparamtype q: string" in post_markup
+    assert "An inherited query parameter." in post_markup
+    assert "An overridden query parameter." not in post_markup
+    # Reusing a spec must not accumulate inherited parameters.
+    assert "\n".join(renderer.render_restructuredtext_markup(spec)) == markup
+
+
+@pytest.mark.parametrize("group", [False, True])
+def test_oas2_inherited_request_body(fakestate, group):
+    """Swagger body parameters must be inherited before conversion to OAS 3."""
+
+    spec = make_spec(
+        "2.0",
+        {
+            "x-codegen-name": "customName",
+            "parameters": [
+                {
+                    "name": "body",
+                    "in": "body",
+                    "required": True,
+                    "schema": {
+                        "type": "object",
+                        "example": {"name": "An inherited body"},
+                    },
+                }
+            ],
+            "post": {"responses": {"201": {"description": "A response."}}},
+        },
+    )
+    spec["consumes"] = ["application/json"]
+    renderer = renderers.HttpdomainRenderer(fakestate, {"group": group})
+    markup = "\n".join(renderer.render_restructuredtext_markup(copy.deepcopy(spec)))
+    assert "POST /resources HTTP/1.1" in markup
+    assert '"name": "An inherited body"' in markup
+    assert ":statuscode 201:" in markup
+
+
+def outbound_path():
+    return {
+        "summary": "Path metadata",
+        "x-notes": "Path metadata",
+        "parameters": [
+            {"name": "token", "in": "header", "schema": {"type": "string"}},
+            {"name": "trace", "in": "header", "schema": {"type": "string"}},
+        ],
+        "post": {
+            "summary": "A notification",
+            "parameters": [
+                {"name": "token", "in": "header", "schema": {"type": "integer"}},
+            ],
+            "requestBody": {
+                "content": {
+                    "application/json": {
+                        "schema": {
+                            "$ref": "#/components/schemas/Event",
+                        }
+                    }
+                }
+            },
+            "responses": {"202": {"description": "Notification accepted"}},
+        },
+    }
+
+
+@pytest.mark.parametrize("group", [False, True])
+@pytest.mark.parametrize("version", ["3.0.3", "3.1.0"])
+def test_referenced_callbacks(fakestate, version, group):
+    """Callbacks retain their own inheritance, references and payloads."""
+
+    expression = "{$request.query.callbackUrl}/data"
+    spec = make_spec(
+        version,
+        {
+            "get": {
+                "parameters": [
+                    {"name": "parent", "in": "query", "schema": {"type": "string"}}
+                ],
+                "responses": {"200": {"description": "Subscribed"}},
+                "callbacks": {"onEvent": {"$ref": "#/components/callbacks/Event"}},
+            }
+        },
+    )
+    spec["components"] = {
+        "callbacks": {
+            "Event": {expression: outbound_path(), "x-notes": "Callback metadata"}
+        },
+        "schemas": {
+            "Event": {
+                "type": "object",
+                "required": ["active"],
+                "properties": {"active": {"type": "boolean"}},
+                "example": {"active": False},
+            }
+        },
+    }
+    renderer = renderers.HttpdomainRenderer(
+        fakestate, {"group": group, "paths": ["/resources"], "methods": ["get"]}
+    )
+    markup = textify(renderer.render_restructuredtext_markup(spec))
+    assert ".. admonition:: Callback: onEvent" in markup
+    assert f".. http:openapi-post:: {expression}" in markup
+    callback_markup = markup.split(".. admonition:: Callback: onEvent")[1]
+    assert callback_markup.count(":reqheader token:") == 1
+    assert ":reqheadertype token: integer" in callback_markup
+    assert ":reqheader trace:" in callback_markup
+    assert ":queryparam parent:" not in callback_markup
+    assert ":reqjsonobj active: boolean, required" in callback_markup
+    assert '"active": false' in callback_markup
+    assert ":statuscode 202:" in callback_markup
+    assert "Path metadata" not in markup
+    assert "Callback metadata" not in markup
+    assert textify(renderer.render_restructuredtext_markup(spec)) == markup
+    filtered = renderers.HttpdomainRenderer(fakestate, {"exclude": ["/resources"]})
+    assert textify(filtered.render_restructuredtext_markup(spec)) == ""
+
+
+@pytest.mark.parametrize("group", [False, True])
+@pytest.mark.parametrize("examples", [False, True])
+@pytest.mark.parametrize("render_request", [False, True])
+def test_referenced_webhook_only_spec(fakestate, group, examples, render_request):
+    """Webhook-only specs render independently of incoming-path filters."""
+
+    spec = {
+        "openapi": "3.1.0",
+        "info": {"title": "Events", "version": "1"},
+        "webhooks": {"newEvent": {"$ref": "#/components/pathItems/Event"}},
+        "components": {
+            "pathItems": {"Event": outbound_path()},
+            "schemas": {
+                "Event": {
+                    "type": "object",
+                    "required": ["active"],
+                    "properties": {"active": {"type": "boolean"}},
+                    "example": {"active": False},
+                }
+            },
+        },
+    }
+    renderer = renderers.HttpdomainRenderer(
+        fakestate,
+        {
+            "group": group,
+            "examples": examples,
+            "request": render_request,
+            "exclude": [".*"],
+            "methods": ["get"],
+        },
+    )
+    markup = textify(renderer.render_restructuredtext_markup(spec))
+    assert ".. admonition:: Webhook: newEvent" in markup
+    assert ".. http:openapi-post:: {webhook_url}" in markup
+    assert ":reqheader token:" in markup
+    assert ":reqheadertype token: integer" in markup
+    assert ":reqheader trace:" in markup
+    assert (":reqjsonobj active: boolean, required" in markup) == render_request
+    assert ('"active": false' in markup) == examples
+    assert ":statuscode 202:" in markup
+    assert ".. http:post:: newEvent" not in markup
+    assert "Path metadata" not in markup
+
+
+def test_components_only_spec(testrenderer):
+    """A valid components-only OAS 3.1 document has no operations to render."""
+
+    assert (
+        textify(
+            testrenderer.render_restructuredtext_markup(
+                {
+                    "openapi": "3.1.0",
+                    "info": {"title": "Models", "version": "1"},
+                    "components": {"schemas": {"Event": {"type": "object"}}},
+                }
+            )
+        )
+        == ""
+    )

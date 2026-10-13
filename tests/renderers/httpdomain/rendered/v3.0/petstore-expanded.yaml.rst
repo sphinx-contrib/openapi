@@ -11,11 +11,17 @@
    :queryparam limit:
       maximum number of results to return
    :queryparamtype limit: integer:int32
+   :resjsonarr name:
+   :resjsonarrtype name: string, required
+   :resjsonarr tag:
+   :resjsonarrtype tag: string
+   :resjsonarr id:
+   :resjsonarrtype id: integer:int64, required
 
    :statuscode 200:
       pet response
 
-   :statuscode default:
+   :response default:
       unexpected error
 
 .. http:post:: /pets
@@ -29,7 +35,7 @@
 
 
    :resjson name:
-   :resjsonobj name: string
+   :resjsonobj name: string, required
    :resjson tag:
    :resjsonobj tag: string
    :resjson id:
@@ -38,7 +44,7 @@
    :statuscode 200:
       pet response
 
-   :statuscode default:
+   :response default:
       unexpected error
 
 .. http:get:: /pets/{id}
@@ -49,7 +55,7 @@
       ID of pet to fetch
    :paramtype id: integer:int64, required
    :resjson name:
-   :resjsonobj name: string
+   :resjsonobj name: string, required
    :resjson tag:
    :resjsonobj tag: string
    :resjson id:
@@ -58,7 +64,7 @@
    :statuscode 200:
       pet response
 
-   :statuscode default:
+   :response default:
       unexpected error
 
 .. http:delete:: /pets/{id}
@@ -70,5 +76,5 @@
    :paramtype id: integer:int64, required
    :statuscode 204:
       pet deleted
-   :statuscode default:
+   :response default:
       unexpected error

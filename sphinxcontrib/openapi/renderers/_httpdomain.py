@@ -6,6 +6,8 @@ import copy
 import functools
 import http.client
 import json
+import re
+from urllib.parse import urlencode
 
 import deepmerge
 import docutils.parsers.rst.directives as directives
@@ -15,7 +17,7 @@ import sphinx_mdinclude
 
 from sphinxcontrib.openapi import _lib2to3 as lib2to3, utils
 from sphinxcontrib.openapi.renderers import abc
-from sphinxcontrib.openapi.schema_utils import example_from_schema
+from sphinxcontrib.openapi.schema_utils import NoExampleError, example_from_schema
 
 CaseInsensitiveDict = requests.structures.CaseInsensitiveDict
 
@@ -71,14 +73,17 @@ def _iterexamples(media_types, example_preference, examples_from_schemas):
 
     for content_type in _iterinorder(media_types, example_preference):
         media_type = media_types[content_type]
+        example = None
 
-        # Look for a example in a bunch of possible places. According to
+        # Look for an example in a bunch of possible places. According to
         # OpenAPI v3 spec, `examples` and `example` keys are mutually
         # exclusive, so there's no much difference between their
         # inspection order, while both must take precedence over a
         # schema example.
         if media_type.get("examples", {}):
             for example in media_type["examples"].values():
+                # Keep fetched content and rendering metadata out of the spec.
+                example = example.copy()
                 if "externalValue" in example:
                     if not example["externalValue"].startswith(("http://", "https://")):
                         logger.warning(
@@ -92,6 +97,7 @@ def _iterexamples(media_types, example_preference, examples_from_schemas):
                         response.raise_for_status()
 
                         example["value"] = response.text
+                        example["_serialize_json"] = False
                         example.pop("externalValue")
                     except Exception:
                         logger.error(
@@ -99,27 +105,50 @@ def _iterexamples(media_types, example_preference, examples_from_schemas):
                             example["externalValue"],
                         )
                         continue
+                # Example Objects can contain annotations without a value.
+                # An explicitly supplied falsey value is nevertheless valid.
+                if "value" not in example:
+                    continue
                 break
             else:
-                # If the loop over examples has not been interrupted, we
-                # probably didn't find an example to render. In that case,
-                # let's try and go next media type.
-                continue
-        elif media_type.get("example"):
-            # Save example from "example" in "examples" compatible format. This
-            # allows to treat all returned examples the same way.
-            example = {"value": media_type["example"]}
-        elif media_type.get("schema", {}).get("example"):
-            # Save example from "schema" in "examples" compatible format. This
-            # allows to treat all returned examples the same way.
-            example = {"value": media_type["schema"]["example"]}
-        elif "schema" in media_type and examples_from_schemas:
-            # Convert schema to example
-            example = {"value": example_from_schema(media_type["schema"])}
-            pass
-        else:
-            continue
+                example = None
 
+        if example is None:
+            if "example" in media_type:
+                example = {"value": media_type["example"]}
+            elif isinstance(media_type.get("schema"), dict) and (
+                "example" in media_type["schema"]
+                or media_type["schema"].get("examples")
+            ):
+                # Schema examples are literal values, unlike media-type examples.
+                # Preserve singular-example precedence for legacy specifications.
+                schema = media_type["schema"]
+                example = {"value": example_from_schema(schema)}
+                if "example" not in schema:
+                    example["_serialize_json"] = True
+            elif "schema" in media_type and examples_from_schemas:
+                # A valid OAS 3.1 schema can forbid all values. In that case there
+                # is no generated example to render; try another media type.
+                try:
+                    example = {
+                        "value": example_from_schema(media_type["schema"]),
+                        "_serialize_json": True,
+                    }
+                except NoExampleError:
+                    continue
+            else:
+                continue
+
+        schema = media_type.get("schema")
+        if isinstance(schema, dict):
+            schema_types = schema.get("type", [])
+            if isinstance(schema_types, str):
+                schema_types = [schema_types]
+            if "string" in schema_types:
+                # A declared string schema makes these JSON instance values,
+                # not legacy preformatted structured payloads. Fetched content
+                # retains its explicit verbatim marker.
+                example.setdefault("_serialize_json", True)
         yield content_type, example
 
 
@@ -127,16 +156,17 @@ def _get_markers_from_object(oas_object, schema):
     """Retrieve a bunch of OAS object markers."""
 
     markers = []
+    if isinstance(schema, bool):
+        schema = {}
 
     schema_type = _get_schema_type(schema)
     if schema_type:
-        if schema.get("format"):
-            schema_type = f"{schema_type}:{schema['format']}"
-        elif schema.get("enum"):
-            schema_type = f"{schema_type}:enum"
-        if isinstance(schema_type, list):
-            markers = schema_type
-        else:
+        schema_types = schema_type if isinstance(schema_type, list) else [schema_type]
+        for schema_type in schema_types:
+            if schema_type != "null" and schema.get("format"):
+                schema_type = f"{schema_type}:{schema['format']}"
+            elif schema_type != "null" and schema.get("enum"):
+                schema_type = f"{schema_type}:enum"
             markers.append(schema_type)
     elif schema.get("enum"):
         markers.append("enum")
@@ -156,12 +186,45 @@ def _get_markers_from_object(oas_object, schema):
 def _is_json_mimetype(mimetype):
     """Returns 'True' if a given mimetype implies JSON data."""
 
+    mimetype = mimetype.split(";", 1)[0].strip().lower()
     return any(
         [
             mimetype == "application/json",
             mimetype.startswith("application/") and mimetype.endswith("+json"),
         ]
     )
+
+
+def _format_example(content_type, example):
+    """Serialize instance values while preserving legacy preformatted payloads."""
+
+    value = example["value"]
+    mimetype = content_type.split(";", 1)[0].strip().lower()
+    if mimetype == "application/x-www-form-urlencoded" and isinstance(value, dict):
+
+        def form_value(item):
+            if isinstance(item, str):
+                return item
+            return json.dumps(item, default=str)
+
+        fields = {
+            name: (
+                [form_value(item) for item in field]
+                if isinstance(field, list)
+                else form_value(field)
+            )
+            for name, field in value.items()
+        }
+        return urlencode(fields, doseq=True)
+    # Generated and schema-level plural examples are literal values. Legacy
+    # nonempty strings may contain preformatted payloads, but an empty string
+    # cannot be preformatted JSON and must be quoted unless fetched verbatim.
+    serialize_json = _is_json_mimetype(content_type) and example.get(
+        "_serialize_json", value == ""
+    )
+    if not isinstance(value, str) or serialize_json:
+        return json.dumps(value, indent=2, default=str)
+    return value
 
 
 def _is_2xx_status(status_code):
@@ -172,6 +235,9 @@ def _is_2xx_status(status_code):
 
 def _get_schema_type(schema):
     """Retrieve schema type either by reading 'type' or guessing."""
+
+    if isinstance(schema, bool):
+        return None
 
     # There are a lot of OpenAPI specs out there that may lack 'type' property
     # in their schemas. I fount no explanations on what is expected behaviour
@@ -190,11 +256,61 @@ def _get_schema_type(schema):
     return schema_type
 
 
+def _get_single_schema_type(schema):
+    """Choose a concrete type to traverse while retaining all types in markers."""
+
+    schema_type = _get_schema_type(schema)
+    if isinstance(schema_type, list):
+        return next((t for t in schema_type if t != "null"), "null")
+    return schema_type
+
+
+def _merge_schema_lists(merger, path, base, nxt):
+    # allOf is conjunctive: every required property and nested allOf constraint
+    # remains applicable. Other lists retain the existing override policy.
+    if path and path[-1] == "required":
+        return list(dict.fromkeys(base + nxt))
+    if path and path[-1] == "allOf":
+        return base + nxt
+    return nxt
+
+
 _merge_mappings = deepmerge.Merger(
-    [(collections.abc.Mapping, deepmerge.strategy.dict.DictStrategies("merge"))],
+    [
+        (collections.abc.Mapping, deepmerge.strategy.dict.DictStrategies("merge")),
+        (list, [_merge_schema_lists]),
+    ],
     ["override"],
     ["override"],
 ).merge
+
+
+_HTTP_METHODS = {"get", "put", "post", "delete", "options", "head", "patch", "trace"}
+
+
+def _to_list(val):
+    if val is None:
+        return None
+    if isinstance(val, str):
+        return val.split()
+    return list(val)
+
+
+def _flag_or_bool(argument):
+    if argument is None:
+        return True
+    val = str(argument).strip().lower()
+    if val in ("true", "yes", "1"):
+        return True
+    if val in ("false", "no", "0"):
+        return False
+    raise ValueError(f"Invalid boolean value: {argument}")
+
+
+def _header(title):
+    yield title
+    yield "=" * len(title)
+    yield ""
 
 
 class HttpdomainRenderer(abc.RestructuredTextRenderer):
@@ -209,43 +325,79 @@ class HttpdomainRenderer(abc.RestructuredTextRenderer):
 
     option_spec = {
         "markup": functools.partial(directives.choice, values=_markup_converters),
+        "format": str,
         "http-methods-order": _split_option,
         "response-examples-for": _split_option,
         "request-parameters-order": _split_option,
         "example-preference": _split_option,
         "request-example-preference": _split_option,
         "response-example-preference": _split_option,
-        "generate-examples-from-schemas": directives.flag,
-        "no-json-schema-description": directives.flag,
+        "generate-examples-from-schemas": _flag_or_bool,
+        "no-json-schema-description": _flag_or_bool,
+        "paths": _split_option,
+        "include": _split_option,
+        "exclude": _split_option,
+        "methods": _split_option,
+        "group": _flag_or_bool,
+        "request": _flag_or_bool,
+        "examples": _flag_or_bool,
     }
 
     def __init__(self, state, options):
         super().__init__(state, options)
 
-        self._convert_markup = self._markup_converters[
-            options.get("markup", "commonmark")
-        ]
-        self._http_methods_order = [
-            http_method.lower() for http_method in options.get("http-methods-order", [])
-        ]
-        self._response_examples_for = options.get(
-            "response-examples-for", self._response_examples_for
+        markup = options.get("markup")
+        if markup is None and "format" in options:
+            fmt = str(options["format"]).strip().lower()
+            if fmt == "markdown":
+                markup = "commonmark"
+            elif fmt in ("rst", "restructuredtext"):
+                markup = "restructuredtext"
+        self._convert_markup = self._markup_converters[markup or "commonmark"]
+        methods_order = _to_list(options.get("http-methods-order")) or []
+        self._http_methods_order = [m.lower() for m in methods_order]
+
+        response_examples_for = _to_list(options.get("response-examples-for"))
+        if response_examples_for is not None:
+            # OpenAPI permits numeric status codes, uppercase ranges 1XX–5XX,
+            # and the lowercase special value "default". Preserve their case.
+            self._response_examples_for = {str(x) for x in response_examples_for}
+        elif options.get("examples"):
+            # The legacy flag renders examples for every response. An explicit
+            # response-examples-for option still takes precedence.
+            self._response_examples_for = None
+        else:
+            self._response_examples_for = {"200", "201", "202", "2XX"}
+
+        req_params_order = _to_list(options.get("request-parameters-order"))
+        if req_params_order is not None:
+            self._request_parameters_order = [
+                parameter_type.lower() for parameter_type in req_params_order
+            ]
+        else:
+            self._request_parameters_order = ["header", "path", "query", "cookie"]
+
+        self._example_preference = _to_list(options.get("example-preference"))
+        self._request_example_preference = (
+            _to_list(options.get("request-example-preference"))
+            or self._example_preference
         )
-        self._request_parameters_order = [
-            parameter_type.lower()
-            for parameter_type in options.get(
-                "request-parameters-order", self._request_parameters_order
+        self._response_example_preference = (
+            _to_list(options.get("response-example-preference"))
+            or self._example_preference
+        )
+        self._render_examples = bool(options.get("examples", True))
+        self._generate_example_from_schema = bool(
+            options.get(
+                "generate-examples-from-schemas", options.get("examples", False)
             )
-        ]
-        self._example_preference = options.get("example-preference")
-        self._request_example_preference = options.get(
-            "request-example-preference", self._example_preference
         )
-        self._response_example_preference = options.get(
-            "response-example-preference", self._example_preference
+        self._json_schema_description = not options.get(
+            "no-json-schema-description", False
         )
-        self._generate_example_from_schema = "generate-examples-from-schemas" in options
-        self._json_schema_description = "no-json-schema-description" not in options
+        self._request_json_schema_description = (
+            self._json_schema_description and options.get("request", True)
+        )
 
     def render_restructuredtext_markup(self, spec):
         """Spec render entry point."""
@@ -253,42 +405,115 @@ class HttpdomainRenderer(abc.RestructuredTextRenderer):
 
         if spec.get("swagger") == "2.0":
             spec = lib2to3.convert(spec)
-        yield from self.render_paths(spec.get("paths", {}))
-
-    def render_paths(self, paths):
-        """Render OAS paths item."""
-
-        for endpoint, path in paths.items():
-            common_parameters = path.pop("parameters", [])
-
-            # OpenAPI's path description may contain objects of different
-            # types. Since we're interested in rendering only objects of
-            # operation type, let's remove irrelevant one from the definition
-            # in order to simplify further code.
-            for key in {"summary", "description", "servers"}:
-                path.pop(key, None)
-
-            for method in _iterinorder(path, self._http_methods_order):
-                operation = path[method]
-                operation.setdefault("parameters", [])
-                operation_parameters_ids = set(
-                    (parameter["name"], parameter["in"])
-                    for parameter in operation["parameters"]
+        yield from self.render_paths(spec.get("paths", {}), spec=spec)
+        for name, path in spec.get("webhooks", {}).items():
+            yield ""
+            yield f".. admonition:: Webhook: {name}"
+            yield ""
+            yield "   The API provider sends this request to the webhook receiver URL."
+            yield "   The webhook name is not an API path; ``{webhook_url}`` is a placeholder."
+            yield ""
+            for endpoint, method, operation in self._iter_path_operations(
+                "{webhook_url}", path
+            ):
+                yield from indented(
+                    self.render_operation(endpoint, method, operation, outbound=True)
                 )
-                operation["parameters"] = [
-                    parameter
-                    for parameter in common_parameters
-                    if (parameter["name"], parameter["in"])
-                    not in operation_parameters_ids
-                ] + operation["parameters"]
-
-                yield from self.render_operation(endpoint, method, operation)
                 yield ""
 
-    def render_operation(self, endpoint, method, operation):
+    def _iter_path_operations(self, endpoint, path, allowed_methods=None):
+        """Yield operations with their own Path Item parameter inheritance."""
+        common_parameters = path.get("parameters", [])
+        methods = [
+            method
+            for method in path
+            if isinstance(method, str) and method.lower() in _HTTP_METHODS
+        ]
+        for method in _iterinorder(methods, self._http_methods_order):
+            if allowed_methods is not None and method.lower() not in allowed_methods:
+                continue
+            operation = copy.deepcopy(path[method])
+            operation.setdefault("parameters", [])
+            parameter_ids = {(p["name"], p["in"]) for p in operation["parameters"]}
+            operation["parameters"] = [
+                p
+                for p in common_parameters
+                if (p["name"], p["in"]) not in parameter_ids
+            ] + operation["parameters"]
+            yield endpoint, method, operation
+
+    def render_paths(self, paths, spec=None):
+        """Render OAS paths item."""
+
+        if "paths" in self._options:
+            expected_paths = set(_to_list(self._options["paths"]))
+            if not expected_paths.issubset(paths):
+                raise ValueError(
+                    "One or more paths are not defined in the spec: %s."
+                    % (", ".join(sorted(expected_paths - set(paths))),)
+                )
+            paths_to_render = [p for p in paths if p in expected_paths]
+        elif "include" in self._options:
+            paths_to_render = []
+            for i in _to_list(self._options["include"]):
+                ir = re.compile(i)
+                for path in paths:
+                    if ir.match(path) and path not in paths_to_render:
+                        paths_to_render.append(path)
+        else:
+            paths_to_render = list(paths.keys())
+
+        if "exclude" in self._options:
+            excluded_patterns = [
+                re.compile(pattern) for pattern in _to_list(self._options["exclude"])
+            ]
+            paths_to_render = [
+                path
+                for path in paths_to_render
+                if not any(pattern.match(path) for pattern in excluded_patterns)
+            ]
+
+        allowed_methods = None
+        if "methods" in self._options:
+            allowed_methods = {m.lower() for m in _to_list(self._options["methods"])}
+
+        if self._options.get("group"):
+            tags_order = (
+                [x["name"] for x in (spec.get("tags") or []) if "name" in x]
+                if spec
+                else []
+            )
+            groups = collections.OrderedDict([(t, []) for t in tags_order])
+
+            for endpoint in paths_to_render:
+                for endpoint, method, operation in self._iter_path_operations(
+                    endpoint, paths[endpoint], allowed_methods
+                ):
+                    tag = (
+                        operation.get("tags", [""])[0] if operation.get("tags") else ""
+                    )
+                    groups.setdefault(tag, []).append((endpoint, method, operation))
+
+            for tag, operations in groups.items():
+                if not operations:
+                    continue
+                yield from _header(tag if tag else "default")
+                for endpoint, method, operation in operations:
+                    yield from self.render_operation(endpoint, method, operation)
+                    yield ""
+        else:
+            for endpoint in paths_to_render:
+                for endpoint, method, operation in self._iter_path_operations(
+                    endpoint, paths[endpoint], allowed_methods
+                ):
+                    yield from self.render_operation(endpoint, method, operation)
+                    yield ""
+
+    def render_operation(self, endpoint, method, operation, *, outbound=False):
         """Render OAS operation item."""
 
-        yield f".. http:{method}:: {endpoint}"
+        directive_method = "openapi-" + method if outbound else method
+        yield f".. http:{directive_method}:: {endpoint}"
 
         if operation.get("deprecated"):
             yield "   :deprecated:"
@@ -306,10 +531,36 @@ class HttpdomainRenderer(abc.RestructuredTextRenderer):
 
         yield from indented(self.render_parameters(operation.get("parameters", [])))
         if "requestBody" in operation:
+            if operation.get("parameters"):
+                # The body can begin with a literal block rather than more
+                # fields, particularly for form data or primitive schemas.
+                yield ""
             yield from indented(
                 self.render_request_body(operation["requestBody"], endpoint, method)
             )
-        yield from indented(self.render_responses(operation["responses"]))
+        yield from indented(self.render_responses(operation.get("responses", {})))
+        for name, callback in operation.get("callbacks", {}).items():
+            yield ""
+            yield f"   .. admonition:: Callback: {name}"
+            yield ""
+            yield "      The API provider sends this request to the callback URL."
+            yield ""
+            for expression, path in callback.items():
+                # Callback Objects support scalar vendor-extension metadata.
+                if not isinstance(expression, str) or expression.startswith("x-"):
+                    continue
+                for (
+                    endpoint,
+                    callback_method,
+                    callback_operation,
+                ) in self._iter_path_operations(expression, path):
+                    yield from indented(
+                        self.render_operation(
+                            endpoint, callback_method, callback_operation, outbound=True
+                        ),
+                        6,
+                    )
+                    yield ""
 
     def render_parameters(self, parameters):
         """Render OAS operation's parameters."""
@@ -357,7 +608,7 @@ class HttpdomainRenderer(abc.RestructuredTextRenderer):
     def render_request_body(self, request_body, endpoint, method):
         """Render OAS operation's requestBody."""
 
-        if self._json_schema_description:
+        if self._request_json_schema_description:
             for content_type, content in request_body["content"].items():
                 if _is_json_mimetype(content_type) and content.get("schema"):
                     yield from self.render_json_schema_description(
@@ -372,6 +623,9 @@ class HttpdomainRenderer(abc.RestructuredTextRenderer):
     def render_request_body_example(self, request_body, endpoint, method):
         """Render OAS operation's requestBody's example."""
 
+        if not self._render_examples:
+            return
+
         content_type, example = next(
             _iterexamples(
                 request_body["content"],
@@ -382,10 +636,7 @@ class HttpdomainRenderer(abc.RestructuredTextRenderer):
         )
 
         if content_type and example:
-            example = example["value"]
-
-            if not isinstance(example, str):
-                example = json.dumps(example, indent=2)
+            example = _format_example(content_type, example)
 
             yield ".. sourcecode:: http"
             yield ""
@@ -418,12 +669,27 @@ class HttpdomainRenderer(abc.RestructuredTextRenderer):
     def render_response(self, status_code, response):
         """Render OAS operation's response."""
 
-        yield f":statuscode {status_code}:"
+        status_code = str(status_code)
+        # httpdomain's statuscode field creates numeric HTTP status roles.
+        # OpenAPI's fallback and range keys are not individual status codes.
+        field = (
+            "response"
+            if status_code == "default" or re.fullmatch(r"[1-5]XX", status_code)
+            else "statuscode"
+        )
+        yield f":{field} {status_code}:"
         yield from indented(
             self._convert_markup(response["description"]).strip().splitlines()
         )
 
-        if "content" in response and status_code in self._response_examples_for:
+        if (
+            self._render_examples
+            and "content" in response
+            and (
+                self._response_examples_for is None
+                or status_code in self._response_examples_for
+            )
+        ):
             yield ""
             yield from indented(
                 self.render_response_example(response["content"], status_code)
@@ -460,6 +726,9 @@ class HttpdomainRenderer(abc.RestructuredTextRenderer):
                     yield f":resheadertype {header_name}: {markers}"
 
     def render_response_example(self, media_type, status_code):
+        if not self._render_examples:
+            return
+
         # OpenAPI 3.0 spec may contain more than one response media type, and
         # each media type may contain more than one example. Rendering all
         # invariants normally is not an option because the result will be hard
@@ -477,10 +746,7 @@ class HttpdomainRenderer(abc.RestructuredTextRenderer):
         )
 
         if content_type and example:
-            example = example["value"]
-
-            if not isinstance(example, str):
-                example = json.dumps(example, indent=2)
+            example = _format_example(content_type, example)
 
             # According to OpenAPI v3 spec, status code may be a special value
             # - "default". It's not quite clear what to render in this case.
@@ -493,11 +759,10 @@ class HttpdomainRenderer(abc.RestructuredTextRenderer):
                 status_code = "000"
                 status_text = "Reason-Phrase"
             else:
-                # According to OpenAPI v3 spec, status code may define a range
-                # of response codes. Since we're talking about rendered example
-                # here, we may show either code from range, but for the sake of
-                # simplicity let's pick the first one.
-                status_code = status_code.replace("XX", "00")
+                # OpenAPI permits numeric status codes and uppercase ranges
+                # 1XX–5XX here; the special value "default" is handled above.
+                # For a range, show its first code in the rendered example.
+                status_code = str(status_code).replace("XX", "00")
                 status_text = http.client.responses.get(int(status_code), "-")
 
             yield ".. sourcecode:: http"
@@ -511,20 +776,22 @@ class HttpdomainRenderer(abc.RestructuredTextRenderer):
         """Render JSON schema's description."""
 
         def _resolve_combining_schema(schema):
-            if "oneOf" in schema:
-                # The part with merging is a vague one since I only found a
-                # single 'oneOf' example where such merging was assumed, and no
-                # explanations in the spec itself.
-                merged_schema = schema.copy()
-                merged_schema.update(merged_schema.pop("oneOf")[0])
-                return merged_schema
+            if isinstance(schema, bool):
+                return schema
 
-            elif "anyOf" in schema:
-                # The part with merging is a vague one since I only found a
-                # single 'oneOf' example where such merging was assumed, and no
-                # explanations in the spec itself.
+            if "oneOf" in schema or "anyOf" in schema:
                 merged_schema = schema.copy()
-                merged_schema.update(merged_schema.pop("anyOf")[0])
+                keyword = "oneOf" if "oneOf" in schema else "anyOf"
+                # Keep the existing first-variant description policy, but skip
+                # False alternatives: they cannot describe any value.
+                first = next(
+                    (item for item in merged_schema.pop(keyword) if item is not False),
+                    False,
+                )
+                if first is False:
+                    return False
+                if first is not True:
+                    merged_schema.update(first)
                 return merged_schema
 
             elif "allOf" in schema:
@@ -533,9 +800,14 @@ class HttpdomainRenderer(abc.RestructuredTextRenderer):
                 # sequentially. Please note, the only way the end result will
                 # ever make sense is when all schemas from the array are of
                 # object type.
-                merged_schema = schema.copy()
+                merged_schema = copy.deepcopy(schema)
                 for item in merged_schema.pop("allOf"):
-                    merged_schema = _merge_mappings(merged_schema, copy.deepcopy(item))
+                    item = _resolve_combining_schema(item)
+                    if item is False:
+                        return False
+                    if item is True:
+                        continue
+                    merged_schema = _merge_mappings(merged_schema, item)
                 return merged_schema
 
             elif "not" in schema:
@@ -545,7 +817,9 @@ class HttpdomainRenderer(abc.RestructuredTextRenderer):
             return schema
 
         def _traverse_schema(schema, name, is_required=False):
-            schema_type = _get_schema_type(schema)
+            if isinstance(schema, bool):
+                return
+            schema_type = _get_single_schema_type(schema)
 
             if {"oneOf", "anyOf", "allOf"} & schema.keys():
                 # Since an item can represented by either or any schema from
@@ -555,7 +829,9 @@ class HttpdomainRenderer(abc.RestructuredTextRenderer):
                 # only a single schema variant and leave the rest out. This is
                 # by design and it was decided so in order to keep produced
                 # description clear and simple.
-                yield from _traverse_schema(_resolve_combining_schema(schema), name)
+                yield from _traverse_schema(
+                    _resolve_combining_schema(schema), name, is_required=is_required
+                )
 
             elif "not" in schema:
                 yield name, {}, is_required
@@ -577,7 +853,9 @@ class HttpdomainRenderer(abc.RestructuredTextRenderer):
                     )
 
             elif schema_type == "array":
-                yield from _traverse_schema(schema["items"], f"{name}[]")
+                yield from _traverse_schema(
+                    schema.get("items", {}), f"{name}[]", is_required=is_required
+                )
 
             elif "enum" in schema:
                 yield name, schema, is_required
@@ -586,7 +864,7 @@ class HttpdomainRenderer(abc.RestructuredTextRenderer):
                 yield name, schema, is_required
 
         schema = _resolve_combining_schema(schema)
-        schema_type = _get_schema_type(schema)
+        schema_type = _get_single_schema_type(schema)
 
         # On root level, httpdomain supports only 'object' and 'array' response
         # types. If it's something else, let's do not even try to render it.
@@ -616,11 +894,11 @@ class HttpdomainRenderer(abc.RestructuredTextRenderer):
         # we're about to render is an array, there's no need to render that
         # array in the first place.
         if schema_type == "array":
-            schema = schema["items"]
+            schema = _resolve_combining_schema(schema.get("items", {}))
 
             # Even if a root element is an array, items it contain must not be
             # of a primitive types.
-            if _get_schema_type(schema) not in {"object", "array"}:
+            if _get_single_schema_type(schema) not in {"object", "array"}:
                 return
 
         for name, schema, is_required in _traverse_schema(schema, ""):

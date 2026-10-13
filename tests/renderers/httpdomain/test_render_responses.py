@@ -44,6 +44,36 @@ def test_render_responses_one_item_status_code_int(testrenderer, oas_fragment):
         """.rstrip())
 
 
+def test_render_responses_default_example(fakestate, oas_fragment):
+    """The 'default' response can be selected for example rendering."""
+
+    testrenderer = renderers.HttpdomainRenderer(
+        fakestate, {"response-examples-for": "default"}
+    )
+
+    markup = textify(testrenderer.render_responses(oas_fragment("""
+                default:
+                  description: A fallback response.
+                  content:
+                    application/json:
+                      example:
+                        result: error
+                """)))
+    assert markup == textwrap.dedent("""\
+        :response default:
+           A fallback response.
+
+           .. sourcecode:: http
+
+              HTTP/1.1 000 Reason-Phrase
+              Content-Type: application/json
+
+              {
+                "result": "error"
+              }
+        """.rstrip())
+
+
 def test_render_responses_many_items(testrenderer, oas_fragment):
     """Many response definitions are rendered."""
 

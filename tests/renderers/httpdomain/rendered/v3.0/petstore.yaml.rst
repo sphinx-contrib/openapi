@@ -19,7 +19,7 @@
    :resheader x-next:
       A link to the next page of responses
    :resheadertype x-next: string
-   :statuscode default:
+   :response default:
       unexpected error
 
 .. http:post:: /pets
@@ -28,7 +28,7 @@
 
    :statuscode 201:
       Null response
-   :statuscode default:
+   :response default:
       unexpected error
 
 .. http:get:: /pets/{petId}
@@ -48,5 +48,5 @@
    :statuscode 200:
       Expected response to a valid request
 
-   :statuscode default:
+   :response default:
       unexpected error

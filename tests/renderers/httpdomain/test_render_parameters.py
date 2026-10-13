@@ -377,3 +377,28 @@ def test_render_parameters_case_insensitive(fakestate, oas_fragment):
            A desired Content-Type of HTTP response.
         :reqheadertype Accept: string
         """.rstrip())
+
+
+def test_render_parameters_custom_order_string(fakestate, oas_fragment):
+    """Parameters order passed as a whitespace-delimited string (docutils directive style)."""
+
+    testrenderer = renderers.HttpdomainRenderer(
+        fakestate, {"request-parameters-order": "query path"}
+    )
+
+    markup = textify(testrenderer.render_parameters(oas_fragment("""
+                - name: kind
+                  in: path
+                  schema:
+                    type: string
+                - name: details
+                  in: query
+                  schema:
+                    type: boolean
+                """)))
+    assert markup == textwrap.dedent("""\
+        :queryparam details:
+        :queryparamtype details: boolean
+        :param kind:
+        :paramtype kind: string
+        """.rstrip())

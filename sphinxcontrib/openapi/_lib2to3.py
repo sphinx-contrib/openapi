@@ -19,7 +19,7 @@ def convert(spec):
 def _is_vendor_extension(key):
     """Return 'True' if a given key is a vendor extension."""
 
-    return key.startswith("x-")
+    return str(key).startswith("x-")
 
 
 def _get_properties(node, properties, *, vendor_extensions=False):
@@ -308,7 +308,7 @@ class Lib2to3:
         converted = _get_properties(responses, {}, vendor_extensions=True)
 
         for status_code, response in _items_wo_vendor_extensions(responses):
-            converted[status_code] = self.convert_response(response)
+            converted[str(status_code)] = self.convert_response(response)
 
         return converted
 

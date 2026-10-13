@@ -30,10 +30,11 @@ def test_render_response_status_code(testrenderer, oas_fragment, statuscode):
                 """),
         )
     )
-    assert markup == textwrap.dedent("""\
-        :statuscode %s:
+    field = "statuscode" if statuscode == "200" else "response"
+    assert markup == textwrap.dedent(f"""\
+        :{field} {statuscode}:
            An evidence.
-        """.rstrip() % statuscode)
+        """.rstrip())
 
 
 def test_render_response_minimal(testrenderer, oas_fragment):

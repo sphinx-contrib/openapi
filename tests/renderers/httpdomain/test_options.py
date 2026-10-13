@@ -55,6 +55,10 @@ paths:
 
 
 _WHITESPACE_DELIMITED_OPTIONS = [
+    pytest.param("paths", "/evidences", ["/evidences"]),
+    pytest.param("include", "/evid.* /missing", ["/evid.*", "/missing"]),
+    pytest.param("exclude", "/missing /other", ["/missing", "/other"]),
+    pytest.param("methods", "get post", ["get", "post"]),
     pytest.param("http-methods-order", "head get", ["head", "get"]),
     pytest.param(
         "response-examples-for", "200 201 2XX 404", ["200", "201", "2XX", "404"]

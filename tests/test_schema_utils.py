@@ -1,6 +1,9 @@
+import copy
+
+import jsonschema
 import pytest
 
-from sphinxcontrib.openapi.schema_utils import example_from_schema
+from sphinxcontrib.openapi.schema_utils import NoExampleError, example_from_schema
 
 
 @pytest.mark.parametrize(
@@ -125,7 +128,7 @@ from sphinxcontrib.openapi.schema_utils import example_from_schema
                 "properties": {
                     "mixed_type_array": {
                         "type": "array",
-                        "items": {"oneOf": {"string", "integer"}},
+                        "items": {"oneOf": [{"type": "integer"}, {"type": "string"}]},
                     },
                     "any_type_array": {"type": "array", "items": {}},
                     "0_to_1_length_array": {
@@ -354,3 +357,252 @@ from sphinxcontrib.openapi.schema_utils import example_from_schema
 )
 def test_generate_example_from_schema(schema, expected):
     assert example_from_schema(schema) == expected
+
+
+@pytest.mark.parametrize("value", [0, 0.0, False, None, "", [], {}, {"value": False}])
+def test_schema_examples(value):
+    """The first schema examples entry is a literal value, even when falsey."""
+
+    schema = {"examples": [value, "fallback"]}
+    original_schema = copy.deepcopy(schema)
+    example = example_from_schema(schema)
+    assert example == value
+    jsonschema.Draft202012Validator(schema).validate(example)
+    assert schema == original_schema
+
+
+@pytest.mark.parametrize("value", [0, False, None, "", [], {}])
+def test_schema_example_precedes_examples(value):
+    """Keep singular example precedence when both schema annotations are present."""
+
+    assert example_from_schema({"example": value, "examples": ["fallback"]}) == value
+
+
+@pytest.mark.parametrize(
+    "schema, expected",
+    [
+        ({"type": "string", "examples": []}, "string"),
+        (
+            {"type": "object", "properties": {"name": {"examples": [False]}}},
+            {"name": False},
+        ),
+        ({"type": "array", "items": {"examples": [0]}}, [0, 0]),
+        ({"oneOf": [{"examples": [0]}, {"type": "string"}]}, 0),
+        ({"anyOf": [{"examples": [False]}, {"type": "string"}]}, False),
+        ({"allOf": [{"type": "boolean"}, {"examples": [False]}]}, False),
+        ({"allOf": [{"examples": [False]}, {"type": "boolean"}]}, False),
+        ({"allOf": [{"type": ["string", "null"]}, {"examples": [None]}]}, None),
+        ({"allOf": [{"examples": [None]}, {"type": ["string", "null"]}]}, None),
+        (
+            {
+                "allOf": [
+                    {"type": "array", "items": {"type": "integer"}},
+                    {"examples": [[]]},
+                ]
+            },
+            [],
+        ),
+        (
+            {
+                "allOf": [
+                    {"examples": [[]]},
+                    {"type": "array", "items": {"type": "integer"}},
+                ]
+            },
+            [],
+        ),
+        (
+            {
+                "allOf": [
+                    {"type": "object", "properties": {"name": {"type": "string"}}},
+                    {"examples": []},
+                ]
+            },
+            {"name": "string"},
+        ),
+    ],
+)
+def test_schema_examples_in_generation(schema, expected):
+    """Nested annotations contribute explicit examples without losing empty values."""
+
+    example = example_from_schema(schema)
+    assert example == expected
+    jsonschema.Draft202012Validator(schema).validate(example)
+
+
+@pytest.mark.parametrize("combining_keyword", ["oneOf", "anyOf"])
+@pytest.mark.parametrize(
+    "first_schema, expected_item",
+    [
+        ({"type": "string"}, "string"),
+        (
+            {"type": "object", "properties": {"name": {"type": "string"}}},
+            {"name": "string"},
+        ),
+        ({"type": "array", "items": {"type": "string"}}, ["string", "string"]),
+    ],
+)
+def test_composed_array_items(combining_keyword, first_schema, expected_item):
+    """Composed items use the first schema in declaration order."""
+
+    schema = {
+        "type": "array",
+        "items": {combining_keyword: [first_schema, {"type": "integer"}]},
+    }
+    example = example_from_schema(schema)
+    assert example == [expected_item, expected_item]
+    jsonschema.Draft202012Validator(schema).validate(example)
+
+
+@pytest.mark.parametrize("combining_keyword", ["oneOf", "anyOf"])
+@pytest.mark.parametrize(
+    "first_schema, explicit_example",
+    [
+        ({"type": "integer", "example": 7}, 42),
+        ({"type": "integer", "example": 7}, 0),
+        ({"type": "boolean", "example": True}, False),
+        ({"type": "string", "example": "branch"}, ""),
+        ({"type": "object", "example": {"name": "branch"}}, {}),
+        ({"type": "array", "items": {"type": "integer"}, "example": [7]}, []),
+        ({"type": "null"}, None),
+    ],
+)
+def test_composed_array_item_example(combining_keyword, first_schema, explicit_example):
+    """An item-level example takes precedence over composed subschemas."""
+
+    alternative = {"type": "integer" if first_schema["type"] == "string" else "string"}
+    schema = {
+        "type": "array",
+        "items": {
+            "example": explicit_example,
+            combining_keyword: [first_schema, alternative],
+        },
+    }
+    example = example_from_schema(schema)
+    assert example == [explicit_example, explicit_example]
+    jsonschema.Draft202012Validator(schema).validate(example)
+
+
+@pytest.mark.parametrize(
+    "schema, expected",
+    [
+        (True, 1),
+        ({"oneOf": [True, False]}, 1),
+        ({"anyOf": [True, False]}, 1),
+        ({"type": "null"}, None),
+        ({"type": ["string", "null"]}, "string"),
+        ({"type": ["null", "string"], "minLength": 8}, "stringst"),
+        ({"type": ["null"]}, None),
+        (
+            {"type": ["string", "null"], "properties": {"name": {"type": "integer"}}},
+            "string",
+        ),
+        (
+            {"type": ["object", "null"], "properties": {"name": {"type": "string"}}},
+            {"name": "string"},
+        ),
+        ({"type": ["array", "null"], "items": {"type": "integer"}}, [1, 1]),
+        ({"type": ["string", "null"], "example": None}, None),
+        ({"type": ["string", "null"], "enum": [None, "name"]}, None),
+        (
+            {"type": "object", "properties": {"anything": True, "forbidden": False}},
+            {"anything": 1},
+        ),
+        ({"type": "array"}, ["string", 1]),
+        ({"type": "array", "items": True}, ["string", 1]),
+        ({"type": "array", "items": False}, []),
+        ({"type": "array", "items": False, "maxItems": 0}, []),
+        (
+            {
+                "type": "array",
+                "prefixItems": [{"type": "integer"}],
+                "items": False,
+                "minItems": 1,
+            },
+            [1],
+        ),
+        (
+            {"type": "array", "prefixItems": [{"type": "integer"}, {"type": "string"}]},
+            [1, "string"],
+        ),
+        (
+            {
+                "type": "array",
+                "prefixItems": [{"type": "integer"}],
+                "items": {"type": "string"},
+                "minItems": 3,
+            },
+            [1, "string", "string"],
+        ),
+        ({"type": "array", "prefixItems": [False]}, []),
+        ({"type": ["array", "null"], "items": False, "minItems": 1}, None),
+        ({"oneOf": [False, {"type": "string"}]}, "string"),
+        ({"anyOf": [False, {"type": "string"}]}, "string"),
+    ],
+)
+def test_openapi31_example(schema, expected):
+    """OAS 3.1 schemas produce examples satisfying their declared constraints."""
+
+    original_schema = copy.deepcopy(schema)
+    example = example_from_schema(schema)
+    assert example == expected
+    jsonschema.Draft202012Validator(schema).validate(example)
+    assert schema == original_schema
+
+
+def test_openapi31_issue112_examples(get_testspec):
+    """The in-tree nullable-schema reproducer supports example generation."""
+
+    spec = get_testspec("v3.1", "issue-112.yaml")
+    for path in spec["paths"].values():
+        schema = path["get"]["responses"]["200"]["content"]["application/json"][
+            "schema"
+        ]
+        jsonschema.Draft202012Validator.check_schema(schema)
+        jsonschema.Draft202012Validator(schema).validate(example_from_schema(schema))
+
+
+@pytest.mark.parametrize(
+    "schema",
+    [
+        False,
+        {"allOf": [False, {"type": "string"}]},
+        {"oneOf": [False]},
+        {"anyOf": [False]},
+        {"type": "array", "items": False, "minItems": 1},
+        {
+            "type": "array",
+            "prefixItems": [{"type": "integer"}],
+            "items": False,
+            "minItems": 2,
+        },
+        {"type": "array", "prefixItems": [False], "minItems": 1},
+        {
+            "type": "object",
+            "required": ["forbidden"],
+            "properties": {"forbidden": False},
+        },
+    ],
+)
+def test_openapi31_impossible_example(schema):
+    """False schemas must not be represented by an invalid example value."""
+
+    with pytest.raises(NoExampleError):
+        example_from_schema(schema)
+
+
+@pytest.mark.parametrize("combining_keyword", ["oneOf", "anyOf"])
+def test_composed_array_example(combining_keyword):
+    """An array-level example takes precedence over item examples."""
+
+    schema = {
+        "type": "array",
+        "example": [42],
+        "items": {
+            "example": 7,
+            combining_keyword: [{"type": "integer"}, {"type": "string"}],
+        },
+    }
+    example = example_from_schema(schema)
+    assert example == [42]
+    jsonschema.Draft202012Validator(schema).validate(example)

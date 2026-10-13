@@ -46,6 +46,22 @@ or:
    .. openapi:httpdomain:old:: specs/openapi.yml
 
 
+Callbacks and webhooks
+======================
+
+The ``httpdomain`` renderer displays OpenAPI 3 callbacks beneath their parent operation and OpenAPI 3.1 webhooks in separate, named admonitions.
+These describe requests initiated by the API provider, not incoming API routes, and are not registered in the HTTP domain's route index.
+Callback URL runtime expressions are displayed without evaluating them.
+Webhook names are not URLs; ``{webhook_url}`` stands for the receiver's URL.
+Webhook-only documents are supported, while components-only documents have no operations to render.
+
+``paths``, ``include``, ``exclude`` and ``methods`` select incoming operations.
+Callbacks accompany their selected parent operation, including callback methods not listed in ``methods``.
+Webhooks are rendered independently of these incoming-path filters.
+Grouping applies to incoming operations; callbacks stay with their parent and webhooks stay in their own admonitions.
+Example, request-schema and method-order options apply to outbound operations as well.
+
+
 Configuration
 =============
 
@@ -104,6 +120,9 @@ The following options take a value.
 ``response-examples-for``
   The response codes to render samples for.
 
+  An explicit value takes precedence over the ``examples`` flag.
+  Numeric responses use HTTP-domain status-code fields; OpenAPI ``default`` and ``1XX``–``5XX`` responses use plain response fields because they do not identify a single HTTP status code.
+
   :Type: A whitespace-delimited sequence of strings, with each string corresponding to an `HTTP status code <https://spec.openapis.org/oas/v3.1.0#http-status-codes>`__ that response examples should be rendered for.
   :Default: ``["200", "201", "202", "2XX"]``
 
@@ -131,17 +150,51 @@ The following options take a value.
   :Type: A whitespace-delimited sequence of strings, with each string corresponding to a `supported media type <https://spec.openapis.org/oas/v3.1.0#media-types>`__.
   :Default: Defaults to the value of ``example-preference``, or ``None``
 
-The following options are boolean flags.
+The following options are boolean flags. They can be passed without a value to enable them, or with an explicit ``true`` or ``false`` value.
+
+``examples``
+
+  Controls rendering of request and response examples. If enabled, examples are generated from schemas when not supplied in the spec, and examples are rendered for all response codes unless ``response-examples-for`` is set.
+  If disabled, neither supplied nor generated examples are rendered.
+
+  Supplied media-type ``example`` or named ``examples`` values take precedence over schema examples.
+  OpenAPI 3.1 schema-level ``examples`` is an array of literal instance values, not a mapping of Example Objects; the first entry is selected even when it is ``null``, ``false``, zero, or empty.
+  If a schema contains both the legacy singular ``example`` and plural ``examples``, the singular value takes precedence for compatibility.
+  Supplied schema examples do not require ``generate-examples-from-schemas`` to be enabled.
+
+  For JSON media types, generated examples and schema-level ``examples`` entries are JSON-encoded, including strings.
+  Examples with an explicitly declared string type are JSON-encoded too.
+  Legacy nonempty strings for untyped or structured schemas, and fetched external payloads, remain verbatim.
+  Object-valued examples for ``application/x-www-form-urlencoded`` use default form encoding, rather than a JSON body.
+
+  :Type: Flag.
+  :Default: Supplied examples are rendered, but examples are not generated from schemas.
+
+``request``
+
+  Controls rendering of request JSON schema hints, independently of examples and response schema hints.
+  Unlike the old renderer, request structure is described using HTTP domain fields rather than a raw JSON schema dump.
+  ``no-json-schema-description`` takes precedence over this option.
+
+  :Type: Flag.
+  :Default: Enabled.
 
 ``generate-examples-from-schemas``
 
-  Whether examples should be generated from the schema if they are not provided in the spec. If unset, examples will not be generated.
+  Whether examples should be generated from the schema if they are not provided in the spec. If unset, examples will only be generated when ``examples`` is enabled.
+  An explicit value overrides the generation setting implied by ``examples``, but ``examples: false`` always suppresses rendering.
+
+  Generation is best effort, not a full JSON Schema constraint solver.
+  For OpenAPI 3.1 type arrays, a non-null type is preferred when possible.
+  Boolean ``true`` schemas allow any value; ``false`` schemas cannot have an example.
+  If a schema cannot contribute an example, generation is skipped for that media type.
+  Arrays may omit ``items``, and ``prefixItems`` constrains initial positions independently of ``items``.
 
   :Type: Flag.
 
 ``no-json-schema-description``
 
-  Whether to disable rendering of JSON schema hints.
+  Whether to disable rendering of both request and response JSON schema hints. An explicit ``false`` value leaves schema hints enabled.
 
   :Type: Flag.
 
