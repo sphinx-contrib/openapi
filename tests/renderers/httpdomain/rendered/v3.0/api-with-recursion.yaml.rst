@@ -4,6 +4,8 @@
 
    :resjson name:
    :resjsonobj name: string, required
+   :resjson children[]:
+   :resjsonobj children[]: object
 
    :statuscode 200:
       200 response
@@ -17,6 +19,8 @@
 
    :resjson name:
    :resjsonobj name: string, required
+   :resjson children[]:
+   :resjsonobj children[]: object
 
    :statuscode 200:
       200 response

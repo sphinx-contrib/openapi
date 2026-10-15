@@ -14,47 +14,41 @@ import collections
 import collections.abc
 
 from contextlib import closing
-import jsonschema
+from copy import deepcopy
+from functools import lru_cache
+import json
+import referencing
 import yaml
 import sphinx_mdinclude
 
-from urllib.parse import urlsplit
+from urllib.parse import urldefrag, urljoin, urlsplit
 from urllib.request import urlopen
 
 import os.path
 
+try:
+    import requests
+except ImportError:
+    requests = None
 
-class OpenApiRefResolver(jsonschema.RefResolver):
-    """
-    Overrides resolve_remote to support both YAML and JSON
-    OpenAPI schemas.
-    """
 
-    try:
-        import requests
-        _requests = requests
-    except ImportError:
-        _requests = None
+def _retrieve_resource(uri):
+    """Retrieve a JSON or YAML document referenced by an OpenAPI spec."""
+    scheme, _, path, _, _ = urlsplit(uri)
+    _, extension = os.path.splitext(path)
+    is_yaml = extension in ('.yml', '.yaml')
 
-    def resolve_remote(self, uri):
-        scheme, _, path, _, _ = urlsplit(uri)
-        _, extension = os.path.splitext(path)
+    if scheme in ('http', 'https') and requests is not None:
+        response = requests.get(uri)
+        response.raise_for_status()
+        contents = yaml.safe_load(response.content) if is_yaml else response.json()
+    else:
+        with closing(urlopen(uri)) as response:
+            text = response.read().decode('utf-8')
+            contents = yaml.safe_load(text) if is_yaml else json.loads(text)
 
-        if extension not in [".yml", ".yaml"] or scheme in self.handlers:
-            return super(OpenApiRefResolver, self).resolve_remote(uri)
-
-        if scheme in [u"http", u"https"] and self._requests:
-            response = self._requests.get(uri)
-            result = yaml.safe_load(response.content)
-        else:
-            # Otherwise, pass off to urllib and assume utf-8
-            with closing(urlopen(uri)) as url:
-                response = url.read().decode("utf-8")
-                result = yaml.safe_load(response)
-
-        if self.cache_remote:
-            self.store[uri] = result
-        return result
+    # OpenAPI documents (and their fragments) aren't necessarily JSON Schemas.
+    return referencing.Resource.opaque(contents)
 
 
 def _resolve_refs(uri, spec):
@@ -71,24 +65,34 @@ def _resolve_refs(uri, spec):
     the function.
     """
 
-    resolver = OpenApiRefResolver(uri, spec)
+    # Keep unresolved resources separate from the spec we modify in-place.
+    # Otherwise, expanding a reference could change the scope of nested refs
+    # when the same resource is used again elsewhere.
+    registry = referencing.Registry(
+        retrieve=lru_cache(maxsize=None)(_retrieve_resource),
+    ).with_resource(uri, referencing.Resource.opaque(deepcopy(spec)))
 
-    def _do_resolve(node, seen=[]):
+    def _do_resolve(node, resolver, base_uri, seen=()):
         if isinstance(node, collections.abc.Mapping) and '$ref' in node:
-            ref = node['$ref']
-            with resolver.resolving(ref) as resolved:
-                if ref in seen:
-                    return {type: 'object'}  # return a distinct object for recursive data type
-                return _do_resolve(resolved, seen + [ref])  # might have other references
+            ref = urljoin(base_uri, node['$ref'])
+            if ref in seen:
+                return {'type': 'object'}  # a distinct object for recursive data types
+            resolved = resolver.lookup(ref)
+            return _do_resolve(
+                deepcopy(resolved.contents),
+                resolved.resolver,
+                urldefrag(ref)[0],
+                seen + (ref,),
+            )
         elif isinstance(node, collections.abc.Mapping):
             for k, v in node.items():
-                node[k] = _do_resolve(v, seen)
+                node[k] = _do_resolve(v, resolver, base_uri, seen)
         elif isinstance(node, (list, tuple)):
             for i in range(len(node)):
-                node[i] = _do_resolve(node[i], seen)
+                node[i] = _do_resolve(node[i], resolver, base_uri, seen)
         return node
 
-    return _do_resolve(spec)
+    return _do_resolve(spec, registry.resolver(uri), uri)
 
 
 def normalize_spec(spec, **options):
