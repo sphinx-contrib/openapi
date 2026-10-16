@@ -8,23 +8,18 @@
     :license: BSD, see LICENSE for details.
 """
 
-from __future__ import unicode_literals
-
-import collections
 import collections.abc
-
+import json
+import os.path
 from contextlib import closing
 from copy import deepcopy
 from functools import lru_cache
-import json
-import referencing
-import yaml
-import sphinx_mdinclude
-
 from urllib.parse import urldefrag, urljoin, urlsplit
 from urllib.request import urlopen
 
-import os.path
+import referencing
+import sphinx_mdinclude
+import yaml
 
 try:
     import requests

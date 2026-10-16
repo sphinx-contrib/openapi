@@ -20,7 +20,6 @@ _DEFAULT_STRING_EXAMPLES = {
     "ipv6": "::1",
 }
 
-
 # Keywords an example can possibly be derived from. A schema that has none of
 # them carries annotations only, and thus contributes no example. Please note,
 # '$ref' is absent because references are expected to be resolved before a
@@ -28,7 +27,6 @@ _DEFAULT_STRING_EXAMPLES = {
 _EXAMPLE_KEYWORDS = frozenset(
     ["example", "oneOf", "anyOf", "allOf", "enum", "type", "properties", "items"]
 )
-
 
 # Tells "no example has been found yet" apart from an example that is 'None',
 # which is what an explicit 'example: null' produces. Never returned.
