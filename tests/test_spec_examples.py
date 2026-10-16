@@ -2,29 +2,31 @@
 
 import os
 import glob
-import itertools
 
 import py
 import pytest
 
 
-@pytest.mark.parametrize('spec', itertools.chain(
+@pytest.mark.parametrize(
+    'spec',
     glob.glob(
         os.path.join(
             os.path.abspath(os.path.dirname(__file__)),
             'examples',
             'v2.0',
             'json',
-            '*.json')),
-
-    glob.glob(
+            '*.json',
+        )
+    ) + glob.glob(
         os.path.join(
             os.path.abspath(os.path.dirname(__file__)),
             'examples',
             'v2.0',
             'yaml',
-            '*.yaml')),
-))
+            '*.yaml',
+        )
+    ),
+)
 def test_openapi2_success(tmpdir, run_sphinx, spec):
     py.path.local(spec).copy(tmpdir.join('src', 'test-spec.yml'))
     run_sphinx('test-spec.yml')

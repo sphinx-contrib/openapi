@@ -74,7 +74,7 @@ def test_render_parameters_many_items(testrenderer, oas_fragment):
         """.rstrip())
 
 
-@pytest.mark.parametrize("permutation_seq", itertools.permutations(range(3)))
+@pytest.mark.parametrize("permutation_seq", list(itertools.permutations(range(3))))
 def test_render_parameters_many_items_ordered(
     testrenderer, oas_fragment, permutation_seq
 ):
