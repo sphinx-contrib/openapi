@@ -227,7 +227,7 @@ def openapihttpdomain(spec, **options):
     if 'group' in options:
         groups = collections.OrderedDict(
             [(x['name'], []) for x in spec.get('tags', {})]
-            )
+        )
 
         for endpoint in paths:
             for method, properties in spec['paths'][endpoint].items():

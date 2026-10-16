@@ -8,17 +8,15 @@
     :license: BSD, see LICENSE for details.
 """
 
-import copy
-
 import collections
 import collections.abc
-
-from datetime import datetime
+import copy
 import itertools
 import json
 import re
-from urllib import parse
+from datetime import datetime
 from http.client import responses as http_status_codes
+from urllib import parse
 
 from sphinx.util import logging
 
@@ -447,7 +445,7 @@ def openapihttpdomain(spec, **options):
     if 'group' in options:
         groups = collections.OrderedDict(
             [(x['name'], []) for x in spec.get('tags', {})]
-            )
+        )
 
         for endpoint in paths:
             for method, properties in spec['paths'][endpoint].items():

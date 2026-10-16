@@ -8,17 +8,15 @@ The OpenAPI 3.1 spec renderer. Based on ``sphinxcontrib-httpdomain``.
 :license: BSD, see LICENSE for details.
 """
 
-import copy
-
 import collections
 import collections.abc
-
-from datetime import datetime
+import copy
 import itertools
 import json
 import re
-from urllib import parse
+from datetime import datetime
 from http.client import responses as http_status_codes
+from urllib import parse
 
 from sphinx.util import logging
 
