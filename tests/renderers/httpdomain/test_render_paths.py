@@ -12,7 +12,9 @@ def textify(generator):
 def test_render_paths(testrenderer, oas_fragment):
     """Usual paths definition is rendered."""
 
-    markup = textify(testrenderer.render_paths(oas_fragment("""
+    markup = textify(
+        testrenderer.render_paths(
+            oas_fragment("""
                 /evidences/{evidenceId}:
                   summary: Ignored
                   description: Ignored
@@ -39,7 +41,9 @@ def test_render_paths(testrenderer, oas_fragment):
                         description: An evidence.
                       '404':
                         description: An evidence not found.
-                """)))
+                """)
+        )
+    )
     assert markup == textwrap.dedent("""\
         .. http:get:: /evidences/{evidenceId}
 
@@ -63,13 +67,17 @@ def test_render_paths(testrenderer, oas_fragment):
 def test_render_paths_minimal(testrenderer, oas_fragment):
     """Minimal paths definition is rendered."""
 
-    markup = textify(testrenderer.render_paths(oas_fragment("""
+    markup = textify(
+        testrenderer.render_paths(
+            oas_fragment("""
                 /evidences:
                   get:
                     responses:
                       '200':
                         description: A list of evidences.
-                """)))
+                """)
+        )
+    )
     assert markup == textwrap.dedent("""\
         .. http:get:: /evidences
 
@@ -81,7 +89,9 @@ def test_render_paths_minimal(testrenderer, oas_fragment):
 def test_render_paths_multiple(testrenderer, oas_fragment):
     """Paths definition with multiple paths is rendered."""
 
-    markup = textify(testrenderer.render_paths(oas_fragment("""
+    markup = textify(
+        testrenderer.render_paths(
+            oas_fragment("""
                 /evidences/{evidenceId}:
                   get:
                     summary: Retrieve an evidence by ID.
@@ -109,7 +119,9 @@ def test_render_paths_multiple(testrenderer, oas_fragment):
                     responses:
                       '201':
                         description: An evidence created.
-                """)))
+                """)
+        )
+    )
     assert markup == textwrap.dedent("""\
         .. http:get:: /evidences/{evidenceId}
 
@@ -140,7 +152,9 @@ def test_render_paths_multiple(testrenderer, oas_fragment):
 def test_render_paths_parameters_common(testrenderer, oas_fragment):
     """Paths definition with common parameters is rendered."""
 
-    markup = textify(testrenderer.render_paths(oas_fragment("""
+    markup = textify(
+        testrenderer.render_paths(
+            oas_fragment("""
                 /evidences/{evidenceId}:
                   get:
                     summary: Retrieve an evidence by ID.
@@ -169,7 +183,9 @@ def test_render_paths_parameters_common(testrenderer, oas_fragment):
                       description: A unique evidence identifier to query.
                       schema:
                         type: string
-                """)))
+                """)
+        )
+    )
     assert markup == textwrap.dedent("""\
         .. http:get:: /evidences/{evidenceId}
 
@@ -203,7 +219,9 @@ def test_render_paths_parameters_common(testrenderer, oas_fragment):
 def test_render_paths_parameters_common_prepend(testrenderer, oas_fragment):
     """Paths definition with common parameters is rendered."""
 
-    markup = textify(testrenderer.render_paths(oas_fragment("""
+    markup = textify(
+        testrenderer.render_paths(
+            oas_fragment("""
                 /evidences/{evidenceId}/{evidenceSection}:
                   get:
                     summary: Retrieve an evidence by ID.
@@ -225,7 +243,9 @@ def test_render_paths_parameters_common_prepend(testrenderer, oas_fragment):
                       description: A unique evidence identifier to query.
                       schema:
                         type: string
-                """)))
+                """)
+        )
+    )
     assert markup == textwrap.dedent("""\
         .. http:get:: /evidences/{evidenceId}/{evidenceSection}
 
@@ -247,7 +267,9 @@ def test_render_paths_parameters_common_prepend(testrenderer, oas_fragment):
 def test_render_paths_parameters_common_overwritten(testrenderer, oas_fragment):
     """Paths definition with common parameters is rendered."""
 
-    markup = textify(testrenderer.render_paths(oas_fragment("""
+    markup = textify(
+        testrenderer.render_paths(
+            oas_fragment("""
                 /evidences/{evidenceId}:
                   get:
                     summary: Retrieve an evidence by ID.
@@ -267,7 +289,9 @@ def test_render_paths_parameters_common_overwritten(testrenderer, oas_fragment):
                       description: A unique evidence identifier to query.
                       schema:
                         type: string
-                """)))
+                """)
+        )
+    )
     assert markup == textwrap.dedent("""\
         .. http:get:: /evidences/{evidenceId}
 
@@ -284,7 +308,9 @@ def test_render_paths_parameters_common_overwritten(testrenderer, oas_fragment):
 def test_render_paths_methods_order(testrenderer, oas_fragment):
     """Paths definition is rendered with HTTP methods ordered."""
 
-    markup = textify(testrenderer.render_paths(oas_fragment("""
+    markup = textify(
+        testrenderer.render_paths(
+            oas_fragment("""
                 /evidences:
                   post:
                     responses:
@@ -298,7 +324,9 @@ def test_render_paths_methods_order(testrenderer, oas_fragment):
                     responses:
                       '200':
                         description: A list of evidences.
-                """)))
+                """)
+        )
+    )
     assert markup == textwrap.dedent("""\
         .. http:post:: /evidences
 
@@ -324,7 +352,9 @@ def test_render_paths_methods_order_custom(fakestate, oas_fragment):
         fakestate, {"http-methods-order": ["delete", "options", "get", "post"]}
     )
 
-    markup = textify(testrenderer.render_paths(oas_fragment("""
+    markup = textify(
+        testrenderer.render_paths(
+            oas_fragment("""
                 /evidences:
                   post:
                     responses:
@@ -338,7 +368,9 @@ def test_render_paths_methods_order_custom(fakestate, oas_fragment):
                     responses:
                       '200':
                         description: A list of evidences.
-                """)))
+                """)
+        )
+    )
     assert markup == textwrap.dedent("""\
         .. http:options:: /evidences
 
@@ -364,7 +396,9 @@ def test_render_paths_methods_order_insensitive(fakestate, oas_fragment):
         fakestate, {"http-methods-order": ["gEt", "post"]}
     )
 
-    markup = textify(testrenderer.render_paths(oas_fragment("""
+    markup = textify(
+        testrenderer.render_paths(
+            oas_fragment("""
                 /evidences:
                   post:
                     responses:
@@ -374,7 +408,9 @@ def test_render_paths_methods_order_insensitive(fakestate, oas_fragment):
                     responses:
                       '200':
                         description: A list of evidences.
-                """)))
+                """)
+        )
+    )
     assert markup == textwrap.dedent("""\
         .. http:get:: /evidences
 
