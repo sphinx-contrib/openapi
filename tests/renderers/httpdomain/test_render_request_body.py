@@ -44,27 +44,49 @@ def test_render_request_body_schema_description(
         """)
 
 
-def test_render_request_body_schema_description_non_json(testrenderer, oas_fragment):
-    """JSON schema is not rendered for non JSON mimetype."""
-
+def test_render_request_body_media_types(testrenderer, oas_fragment):
     markup = textify(
         testrenderer.render_request_body(
             oas_fragment("""
                 content:
-                  text/csv:
+                  application/json:
                     schema:
                       properties:
-                        foo:
+                        text:
                           type: string
-                        bar:
-                          type: integer
+                  multipart/form-data:
+                    schema:
+                      type: object
+                      required: [file]
+                      properties:
+                        file:
+                          type: string
+                          format: binary
+                          description: File to upload
+                        method:
+                          type: string
+                  application/x-www-form-urlencoded:
+                    schema:
+                      properties:
+                        name:
+                          type: string
+                  text/csv:
+                    schema:
+                      type: string
                 """),
-            "/evidences/{evidenceId}",
+            "/files",
             "POST",
         )
     )
-    assert markup == textwrap.dedent("""\
-        """)
+    assert "**Request body** (``application/json``)" in markup
+    assert ":reqjson text:" in markup
+    assert "**Request body** (``multipart/form-data``)" in markup
+    assert ":form file:\n   ``string:binary``, ``required``" in markup
+    assert "File to upload" in markup
+    assert ":form method:" in markup
+    assert "**Request body** (``application/x-www-form-urlencoded``)" in markup
+    assert ":form name:" in markup
+    assert "**Request body** (``text/csv``)\n\n``string``" in markup
 
 
 def test_render_request_body_schema_description_turned_off(fakestate, oas_fragment):

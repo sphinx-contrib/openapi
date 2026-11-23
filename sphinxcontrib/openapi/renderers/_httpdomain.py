@@ -358,15 +358,64 @@ class HttpdomainRenderer(abc.RestructuredTextRenderer):
         """Render OAS operation's requestBody."""
 
         if self._json_schema_description:
-            for content_type, content in request_body["content"].items():
-                if _is_json_mimetype(content_type) and content.get("schema"):
-                    yield from self.render_json_schema_description(
-                        content["schema"], "req"
-                    )
-                    yield ""
-                    break
+            content = request_body["content"]
+            for media_type, representation in content.items():
+                yield from self.render_request_schema(
+                    media_type, representation.get("schema"), len(content) > 1
+                )
 
         yield from self.render_request_body_example(request_body, endpoint, method)
+        yield ""
+
+    def render_request_schema(self, media_type, schema, multiple):
+        is_json = _is_json_mimetype(media_type)
+        fields = (
+            list(self.render_json_schema_description(schema, "req"))
+            if is_json and isinstance(schema, dict)
+            else []
+        )
+        if multiple or not is_json or (isinstance(schema, dict) and not fields):
+            yield ""
+            yield f"**Request body** (``{media_type}``)"
+            yield ""
+
+        if not isinstance(schema, dict):
+            return
+
+        if fields:
+            yield from fields
+        elif (
+            media_type.split(";", 1)[0].strip().lower()
+            in {
+                "application/x-www-form-urlencoded",
+                "multipart/form-data",
+            }
+            and "properties" in schema
+        ):
+            required = set(schema.get("required", []))
+            for name, field in schema["properties"].items():
+                yield f":form {name}:"
+                markers = _get_markers_from_object(
+                    {"required": name in required},
+                    field if isinstance(field, dict) else {},
+                )
+                if markers:
+                    yield "   " + ", ".join(f"``{marker}``" for marker in markers)
+                if isinstance(field, dict) and field.get("description"):
+                    if markers:
+                        yield ""
+                    yield from indented(
+                        self._convert_markup(field["description"]).strip().splitlines()
+                    )
+        else:
+            markers = _get_markers_from_object({}, schema)
+            if markers:
+                yield ", ".join(f"``{marker}``" for marker in markers)
+                yield ""
+            if schema.get("description"):
+                description = self._convert_markup(schema["description"]).strip()
+                yield from description.splitlines()
+
         yield ""
 
     def render_request_body_example(self, request_body, endpoint, method):
