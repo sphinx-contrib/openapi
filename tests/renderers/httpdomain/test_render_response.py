@@ -58,9 +58,10 @@ def test_render_response_minimal(testrenderer, oas_fragment):
     )
 
 
-def test_render_response_description_commonmark_default(testrenderer, oas_fragment):
+def test_render_response_description_commonmark_default(fakestate, oas_fragment):
     """Path response's 'description' must be in commonmark."""
 
+    testrenderer = renderers.HttpdomainRenderer(fakestate, {})
     markup = textify(
         testrenderer.render_response(
             "200",
@@ -71,11 +72,11 @@ def test_render_response_description_commonmark_default(testrenderer, oas_fragme
                 """),
         )
     )
-    assert markup == textwrap.dedent(
+    assert markup.rstrip() == textwrap.dedent(
         """\
         :statuscode 200:
-           An **evidence** that matches
-           the ``query``.
+           .. openapi-commonmark:: "An __evidence__ that matches\\nthe `query`.\\n"
+
         """.rstrip()
     )
 
@@ -94,11 +95,11 @@ def test_render_response_description_commonmark(fakestate, oas_fragment):
                 """),
         )
     )
-    assert markup == textwrap.dedent(
+    assert markup.rstrip() == textwrap.dedent(
         """\
         :statuscode 200:
-           An **evidence** that matches
-           the ``query``.
+           .. openapi-commonmark:: "An __evidence__ that matches\\nthe `query`.\\n"
+
         """.rstrip()
     )
 
@@ -217,7 +218,11 @@ def test_render_response_content_custom(fakestate, oas_fragment, status_code, st
     """Path response's 'content' definition is rendered."""
 
     testrenderer = renderers.HttpdomainRenderer(
-        fakestate, {"response-examples-for": ["301", "307", "401", "422"]}
+        fakestate,
+        {
+            "markup": "restructuredtext",
+            "response-examples-for": ["301", "307", "401", "422"],
+        },
     )
 
     markup = textify(
@@ -255,7 +260,11 @@ def test_render_response_content_custom_mismatch(fakestate, oas_fragment):
     """Path response's 'content' definition is NOT rendered."""
 
     testrenderer = renderers.HttpdomainRenderer(
-        fakestate, {"response-examples-for": ["301", "307", "401", "422"]}
+        fakestate,
+        {
+            "markup": "restructuredtext",
+            "response-examples-for": ["301", "307", "401", "422"],
+        },
     )
 
     markup = textify(
@@ -383,11 +392,10 @@ def test_render_response_header_multiline_description(testrenderer, oas_fragment
     )
 
 
-def test_render_response_header_description_commonmark_default(
-    testrenderer, oas_fragment
-):
+def test_render_response_header_description_commonmark_default(fakestate, oas_fragment):
     """Path response's 'header' description must be in commonmark by default."""
 
+    testrenderer = renderers.HttpdomainRenderer(fakestate, {})
     markup = textify(
         testrenderer.render_response(
             200,
@@ -401,14 +409,15 @@ def test_render_response_header_description_commonmark_default(
                 """),
         )
     )
-    assert markup == textwrap.dedent(
+    assert markup.rstrip() == textwrap.dedent(
         """\
         :statuscode 200:
-           An evidence.
+           .. openapi-commonmark:: "An evidence."
+
 
         :resheader X-Request-Id:
-           A unique **request**
-           ``identifier``.
+           .. openapi-commonmark:: "A unique __request__\\n`identifier`.\\n"
+
         """.rstrip()
     )
 
@@ -430,14 +439,15 @@ def test_render_response_header_description_commonmark(fakestate, oas_fragment):
                 """),
         )
     )
-    assert markup == textwrap.dedent(
+    assert markup.rstrip() == textwrap.dedent(
         """\
         :statuscode 200:
-           An evidence.
+           .. openapi-commonmark:: "An evidence."
+
 
         :resheader X-Request-Id:
-           A unique **request**
-           ``identifier``.
+           .. openapi-commonmark:: "A unique __request__\\n`identifier`.\\n"
+
         """.rstrip()
     )
 

@@ -13,6 +13,7 @@ It depends on `sphinxcontrib-httpdomain`_, which provides an HTTP domain for des
 
    pip install sphinxcontrib-openapi
 
+Sphinx 8 or newer is required.
 
 Usage
 =====
@@ -81,10 +82,14 @@ The following options take a value.
   Encoding to be used to read an OpenAPI spec. If not passed, Sphinx's source encoding will be used.
 
 ``markup``
-  The format to use when parsing markup.
+  The format to use when parsing markup. MyST parses CommonMark descriptions
+  directly into Sphinx document nodes with its syntax extensions disabled.
 
   :Type: One of ``commonmark``, ``restructuredtext``
   :Default: ``commonmark``
+
+  Select ``restructuredtext`` for specifications that use Sphinx roles or
+  directives in their descriptions.
 
 ``http-methods-order``
   The preferred order in which to output HTTP methods.
@@ -180,6 +185,7 @@ The following options are supported when using the ``httpdomain:old`` renderer:
 
 ``format``
   The format of text in the spec, either ``rst`` or ``markdown``.
+  MyST parses the ``markdown`` format as CommonMark.
   If not supplied, reStructuredText is assumed.
 
 ``include``

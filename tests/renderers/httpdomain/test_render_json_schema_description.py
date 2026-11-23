@@ -852,10 +852,11 @@ def test_render_json_schema_description_description(
     ],
 )
 def test_render_json_schema_description_description_commonmark_default(
-    testrenderer, oas_fragment, req_or_res, directive, typedirective
+    fakestate, oas_fragment, req_or_res, directive, typedirective
 ):
     """JSON schema description is generated with CommonMark description by default."""
 
+    testrenderer = renderers.HttpdomainRenderer(fakestate, {})
     markup = textify(
         testrenderer.render_json_schema_description(
             oas_fragment("""
@@ -869,10 +870,11 @@ def test_render_json_schema_description_description_commonmark_default(
             req_or_res,
         )
     )
-    assert markup == textwrap.dedent(
+    assert markup.rstrip() == textwrap.dedent(
         f"""\
         :{directive} created_at:
-           a ``resource`` creation **time**
+           .. openapi-commonmark:: "a `resource` creation __time__"
+
         :{typedirective} created_at: string
         """.rstrip()
     )
@@ -904,10 +906,11 @@ def test_render_json_schema_description_description_commonmark(
             req_or_res,
         )
     )
-    assert markup == textwrap.dedent(
+    assert markup.rstrip() == textwrap.dedent(
         f"""\
         :{directive} created_at:
-           a ``resource`` creation **time**
+           .. openapi-commonmark:: "a `resource` creation __time__"
+
         :{typedirective} created_at: string
         """.rstrip()
     )

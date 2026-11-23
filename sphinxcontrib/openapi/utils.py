@@ -18,8 +18,9 @@ from urllib.parse import urldefrag, urljoin, urlsplit
 from urllib.request import urlopen
 
 import referencing
-import sphinx_mdinclude
 import yaml
+
+from sphinxcontrib.openapi import commonmark
 
 try:
     import requests
@@ -112,7 +113,7 @@ def get_text_converter(options):
     """Decide on a text converter for prose."""
     if "format" in options:
         if options["format"] == "markdown":
-            return sphinx_mdinclude.convert
+            return commonmark.as_directive
 
     # No conversion needed.
     return lambda s: s

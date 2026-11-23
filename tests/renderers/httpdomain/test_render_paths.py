@@ -349,7 +349,11 @@ def test_render_paths_methods_order_custom(fakestate, oas_fragment):
     """Paths definition is rendered with HTTP methods ordered."""
 
     testrenderer = renderers.HttpdomainRenderer(
-        fakestate, {"http-methods-order": ["delete", "options", "get", "post"]}
+        fakestate,
+        {
+            "markup": "restructuredtext",
+            "http-methods-order": ["delete", "options", "get", "post"],
+        },
     )
 
     markup = textify(
@@ -393,7 +397,7 @@ def test_render_paths_methods_order_insensitive(fakestate, oas_fragment):
     """Paths definition is rendered with HTTP methods ordered."""
 
     testrenderer = renderers.HttpdomainRenderer(
-        fakestate, {"http-methods-order": ["gEt", "post"]}
+        fakestate, {"markup": "restructuredtext", "http-methods-order": ["gEt", "post"]}
     )
 
     markup = textify(
