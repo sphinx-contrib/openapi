@@ -15,7 +15,8 @@ def fakestate():
 
 @pytest.fixture(scope="function")
 def testrenderer(fakestate):
-    return renderers.HttpdomainRenderer(fakestate, {})
+    # These fixtures assert the reStructuredText layout of the HTTP directives.
+    return renderers.HttpdomainRenderer(fakestate, {"markup": "restructuredtext"})
 
 
 @pytest.fixture(scope="function")

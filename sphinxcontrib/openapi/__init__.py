@@ -11,7 +11,7 @@ RESTful API. Based on ``sphinxcontrib-httpdomain``.
 
 from importlib.metadata import distribution, PackageNotFoundError
 
-from sphinxcontrib.openapi import renderers, directive
+from sphinxcontrib.openapi import commonmark, directive, renderers
 
 try:
     __version__ = distribution(__name__).version
@@ -78,6 +78,7 @@ def setup(app):
             )
 
     app.setup_extension("sphinxcontrib.httpdomain")
+    app.add_directive(commonmark.DIRECTIVE_NAME, commonmark.CommonMarkDirective)
     app.connect("config-inited", _register_rendering_directives)
 
     return {"version": __version__, "parallel_read_safe": True}

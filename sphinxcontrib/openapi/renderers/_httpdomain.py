@@ -11,9 +11,9 @@ import deepmerge
 import docutils.parsers.rst.directives as directives
 import requests
 import sphinx.util.logging as logging
-import sphinx_mdinclude
 
-from sphinxcontrib.openapi import _lib2to3 as lib2to3, utils
+from sphinxcontrib.openapi import _lib2to3 as lib2to3
+from sphinxcontrib.openapi import commonmark, utils
 from sphinxcontrib.openapi.renderers import abc
 from sphinxcontrib.openapi.schema_utils import example_from_schema
 
@@ -201,8 +201,8 @@ class HttpdomainRenderer(abc.RestructuredTextRenderer):
     """Render OpenAPI v3 using `sphinxcontrib-httpdomain` extension."""
 
     _markup_converters = {
-        "commonmark": sphinx_mdinclude.convert,
-        "restructuredtext": lambda x: x,
+        "commonmark": commonmark.as_directive,
+        "restructuredtext": str.strip,
     }
     _response_examples_for = {"200", "201", "202", "2XX"}
     _request_parameters_order = ["header", "path", "query", "cookie"]
@@ -300,7 +300,7 @@ class HttpdomainRenderer(abc.RestructuredTextRenderer):
 
         if operation.get("description"):
             yield from indented(
-                self._convert_markup(operation["description"]).strip().splitlines()
+                self._convert_markup(operation["description"]).splitlines()
             )
             yield ""
 
@@ -346,7 +346,7 @@ class HttpdomainRenderer(abc.RestructuredTextRenderer):
 
         if parameter.get("description"):
             yield from indented(
-                self._convert_markup(parameter["description"]).strip().splitlines()
+                self._convert_markup(parameter["description"]).splitlines()
             )
 
         markers = _get_markers_from_object(parameter, schema)
@@ -419,9 +419,7 @@ class HttpdomainRenderer(abc.RestructuredTextRenderer):
         """Render OAS operation's response."""
 
         yield f":statuscode {status_code}:"
-        yield from indented(
-            self._convert_markup(response["description"]).strip().splitlines()
-        )
+        yield from indented(self._convert_markup(response["description"]).splitlines())
 
         if "content" in response and status_code in self._response_examples_for:
             yield ""
@@ -442,9 +440,7 @@ class HttpdomainRenderer(abc.RestructuredTextRenderer):
 
                 if header_value.get("description"):
                     yield from indented(
-                        self._convert_markup(header_value["description"])
-                        .strip()
-                        .splitlines()
+                        self._convert_markup(header_value["description"]).splitlines()
                     )
 
                 schema = header_value.get("schema", {})
@@ -630,7 +626,7 @@ class HttpdomainRenderer(abc.RestructuredTextRenderer):
 
             if schema.get("description"):
                 yield from indented(
-                    self._convert_markup(schema["description"]).strip().splitlines()
+                    self._convert_markup(schema["description"]).splitlines()
                 )
 
             markers = _get_markers_from_object({}, schema)

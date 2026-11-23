@@ -212,7 +212,11 @@ def test_render_parameters_custom_order(fakestate, oas_fragment):
     """Many parameter definitions are rendered w/ preserved order."""
 
     testrenderer = renderers.HttpdomainRenderer(
-        fakestate, {"request-parameters-order": ["query", "path", "header"]}
+        fakestate,
+        {
+            "markup": "restructuredtext",
+            "request-parameters-order": ["query", "path", "header"],
+        },
     )
 
     markup = textify(
@@ -283,7 +287,8 @@ def test_render_parameters_custom_order_partial(fakestate, oas_fragment):
     """Many parameter definitions are rendered w/ preserved order."""
 
     testrenderer = renderers.HttpdomainRenderer(
-        fakestate, {"request-parameters-order": ["query", "path"]}
+        fakestate,
+        {"markup": "restructuredtext", "request-parameters-order": ["query", "path"]},
     )
 
     markup = textify(
@@ -354,7 +359,11 @@ def test_render_parameters_case_insensitive(fakestate, oas_fragment):
     """Many parameter definitions are rendered w/ preserved order."""
 
     testrenderer = renderers.HttpdomainRenderer(
-        fakestate, {"request-parameters-order": ["QUERY", "pAth", "Header"]}
+        fakestate,
+        {
+            "markup": "restructuredtext",
+            "request-parameters-order": ["QUERY", "pAth", "Header"],
+        },
     )
 
     markup = textify(

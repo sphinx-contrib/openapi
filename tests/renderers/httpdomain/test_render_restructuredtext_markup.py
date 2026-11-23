@@ -172,7 +172,8 @@ def test_oas2_complete_generate_examples_from_schema(fakestate, oas_fragment):
     """Schema can be used to generate example snippets."""
 
     testrenderer = renderers.HttpdomainRenderer(
-        fakestate, {"generate-examples-from-schemas": True}
+        fakestate,
+        {"markup": "restructuredtext", "generate-examples-from-schemas": True},
     )
     markup = textify(
         testrenderer.render_restructuredtext_markup(
@@ -385,7 +386,8 @@ def test_oas3_generate_examples_from_schema(fakestate, oas_fragment):
     """Schema can be used to generate example snippets."""
 
     testrenderer = renderers.HttpdomainRenderer(
-        fakestate, {"generate-examples-from-schemas": True}
+        fakestate,
+        {"markup": "restructuredtext", "generate-examples-from-schemas": True},
     )
     markup = textify(
         testrenderer.render_restructuredtext_markup(
@@ -438,7 +440,8 @@ def test_oas3_generate_examples_from_schema_with_composed_property(
     """Schema of a property composed with 'allOf' can be used to generate an example."""
 
     testrenderer = renderers.HttpdomainRenderer(
-        fakestate, {"generate-examples-from-schemas": True}
+        fakestate,
+        {"markup": "restructuredtext", "generate-examples-from-schemas": True},
     )
     markup = textify(
         testrenderer.render_restructuredtext_markup(

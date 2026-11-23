@@ -100,11 +100,10 @@ def test_render_parameter_path_multiline_description(testrenderer, oas_fragment)
     )
 
 
-def test_render_parameter_path_description_commonmark_default(
-    testrenderer, oas_fragment
-):
+def test_render_parameter_path_description_commonmark_default(fakestate, oas_fragment):
     """Path parameter's 'description' must be in commonmark by default."""
 
+    testrenderer = renderers.HttpdomainRenderer(fakestate, {})
     markup = textify(
         testrenderer.render_parameter(
             oas_fragment("""
@@ -117,11 +116,11 @@ def test_render_parameter_path_description_commonmark_default(
                 """)
         )
     )
-    assert markup == textwrap.dedent(
+    assert markup.rstrip() == textwrap.dedent(
         """\
         :param evidenceId:
-           A unique evidence ``identifier``
-           to **query**.
+           .. openapi-commonmark:: "A unique evidence `identifier`\\nto __query__.\\n"
+
         :paramtype evidenceId: required
         """.rstrip()
     )
@@ -143,11 +142,11 @@ def test_render_parameter_path_description_commonmark(fakestate, oas_fragment):
                 """)
         )
     )
-    assert markup == textwrap.dedent(
+    assert markup.rstrip() == textwrap.dedent(
         """\
         :param evidenceId:
-           A unique evidence ``identifier``
-           to **query**.
+           .. openapi-commonmark:: "A unique evidence `identifier`\\nto __query__.\\n"
+
         :paramtype evidenceId: required
         """.rstrip()
     )
@@ -373,11 +372,10 @@ def test_render_parameter_query_multiline_description(testrenderer, oas_fragment
     )
 
 
-def test_render_parameter_query_description_commonmark_default(
-    testrenderer, oas_fragment
-):
+def test_render_parameter_query_description_commonmark_default(fakestate, oas_fragment):
     """Query parameter's 'description' must be in commonmark by default."""
 
+    testrenderer = renderers.HttpdomainRenderer(fakestate, {})
     markup = textify(
         testrenderer.render_parameter(
             oas_fragment("""
@@ -389,11 +387,11 @@ def test_render_parameter_query_description_commonmark_default(
                 """)
         )
     )
-    assert markup == textwrap.dedent(
+    assert markup.rstrip() == textwrap.dedent(
         """\
         :queryparam evidenceId:
-           A unique evidence ``identifier``
-           to **query**.
+           .. openapi-commonmark:: "A unique evidence `identifier`\\nto __query__.\\n"
+
         """.rstrip()
     )
 
@@ -413,11 +411,11 @@ def test_render_parameter_query_description_commonmark(fakestate, oas_fragment):
                 """)
         )
     )
-    assert markup == textwrap.dedent(
+    assert markup.rstrip() == textwrap.dedent(
         """\
         :queryparam evidenceId:
-           A unique evidence ``identifier``
-           to **query**.
+           .. openapi-commonmark:: "A unique evidence `identifier`\\nto __query__.\\n"
+
         """.rstrip()
     )
 
@@ -698,10 +696,11 @@ def test_render_parameter_header_multiline_description(testrenderer, oas_fragmen
 
 
 def test_render_parameter_header_description_commonmark_default(
-    testrenderer, oas_fragment
+    fakestate, oas_fragment
 ):
     """Header parameter's 'description' must be in commonmark by default."""
 
+    testrenderer = renderers.HttpdomainRenderer(fakestate, {})
     markup = textify(
         testrenderer.render_parameter(
             oas_fragment("""
@@ -713,11 +712,11 @@ def test_render_parameter_header_description_commonmark_default(
                 """)
         )
     )
-    assert markup == textwrap.dedent(
+    assert markup.rstrip() == textwrap.dedent(
         """\
         :reqheader evidenceId:
-           A unique evidence ``identifier``
-           to **query**.
+           .. openapi-commonmark:: "A unique evidence `identifier`\\nto __query__.\\n"
+
         """.rstrip()
     )
 
@@ -737,11 +736,11 @@ def test_render_parameter_header_description_commonmark(fakestate, oas_fragment)
                 """)
         )
     )
-    assert markup == textwrap.dedent(
+    assert markup.rstrip() == textwrap.dedent(
         """\
         :reqheader evidenceId:
-           A unique evidence ``identifier``
-           to **query**.
+           .. openapi-commonmark:: "A unique evidence `identifier`\\nto __query__.\\n"
+
         """.rstrip()
     )
 

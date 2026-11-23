@@ -228,9 +228,10 @@ def test_render_operation_description_multiline(testrenderer, oas_fragment):
     )
 
 
-def test_render_operation_description_commonmark_default(testrenderer, oas_fragment):
+def test_render_operation_description_commonmark_default(fakestate, oas_fragment):
     """Operation's 'description' must be in commonmark by default."""
 
+    testrenderer = renderers.HttpdomainRenderer(fakestate, {})
     markup = textify(
         testrenderer.render_operation(
             "/evidences",
@@ -243,14 +244,16 @@ def test_render_operation_description_commonmark_default(testrenderer, oas_fragm
                 """),
         )
     )
-    assert markup == textwrap.dedent(
+    assert markup.rstrip() == textwrap.dedent(
         """\
         .. http:post:: /evidences
 
-           **Create** an ``evidence``.
+           .. openapi-commonmark:: "__Create__ an `evidence`."
+
 
            :statuscode 201:
-              An evidence created.
+              .. openapi-commonmark:: "An evidence created."
+
         """.rstrip()
     )
 
@@ -271,14 +274,16 @@ def test_render_operation_description_commonmark(fakestate, oas_fragment):
                 """),
         )
     )
-    assert markup == textwrap.dedent(
+    assert markup.rstrip() == textwrap.dedent(
         """\
         .. http:post:: /evidences
 
-           **Create** an ``evidence``.
+           .. openapi-commonmark:: "__Create__ an `evidence`."
+
 
            :statuscode 201:
-              An evidence created.
+              .. openapi-commonmark:: "An evidence created."
+
         """.rstrip()
     )
 
