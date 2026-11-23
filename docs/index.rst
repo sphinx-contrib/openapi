@@ -145,6 +145,13 @@ The following options are boolean flags.
 
   :Type: Flag.
 
+``security``
+
+  Render the effective security requirements for each operation, including
+  inherited requirements and whether anonymous access is allowed.
+
+  :Type: Flag.
+
 Options for the ``httpdomain:old`` renderer
 -------------------------------------------
 

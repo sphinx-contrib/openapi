@@ -210,6 +210,7 @@ class HttpdomainRenderer(abc.RestructuredTextRenderer):
     option_spec = {
         "markup": functools.partial(directives.choice, values=_markup_converters),
         "http-methods-order": _split_option,
+        "security": directives.flag,
         "response-examples-for": _split_option,
         "request-parameters-order": _split_option,
         "example-preference": _split_option,
@@ -225,6 +226,8 @@ class HttpdomainRenderer(abc.RestructuredTextRenderer):
         self._convert_markup = self._markup_converters[
             options.get("markup", "commonmark")
         ]
+        self._security = None
+        self._security_schemes = {}
         self._http_methods_order = [
             http_method.lower() for http_method in options.get("http-methods-order", [])
         ]
@@ -251,7 +254,10 @@ class HttpdomainRenderer(abc.RestructuredTextRenderer):
         """Spec render entry point."""
         utils.normalize_spec(spec, **self._options)
 
+        self._security = spec.get("security")
+        self._security_schemes = spec.get("components", {}).get("securitySchemes", {})
         if spec.get("swagger") == "2.0":
+            self._security_schemes = spec.get("securityDefinitions", {})
             spec = lib2to3.convert(spec)
         yield from self.render_paths(spec.get("paths", {}))
 
@@ -304,12 +310,47 @@ class HttpdomainRenderer(abc.RestructuredTextRenderer):
             )
             yield ""
 
+        if "security" in self._options:
+            yield from indented(
+                self.render_security(operation.get("security", self._security))
+            )
+
         yield from indented(self.render_parameters(operation.get("parameters", [])))
         if "requestBody" in operation:
             yield from indented(
                 self.render_request_body(operation["requestBody"], endpoint, method)
             )
         yield from indented(self.render_responses(operation["responses"]))
+
+    def render_security(self, requirements):
+        if requirements is None:
+            return
+
+        yield "**Security**"
+        yield ""
+        if not requirements:
+            yield "No authentication required."
+        elif len(requirements) > 1:
+            yield "Any one of the following options satisfies the security requirement."
+            yield ""
+        for requirement in requirements:
+            if not requirement:
+                yield "* No authentication required."
+                continue
+
+            schemes = []
+            for name, scopes in requirement.items():
+                scheme = self._security_schemes.get(name, {})
+                label = f"``{name}``"
+                if scheme.get("type") == "http" and scheme.get("scheme"):
+                    label += f" (HTTP ``{scheme['scheme']}``)"
+                elif scheme.get("type") == "apiKey" and scheme.get("name"):
+                    label += f" (``{scheme['name']}`` {scheme['in']})"
+                if scopes:
+                    label += " with scopes " + ", ".join(f"``{x}``" for x in scopes)
+                schemes.append(label)
+            yield "* " + " and ".join(schemes)
+        yield ""
 
     def render_parameters(self, parameters):
         """Render OAS operation's parameters."""
