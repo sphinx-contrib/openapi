@@ -133,6 +133,12 @@ The following options take a value.
 
 The following options are boolean flags.
 
+``info``
+
+  Render the OpenAPI document title and description before the operations.
+
+  :Type: Flag.
+
 ``generate-examples-from-schemas``
 
   Whether examples should be generated from the schema if they are not provided in the spec. If unset, examples will not be generated.
