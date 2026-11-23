@@ -208,6 +208,7 @@ class HttpdomainRenderer(abc.RestructuredTextRenderer):
     _request_parameters_order = ["header", "path", "query", "cookie"]
 
     option_spec = {
+        "info": directives.flag,
         "markup": functools.partial(directives.choice, values=_markup_converters),
         "http-methods-order": _split_option,
         "response-examples-for": _split_option,
@@ -253,7 +254,17 @@ class HttpdomainRenderer(abc.RestructuredTextRenderer):
 
         if spec.get("swagger") == "2.0":
             spec = lib2to3.convert(spec)
+        if "info" in self._options:
+            yield from self.render_info(spec.get("info", {}))
         yield from self.render_paths(spec.get("paths", {}))
+
+    def render_info(self, info):
+        if title := info.get("title"):
+            yield f".. rubric:: {' '.join(title.split())}"
+            yield ""
+        if description := info.get("description"):
+            yield from self._convert_markup(description).strip().splitlines()
+            yield ""
 
     def render_paths(self, paths):
         """Render OAS paths item."""
