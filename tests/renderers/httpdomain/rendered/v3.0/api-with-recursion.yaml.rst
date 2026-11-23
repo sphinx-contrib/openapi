@@ -17,13 +17,22 @@
 
    **Show API version details**
 
-   :resjson name:
-   :resjsonobj name: string, required
-   :resjson children[]:
-   :resjsonobj children[]: object
-
    :statuscode 200:
       200 response
 
    :statuscode 203:
       203 response
+
+   **Response 200** (``application/json``)
+
+   :resjson name:
+   :resjsonobj name: string, required
+   :resjson children[]:
+   :resjsonobj children[]: object
+
+   **Response 203** (``application/json``)
+
+   :resjson name:
+   :resjsonobj name: string, required
+   :resjson children[]:
+   :resjsonobj children[]: object

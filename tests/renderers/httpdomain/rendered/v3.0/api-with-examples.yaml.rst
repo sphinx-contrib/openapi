@@ -91,3 +91,7 @@
          }
    :statuscode 203:
       203 response
+
+   **Response 200** (``application/json``)
+
+   **Response 203** (``application/json``)
