@@ -140,55 +140,55 @@ def test_render_responses_json_schema_description_4xx(testrenderer, oas_fragment
     )
 
 
-def test_render_responses_json_schema_description_first_2xx(testrenderer, oas_fragment):
-    """JSON schema description is rendered."""
-
+def test_render_responses_all_successful_bodies(testrenderer, oas_fragment):
     markup = textify(
         testrenderer.render_responses(
             oas_fragment("""
-                '400':
+                "200":
+                  description: Download complete.
+                  content:
+                    application/json:
+                      schema:
+                        properties:
+                          result:
+                            type: string
+                    text/csv:
+                      schema:
+                        type: string
+                    application/openmetrics-text:
+                      schema:
+                        type: string
+                    application/octet-stream:
+                      schema:
+                        type: string
+                        format: binary
+                "202":
+                  description: Download queued.
+                  content:
+                    application/json:
+                      schema:
+                        properties:
+                          task_url:
+                            type: string
+                "400":
                   description: An error.
                   content:
                     application/json:
                       schema:
                         properties:
-                          aaa:
-                            type: string
-                '200':
-                  description: An evidence.
-                  content:
-                    application/json:
-                      schema:
-                        properties:
-                          foo:
-                            type: string
-                          bar:
-                            type: integer
-                '201':
-                  description: An evidence created.
-                  content:
-                    application/json:
-                      schema:
-                        properties:
-                          bbb:
+                          error_only:
                             type: string
                 """)
         )
     )
-    assert markup == textwrap.dedent("""\
-        :resjson foo:
-        :resjsonobj foo: string
-        :resjson bar:
-        :resjsonobj bar: integer
-
-        :statuscode 400:
-           An error.
-        :statuscode 200:
-           An evidence.
-
-        :statuscode 201:
-           An evidence created.
-        """)
+    assert "**Response 200** (``application/json``)\n\n:resjson result:" in markup
+    assert "**Response 202** (``application/json``)\n\n:resjson task_url:" in markup
+    assert "**Response 200** (``text/csv``)\n\n``string``" in markup
+    assert "**Response 200** (``application/openmetrics-text``)" in markup
+    assert (
+        "**Response 200** (``application/octet-stream``)\n\n``string:binary``" in markup
+    )
+    assert "error_only" not in markup
 
 
 def test_render_responses_json_schema_description_turned_off(fakestate, oas_fragment):

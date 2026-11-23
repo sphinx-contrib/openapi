@@ -57,12 +57,15 @@
    :param version:
       Version of the dataset.
    :paramtype version: string, required
-
    :statuscode 200:
       The dataset API for the given version is found and it is accessible to consume.
 
    :statuscode 404:
       The combination of dataset name and version is not found in the system or it is not published yet to be consumed by public.
+
+   **Response 200** (``application/json``)
+
+   ``string``
 
 .. http:post:: /{dataset}/{version}/records
 

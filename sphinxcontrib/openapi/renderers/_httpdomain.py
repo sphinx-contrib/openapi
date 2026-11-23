@@ -397,23 +397,50 @@ class HttpdomainRenderer(abc.RestructuredTextRenderer):
     def render_responses(self, responses):
         """Render OAS operation's responses."""
 
-        if self._json_schema_description:
-            for status_code, response in responses.items():
-                if _is_2xx_status(status_code):
-                    for content_type, content in response.get("content", {}).items():
-                        if _is_json_mimetype(content_type) and content.get("schema"):
-                            yield from self.render_json_schema_description(
-                                content["schema"], "res"
-                            )
-                            yield ""
-                            break
-                    break
+        bodies = [
+            (status, media_type, representation.get("schema"))
+            for status, response in responses.items()
+            if self._json_schema_description and _is_2xx_status(status)
+            for media_type, representation in response.get("content", {}).items()
+        ]
+        if len(bodies) == 1 and _is_json_mimetype(bodies[0][1]):
+            schema = bodies[0][2]
+            if isinstance(schema, dict) and _get_schema_type(schema) in (
+                "object",
+                "array",
+                None,
+            ):
+                yield from self.render_json_schema_description(schema, "res")
+                yield ""
+                bodies = []
+            elif schema is None:
+                bodies = []
 
         for status_code, response in responses.items():
-            # Due to the way how YAML spec is parsed, status code may be
-            # infered as integer. In order to spare some cycles on type
-            # guessing going on, let's ensure it's always string at this point.
             yield from self.render_response(str(status_code), response)
+
+        for status, media_type, schema in bodies:
+            yield ""
+            yield from self.render_response_schema(status, media_type, schema)
+
+    def render_response_schema(self, status, media_type, schema):
+        yield f"**Response {status}** (``{media_type}``)"
+        if not isinstance(schema, dict):
+            return
+        yield ""
+
+        if schema.get("description"):
+            description = self._convert_markup(schema["description"]).strip()
+            yield from description.splitlines()
+            yield ""
+
+        fields = list(self.render_json_schema_description(schema, "res"))
+        if fields:
+            yield from fields
+        else:
+            markers = _get_markers_from_object({}, schema)
+            if markers:
+                yield ", ".join(f"``{marker}``" for marker in markers)
 
     def render_response(self, status_code, response):
         """Render OAS operation's response."""
